@@ -1,0 +1,1 @@
+export { default as JabatanListPage } from "./JabatanPage"

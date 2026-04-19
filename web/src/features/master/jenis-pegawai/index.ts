@@ -1,0 +1,1 @@
+export { default as JenisPegawaiListPage } from "./JenisPegawaiPage"

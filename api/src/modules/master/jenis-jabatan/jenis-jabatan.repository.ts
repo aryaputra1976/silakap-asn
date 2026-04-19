@@ -1,0 +1,74 @@
+import { Injectable } from '@nestjs/common'
+import { PrismaService } from '@/prisma/prisma.service'
+import {
+  BaseMasterRepository,
+  MasterEntity,
+  TxClient,
+} from '@/modules/master/core/base-master.repository'
+import { CreateJenisJabatanDto } from './dto/create-jenis-jabatan.dto'
+import { UpdateJenisJabatanDto } from './dto/update-jenis-jabatan.dto'
+import { QueryJenisJabatanDto } from './dto/query-jenis-jabatan.dto'
+
+export type JenisJabatanEntity = MasterEntity & {
+  kode: string
+  nama: string
+  isActive: boolean
+}
+
+@Injectable()
+export class JenisJabatanRepository extends BaseMasterRepository<
+  JenisJabatanEntity,
+  CreateJenisJabatanDto,
+  UpdateJenisJabatanDto,
+  QueryJenisJabatanDto
+> {
+  constructor(prisma: PrismaService) {
+    super(prisma)
+  }
+
+  protected getModelName(): 'refJenisJabatan' {
+    return 'refJenisJabatan'
+  }
+
+  protected getAllowedSortFields(): string[] {
+    return ['id', 'kode', 'nama', 'createdAt']
+  }
+
+  async findByKode(kode: string, tx?: TxClient) {
+    const model = this.getModel(this.getClient(tx))
+    return model.findFirst({
+      where: {
+        kode: { equals: kode, mode: 'insensitive' },
+        deletedAt: null,
+      },
+    })
+  }
+
+  async findByNama(nama: string, tx?: TxClient) {
+    const model = this.getModel(this.getClient(tx))
+    return model.findFirst({
+      where: {
+        nama: { equals: nama, mode: 'insensitive' },
+        deletedAt: null,
+      },
+    })
+  }
+
+  async isReferenced(id: bigint, tx?: TxClient): Promise<boolean> {
+    const client = this.getClient(tx)
+
+    const [pegawai, jabatan, riwayat] = await Promise.all([
+      client.silakapPegawai.count({
+        where: { jenisJabatanId: id, deletedAt: null },
+      }),
+      client.refJabatan.count({
+        where: { jenisJabatanId: id, deletedAt: null },
+      }),
+      client.silakapRiwayatJabatan.count({
+        where: { jenisJabatanId: id },
+      }),
+    ])
+
+    return pegawai > 0 || jabatan > 0 || riwayat > 0
+  }
+}

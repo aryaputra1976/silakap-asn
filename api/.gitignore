@@ -1,0 +1,12 @@
+node_modules/
+dist/
+uploads/
+data/import/
+docs/manual/
+logs/
+
+.env
+.env.local
+.env.*.local
+
+*.log

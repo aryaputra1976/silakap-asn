@@ -1,0 +1,8 @@
+[
+  { "name": "SUPER_ADMIN" },
+  { "name": "ADMIN_BKPSDM" },
+  { "name": "VERIFIKATOR" },
+  { "name": "PPK" },
+  { "name": "OPERATOR" },
+  { "name": "ASN" }
+]

@@ -1,0 +1,1859 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ======================================================
+// ENUM
+// ======================================================
+
+enum LayananStatus {
+  DRAFT
+  SUBMITTED
+  VERIFIED
+  RETURNED
+  APPROVED
+  REJECTED
+  SYNCED_SIASN
+  FAILED_SIASN
+}
+
+enum DependencyStatus {
+  PENDING
+  COMPLETED
+}
+
+enum DisposisiStatus {
+  SENT
+  ACCEPTED
+  DONE
+}
+
+enum SiasnJobStatus {
+  QUEUED
+  SUCCESS
+  FAILED
+}
+
+enum RegistrasiStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// ======================================================
+// PEREMAJAAN
+// ======================================================
+
+model SilakapPeremajaan {
+  id        BigInt @id @default(autoincrement()) @map("id")
+  layananId BigInt @unique @map("layanan_id")
+
+  layanan SilakapUsulLayanan @relation(fields: [layananId], references: [id])
+
+  jenisPerubahan String  @map("jenis_perubahan")
+  keterangan     String? @map("keterangan")
+  dataLama       Json?   @map("data_lama")
+  dataBaru       Json?   @map("data_baru")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("silakap_peremajaan")
+}
+
+// ======================================================
+// RBAC
+// ======================================================
+
+model SilakapUser {
+  id        BigInt  @id @default(autoincrement()) @map("id")
+  username  String  @unique @map("username")
+  password  String  @map("password")
+  pegawaiId BigInt? @unique @map("pegawai_id")
+  isActive  Boolean @default(true) @map("is_active")
+
+  pegawai SilakapPegawai? @relation(fields: [pegawaiId], references: [id])
+
+  roles         SilakapUserRole[]
+  notifications SilakapNotification[]
+  activities    SilakapActivity[]
+  auditLogs     AuditLog[]
+  authSession   AuthSession[]
+  reviewedRegistrations SilakapRegistrasiUser[] @relation("RegistrationReviewer")
+
+  @@map("silakap_user")
+}
+
+model SilakapRole {
+  id   BigInt @id @default(autoincrement()) @map("id")
+  name String @unique @map("name")
+
+  users       SilakapUserRole[]
+  permissions SilakapRolePermission[]
+  bidang      SilakapBidang[]
+  layananLog  SilakapLayananLog[]
+  registrations SilakapRegistrasiUser[] @relation("RequestedRegistrationRole")
+
+  @@map("silakap_role")
+}
+
+model SilakapPermission {
+  id        BigInt    @id @default(autoincrement()) @map("id")
+  code      String    @unique @map("code")
+  name      String    @map("name")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  rolePermissions SilakapRolePermission[]
+
+  @@map("silakap_permission")
+}
+
+model SilakapUserRole {
+  userId BigInt @map("user_id")
+  roleId BigInt @map("role_id")
+
+  user SilakapUser @relation(fields: [userId], references: [id])
+  role SilakapRole @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+  @@map("silakap_user_role")
+}
+
+model SilakapRolePermission {
+  roleId       BigInt @map("role_id")
+  permissionId BigInt @map("permission_id")
+
+  role       SilakapRole       @relation(fields: [roleId], references: [id])
+  permission SilakapPermission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("silakap_role_permission")
+}
+
+// ======================================================
+// ================= REF MASTER (FINAL) =================
+// ======================================================
+
+model RefAgama {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(2)
+  nama    String @map("nama") @db.VarChar(100)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai SilakapPegawai[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_agama")
+}
+
+model RefAlasanPensiun {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(2)
+  nama    String @map("nama") @db.VarChar(100)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_alasan_pensiun")
+}
+
+model RefGolongan {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(6)
+  nama    String @map("nama") @db.VarChar(100)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawaiGolonganAktif SilakapPegawai[] @relation("GolonganAktif")
+  pegawaiGolonganAwal  SilakapPegawai[] @relation("GolonganAwal")
+
+  riwayatPangkat SilakapRiwayatPangkat[]
+  RefGajiPokok   RefGajiPokok[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_golongan")
+}
+
+model RefJenisKelamin {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(2)
+  nama    String @map("nama") @db.VarChar(100)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai SilakapPegawai[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_jenis_kelamin")
+}
+
+model RefJenisPegawai {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(100)
+  nama    String @map("nama") @db.VarChar(250)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai SilakapPegawai[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_jenis_pegawai")
+}
+
+model RefJenisPensiun {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(2)
+  nama    String @map("nama") @db.VarChar(100)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pensiun SilakapPensiunDetail[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_jenis_pensiun")
+}
+
+model RefStatusKepegawaian {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(2)
+  nama    String @map("nama") @db.VarChar(100)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_status_kepegawaian")
+}
+
+model RefStatusPerkawinan {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(2)
+  nama    String @map("nama") @db.VarChar(100)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai SilakapPegawai[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_status_perkawinan")
+}
+
+model RefTempatLahir {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(50)
+  nama    String @map("nama") @db.VarChar(200)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai SilakapPegawai[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_tempat_lahir")
+}
+
+model RefLokasiKerja {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(100)
+  nama    String @map("nama") @db.VarChar(250)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai        SilakapPegawai[]
+  riwayatJabatan SilakapRiwayatJabatan[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_lokasi_kerja")
+}
+
+model RefKpkn {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(100)
+  nama    String @map("nama") @db.VarChar(250)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai SilakapPegawai[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_kpkn")
+}
+
+model RefKedudukanHukum {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(50)
+  nama    String @map("nama") @db.VarChar(200)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai SilakapPegawai[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_kedudukan_hukum")
+}
+
+model RefPendidikanTingkat {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(10)
+  nama    String @map("nama") @db.VarChar(150)
+
+  pendidikan        RefPendidikan[]
+  riwayatPendidikan SilakapRiwayatPendidikan[]
+
+  isActive       Boolean          @default(true) @map("is_active")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  deletedAt      DateTime?        @map("deleted_at")
+  SilakapPegawai SilakapPegawai[]
+
+  @@index([nama])
+  @@map("ref_pendidikan_tingkat")
+}
+
+model RefPendidikan {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(50)
+  nama    String @map("nama") @db.VarChar(200)
+
+  tingkatId BigInt?               @map("tingkat_id")
+  tingkat   RefPendidikanTingkat? @relation(fields: [tingkatId], references: [id])
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai           SilakapPegawai[]
+  riwayatPendidikan SilakapRiwayatPendidikan[]
+
+  @@index([nama])
+  @@index([tingkatId])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_pendidikan")
+}
+
+model RefJenisJabatan {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(50)
+  nama    String @map("nama") @db.VarChar(200)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawai SilakapPegawai[]
+  jabatan RefJabatan[]
+
+  riwayatJabatan SilakapRiwayatJabatan[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_jenis_jabatan")
+}
+
+model RefJabatan {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(100)
+  nama    String @map("nama") @db.VarChar(250)
+
+  // === Relasi Jenis Jabatan ===
+  jenisJabatanId BigInt?          @map("jenis_jabatan_id")
+  jenisJabatan   RefJenisJabatan? @relation(fields: [jenisJabatanId], references: [id])
+
+  // ===== STRUKTURAL =====
+  eselonId String? @map("eselon_id") @db.VarChar(50)
+
+  // ===== FUNGSIONAL =====
+  jenjang String? @map("jenjang") @db.VarChar(100)
+  bup     Int?    @map("bup")
+
+  // ===== OPSIONAL UNOR =====
+  unorNama String? @map("unor_nama") @db.VarChar(250)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  pegawai        SilakapPegawai[]
+  riwayatJabatan SilakapRiwayatJabatan[]
+
+  // =========================
+  // ANJAB RELATIONS
+  // =========================
+  anjab               RefJabatanAnjab[]
+  abkBebanKerja       AbkBebanKerja[]
+  abkHasilPerhitungan AbkHasilPerhitungan[]
+  workforceFormasi    WorkforceFormasi[]
+
+  @@index([jenisJabatanId])
+  @@index([nama])
+  @@map("ref_jabatan")
+}
+
+model RefInstansi {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(100)
+  nama    String @map("nama") @db.VarChar(250)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawaiInduk SilakapPegawai[] @relation("instansi_induk")
+  pegawaiKerja SilakapPegawai[] @relation("instansi_kerja")
+
+  riwayatJabatan SilakapRiwayatJabatan[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_instansi")
+}
+
+model RefSatker {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  idSiasn String @unique @map("id_siasn") @db.VarChar(100)
+  kode    String @unique @map("kode") @db.VarChar(100)
+  nama    String @map("nama") @db.VarChar(250)
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  pegawaiInduk SilakapPegawai[] @relation("satker_induk")
+  pegawaiKerja SilakapPegawai[] @relation("satker_kerja")
+
+  riwayatJabatan SilakapRiwayatJabatan[]
+
+  @@index([nama])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("ref_satker")
+}
+
+model RefUnor {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  // ===============================
+  // IDENTITAS
+  // ===============================
+  kode    String  @unique @map("kode") @db.VarChar(100)
+  idSiasn String? @unique @map("id_siasn") @db.VarChar(100)
+  nama    String  @map("nama") @db.VarChar(250)
+
+  // ===============================
+  // HIERARKI
+  // ===============================
+  parentId BigInt? @map("parent_id")
+
+  parent   RefUnor?  @relation("UnorHierarchy", fields: [parentId], references: [id])
+  children RefUnor[] @relation("UnorHierarchy")
+
+  level        Int?      @map("level")
+  formasiIdeal Int?      @map("formasi_ideal")
+  // ===============================
+  // SYSTEM
+  // ===============================
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  // ===============================
+  // RELATIONS
+  // ===============================
+  pegawaiUnor      SilakapPegawai[]        @relation("UnorPegawai")
+  pegawaiUnorInduk SilakapPegawai[]        @relation("UnorIndukPegawai")
+  riwayatJabatan   SilakapRiwayatJabatan[]
+  kecamatanId      BigInt?                 @map("kecamatan_id")
+  kecamatan        RefKecamatan?           @relation(fields: [kecamatanId], references: [id])
+
+  // =========================
+  // ABK RELATIONS
+  // =========================
+
+  abkBebanKerja       AbkBebanKerja[]
+  abkHasilPerhitungan AbkHasilPerhitungan[]
+  workforceFormasi    WorkforceFormasi[]
+  sortOrder           Int?                  @map("sort_order")
+
+  // ===============================
+  // INDEX OPTIMASI
+  // ===============================
+  @@index([nama])
+  @@index([parentId])
+  @@index([isActive])
+  @@index([deletedAt])
+  @@index([kecamatanId])
+  @@index([parentId, sortOrder])
+  @@map("ref_unor")
+}
+
+model RefKecamatan {
+  id   BigInt @id @default(autoincrement())
+  nama String @unique @db.VarChar(100)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  unor RefUnor[]
+
+  @@map("ref_kecamatan")
+}
+
+model RefGajiPokok {
+  id BigInt @id @default(autoincrement())
+
+  golonganId BigInt  @map("golongan_id")
+  masaKerja  Int
+  gaji       Decimal @db.Decimal(12, 2)
+
+  golongan RefGolongan @relation(fields: [golonganId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([golonganId, masaKerja])
+  @@map("ref_gaji_pokok")
+}
+
+// ======================================================
+// ===================== PEGAWAI (FINAL) =================
+// ======================================================
+enum StatusAsn {
+  PNS
+  PPPK
+  PPPK_PARUH_WAKTU
+}
+
+model SilakapPegawai {
+  id            BigInt  @id @default(autoincrement()) @map("id")
+  nip           String  @unique @map("nip")
+  nipLama       String? @map("nip_lama") @db.VarChar(20)
+  nik           String? @map("nik")
+  nama          String  @map("nama")
+  gelarDepan    String? @map("gelar_depan")
+  gelarBelakang String? @map("gelar_belakang")
+
+  tempatLahirId BigInt?   @map("tempat_lahir_id")
+  tempatLahir   String?   @map("tempat_lahir")
+  tanggalLahir  DateTime? @map("tanggal_lahir")
+
+  jenisKelaminId     BigInt? @map("jenis_kelamin_id")
+  agamaId            BigInt? @map("agama_id")
+  statusPerkawinanId BigInt? @map("status_perkawinan_id")
+  jenisPegawaiId     BigInt? @map("jenis_pegawai_id")
+  jenisPegawaiNama   String? @map("jenis_pegawai_nama")
+
+  // KEPEGAWAIAN
+  kedudukanHukumId BigInt?    @map("kedudukan_hukum_id")
+  statusCpnsPns    String?    @map("status_cpns_pns")
+  statusAsn        StatusAsn? @map("status_asn")
+
+  // GOLONGAN
+  golonganAwalId  BigInt?   @map("golongan_awal_id")
+  tmtGolonganAwal DateTime? @map("tmt_golongan_awal")
+  golonganAktifId BigInt?   @map("golongan_aktif_id")
+  tmtGolongan     DateTime? @map("tmt_golongan")
+  mkTahun         Int?      @map("mk_tahun")
+  mkBulan         Int?      @map("mk_bulan")
+
+  // JABATAN
+  jenisJabatanId   BigInt?   @map("jenis_jabatan_id")
+  jabatanId        BigInt?   @map("jabatan_id")
+  tmtJabatan       DateTime? @map("tmt_jabatan")
+  skJabatanNomor   String?   @map("sk_jabatan_nomor") @db.VarChar(100)
+  skJabatanTanggal DateTime? @map("sk_jabatan_tanggal")
+
+  // PENDIDIKAN
+  pendidikanTingkatId BigInt? @map("pendidikan_tingkat_id")
+  pendidikanId        BigInt? @map("pendidikan_id")
+  tahunLulus          Int?    @map("tahun_lulus")
+  namaSekolahTerakhir String? @map("nama_sekolah_terakhir")
+  nomorIjazah         String? @map("nomor_ijazah") @db.VarChar(150)
+
+  // KONTAK
+  alamat          String? @map("alamat")
+  noHp            String? @map("no_hp")
+  email           String? @map("email")
+  emailPemerintah String? @map("email_pemerintah") @db.VarChar(150)
+  statusAktif     Boolean @default(true) @map("status_aktif")
+
+  // CPNS / PNS
+  skCpnsNomor   String?   @map("sk_cpns_nomor") @db.VarChar(100)
+  skCpnsTanggal DateTime? @map("sk_cpns_tanggal")
+  tmtCpns       DateTime? @map("tmt_cpns")
+
+  skPnsNomor   String?   @map("sk_pns_nomor") @db.VarChar(100)
+  skPnsTanggal DateTime? @map("sk_pns_tanggal")
+  tmtPns       DateTime? @map("tmt_pns")
+
+  // NOMOR-NOMOR
+  bpjsNomor       String? @map("bpjs_nomor") @db.VarChar(50)
+  npwpNomor       String? @map("npwp_nomor") @db.VarChar(50)
+  kartuAsnVirtual String? @map("kartu_asn_virtual") @db.VarChar(100)
+
+  // INSTANSI & UNIT
+  instansiIndukId BigInt? @map("instansi_induk_id")
+  instansiKerjaId BigInt? @map("instansi_kerja_id")
+  satkerIndukId   BigInt? @map("satker_induk_id")
+  satkerKerjaId   BigInt? @map("satker_kerja_id")
+  unorId          BigInt? @map("unor_id")
+  unorIndukId     BigInt? @map("unor_induk_id")
+  lokasiKerjaId   BigInt? @map("lokasi_kerja_id")
+  kpknId          BigInt? @map("kpkn_id")
+
+  // SIASN
+  siasnId  String? @unique @map("siasn_id")
+  sapkId   String? @map("sapk_id")
+  refSiasn String? @map("ref_siasn")
+
+  // FLAG
+  isValidNik Boolean @default(false) @map("is_valid_nik")
+  flagIkd    Boolean @default(false) @map("flag_ikd")
+
+  // FOTO
+  fotoUrl       String?   @map("foto_url")
+  fotoSiasnUrl  String?   @map("foto_siasn_url")
+  fotoHash      String?   @map("foto_hash")
+  fotoMime      String?   @map("foto_mime")
+  fotoUpdatedAt DateTime? @map("foto_updated_at")
+
+  rawSiasnJson Json? @map("raw_siasn_json")
+
+  deletedAt DateTime? @map("deleted_at")
+
+  // ================= RANKING =================
+
+  jenisJabatanRank Int? @map("jenis_jabatan_rank")
+  golonganRank     Int? @map("golongan_rank")
+  pendidikanRank   Int? @map("pendidikan_rank")
+  masaKerjaTotal   Int? @map("masa_kerja_total")
+
+  // RELATIONS
+  jenisKelamin     RefJenisKelamin?     @relation(fields: [jenisKelaminId], references: [id])
+  agama            RefAgama?            @relation(fields: [agamaId], references: [id])
+  statusPerkawinan RefStatusPerkawinan? @relation(fields: [statusPerkawinanId], references: [id])
+  jenisPegawai     RefJenisPegawai?     @relation(fields: [jenisPegawaiId], references: [id])
+  kedudukanHukum   RefKedudukanHukum?   @relation(fields: [kedudukanHukumId], references: [id])
+
+  golonganAktif RefGolongan? @relation("GolonganAktif", fields: [golonganAktifId], references: [id])
+  golonganAwal  RefGolongan? @relation("GolonganAwal", fields: [golonganAwalId], references: [id])
+
+  jenisJabatan RefJenisJabatan? @relation(fields: [jenisJabatanId], references: [id])
+  jabatan      RefJabatan?      @relation(fields: [jabatanId], references: [id])
+
+  pendidikanTingkat RefPendidikanTingkat? @relation(fields: [pendidikanTingkatId], references: [id])
+  pendidikan        RefPendidikan?        @relation(fields: [pendidikanId], references: [id])
+
+  instansiInduk RefInstansi? @relation("instansi_induk", fields: [instansiIndukId], references: [id])
+  instansiKerja RefInstansi? @relation("instansi_kerja", fields: [instansiKerjaId], references: [id])
+
+  satkerInduk RefSatker? @relation("satker_induk", fields: [satkerIndukId], references: [id])
+  satkerKerja RefSatker? @relation("satker_kerja", fields: [satkerKerjaId], references: [id])
+
+  unor      RefUnor? @relation("UnorPegawai", fields: [unorId], references: [id])
+  unorInduk RefUnor? @relation("UnorIndukPegawai", fields: [unorIndukId], references: [id])
+
+  lokasiKerja RefLokasiKerja? @relation(fields: [lokasiKerjaId], references: [id])
+  kpkn        RefKpkn?        @relation(fields: [kpknId], references: [id])
+
+  tempatLahirRef RefTempatLahir? @relation(fields: [tempatLahirId], references: [id])
+
+  // RELASI LAIN
+  riwayatJabatan     SilakapRiwayatJabatan[]
+  riwayatPangkat     SilakapRiwayatPangkat[]
+  riwayatPendidikan  SilakapRiwayatPendidikan[]
+  riwayatDiklat      SilakapRiwayatDiklat[]
+  skp                SilakapRiwayatSkp[]
+  hukdis             SilakapRiwayatHukumanDisiplin[]
+  usulLayanan        SilakapUsulLayanan[]
+  dokumen            SilakapDokumen[]
+  riwayatCpnsPns     SilakapRiwayatCpnsPns[]
+  riwayatPenghargaan SilakapRiwayatPenghargaan[]
+  talentPool         TalentPool[]
+  user               SilakapUser?
+  registrations      SilakapRegistrasiUser[]
+  kelengkapan        SilakapKelengkapanPegawai[]
+
+  // INDEX OPTIMASI
+  @@index([nik])
+  @@index([nama])
+  @@index([statusAktif])
+  @@index([jenisKelaminId])
+  @@index([agamaId])
+  @@index([statusPerkawinanId])
+  @@index([jenisPegawaiId])
+  @@index([kedudukanHukumId])
+  @@index([golonganAwalId])
+  @@index([golonganAktifId])
+  @@index([jabatanId])
+  @@index([pendidikanId])
+  @@index([instansiKerjaId])
+  @@index([satkerKerjaId])
+  @@index([unorId])
+  @@index([statusAsn])
+  @@index([statusAsn, unorId])
+  @@index([lokasiKerjaId])
+  @@index([kpknId])
+  @@index([deletedAt])
+  @@index([jenisJabatanRank, golonganRank, masaKerjaTotal, pendidikanRank, tanggalLahir, nip], name: "idx_asn_ranking")
+  @@map("silakap_pegawai")
+}
+
+model SilakapRegistrasiUser {
+  id               BigInt           @id @default(autoincrement()) @map("id")
+  pegawaiId        BigInt           @unique @map("pegawai_id")
+  username         String           @unique @map("username")
+  passwordHash     String           @map("password_hash")
+  email            String           @map("email") @db.VarChar(150)
+  noHp             String           @map("no_hp") @db.VarChar(30)
+  requestedRoleId  BigInt?          @map("requested_role_id")
+  status           RegistrasiStatus @default(PENDING) @map("status")
+  reviewNote       String?          @map("review_note") @db.Text
+  reviewedByUserId BigInt?          @map("reviewed_by_user_id")
+  submittedAt      DateTime         @default(now()) @map("submitted_at")
+  reviewedAt       DateTime?        @map("reviewed_at")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
+
+  pegawai        SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+  requestedRole  SilakapRole?   @relation("RequestedRegistrationRole", fields: [requestedRoleId], references: [id])
+  reviewedByUser SilakapUser?   @relation("RegistrationReviewer", fields: [reviewedByUserId], references: [id])
+
+  @@index([status])
+  @@index([submittedAt])
+  @@index([requestedRoleId])
+  @@index([reviewedByUserId])
+  @@map("silakap_registrasi_user")
+}
+
+// ======================================================
+// ================= RIWAYAT (FINAL) ====================
+// ======================================================
+
+model SilakapRiwayatPangkat {
+  id         BigInt   @id @default(autoincrement()) @map("id")
+  pegawaiId  BigInt   @map("pegawai_id")
+  golonganId BigInt   @map("golongan_id")
+  tmtPangkat DateTime @map("tmt_pangkat")
+
+  nomorSk   String?   @map("nomor_sk") @db.VarChar(100)
+  tanggalSk DateTime? @map("tanggal_sk")
+
+  rawSiasnJson Json? @map("raw_siasn_json")
+
+  pegawai  SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+  golongan RefGolongan    @relation(fields: [golonganId], references: [id])
+
+  @@index([pegawaiId])
+  @@index([golonganId])
+  @@map("silakap_riwayat_pangkat")
+}
+
+model SilakapRiwayatPendidikan {
+  id        BigInt @id @default(autoincrement()) @map("id")
+  pegawaiId BigInt @map("pegawai_id")
+
+  pendidikanId        BigInt? @map("pendidikan_id")
+  pendidikanTingkatId BigInt? @map("pendidikan_tingkat_id")
+  namaSekolah         String? @map("nama_sekolah")
+  tahunLulus          Int?    @map("tahun_lulus")
+
+  rawSiasnJson Json?     @map("raw_siasn_json")
+  deletedAt    DateTime? @map("deleted_at")
+
+  pegawai           SilakapPegawai        @relation(fields: [pegawaiId], references: [id])
+  pendidikan        RefPendidikan?        @relation(fields: [pendidikanId], references: [id])
+  pendidikanTingkat RefPendidikanTingkat? @relation(fields: [pendidikanTingkatId], references: [id])
+
+  @@map("silakap_riwayat_pendidikan")
+}
+
+model SilakapRiwayatCpnsPns {
+  id        BigInt    @id @default(autoincrement()) @map("id")
+  pegawaiId BigInt    @map("pegawai_id")
+  jenis     String    @map("jenis")
+  nomorSk   String?   @map("nomor_sk") @db.VarChar(100)
+  tanggalSk DateTime? @map("tanggal_sk")
+  tmt       DateTime? @map("tmt")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+
+  @@index([pegawaiId])
+  @@index([jenis])
+  @@map("silakap_riwayat_cpns_pns")
+}
+
+model SilakapRiwayatDiklat {
+  id        BigInt  @id @default(autoincrement()) @map("id")
+  pegawaiId BigInt  @map("pegawai_id")
+  nama      String? @map("nama")
+  tahun     Int?    @map("tahun")
+
+  rawSiasnJson Json? @map("raw_siasn_json")
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+
+  @@index([pegawaiId])
+  @@map("silakap_riwayat_diklat")
+}
+
+model SilakapRiwayatJabatan {
+  id        BigInt @id @default(autoincrement()) @map("id")
+  pegawaiId BigInt @map("pegawai_id")
+
+  jenisJabatanId BigInt? @map("jenis_jabatan_id")
+  jabatanId      BigInt? @map("jabatan_id")
+  instansiId     BigInt? @map("instansi_id")
+  satkerId       BigInt? @map("satker_id")
+  unorId         BigInt? @map("unor_id")
+  lokasiKerjaId  BigInt? @map("lokasi_kerja_id")
+
+  nomorSk    String?   @map("nomor_sk") @db.VarChar(100)
+  tanggalSk  DateTime? @map("tanggal_sk")
+  tmtJabatan DateTime  @map("tmt_jabatan")
+
+  rawSiasnJson Json? @map("raw_siasn_json")
+
+  pegawai      SilakapPegawai   @relation(fields: [pegawaiId], references: [id])
+  jenisJabatan RefJenisJabatan? @relation(fields: [jenisJabatanId], references: [id])
+  jabatan      RefJabatan?      @relation(fields: [jabatanId], references: [id])
+  instansi     RefInstansi?     @relation(fields: [instansiId], references: [id])
+  satker       RefSatker?       @relation(fields: [satkerId], references: [id])
+  unor         RefUnor?         @relation(fields: [unorId], references: [id])
+  lokasiKerja  RefLokasiKerja?  @relation(fields: [lokasiKerjaId], references: [id])
+
+  @@index([pegawaiId])
+  @@index([jabatanId])
+  @@index([jenisJabatanId])
+  @@index([instansiId])
+  @@index([satkerId])
+  @@index([unorId])
+  @@map("silakap_riwayat_jabatan")
+}
+
+model SilakapRiwayatPenghargaan {
+  id        BigInt @id @default(autoincrement()) @map("id")
+  pegawaiId BigInt @map("pegawai_id")
+  nama      String @map("nama")
+  tahun     Int?   @map("tahun")
+
+  rawSiasnJson Json? @map("raw_siasn_json")
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+
+  @@index([pegawaiId])
+  @@map("silakap_riwayat_penghargaan")
+}
+
+// ======================================================
+// ============ SKP & HUKUMAN DISIPLIN (FINAL) ==========
+// ======================================================
+
+model SilakapRiwayatSkp {
+  id        BigInt @id @default(autoincrement()) @map("id")
+  pegawaiId BigInt @map("pegawai_id")
+  tahun     Int    @map("tahun")
+  nilai     Float? @map("nilai")
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+
+  @@index([pegawaiId])
+  @@index([tahun])
+  @@map("silakap_riwayat_skp")
+}
+
+model SilakapRiwayatHukumanDisiplin {
+  id        BigInt    @id @default(autoincrement()) @map("id")
+  pegawaiId BigInt    @map("pegawai_id")
+  jenis     String?   @map("jenis")
+  tanggalSk DateTime? @map("tanggal_sk")
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+
+  @@index([pegawaiId])
+  @@index([tanggalSk])
+  @@map("silakap_riwayat_hukuman_disiplin")
+}
+
+// ======================================================
+// ================= LAYANAN & WORKFLOW (FINAL) =========
+// ======================================================
+
+model SilakapJenisLayanan {
+  id        BigInt  @id @default(autoincrement()) @map("id")
+  kode      String  @unique @map("kode") @db.VarChar(50)
+  nama      String  @unique @map("nama") @db.VarChar(150)
+  deskripsi String? @map("deskripsi") @db.Text
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // RELASI
+  usul         SilakapUsulLayanan[]
+  bidangRelasi SilakapLayananBidang[]    @relation("LayananToBidang")
+
+  workflowParent SilakapWorkflowDependency[] @relation("WorkflowParent")
+  workflowChild  SilakapWorkflowDependency[] @relation("WorkflowChild")
+  workflowTemplates SilakapWorkflowTemplate[]
+
+  syaratLayanan             SilakapSyaratLayanan[]
+  kelengkapanPegawai        SilakapKelengkapanPegawai[]
+  SilakapWorkflowTransition SilakapWorkflowTransition[]
+  SilakapWorkflowSLA        SilakapWorkflowSLA[]
+
+  @@index([isActive])
+  @@index([deletedAt])
+  @@map("silakap_jenis_layanan")
+}
+
+model SilakapUsulLayanan {
+  id BigInt @id @default(autoincrement())
+
+  pegawaiId      BigInt @map("pegawai_id")
+  jenisLayananId BigInt @map("jenis_layanan_id")
+
+  status LayananStatus @default(DRAFT)
+
+  tanggalUsul DateTime  @default(now())
+  slaDeadline DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id], map: "fk_usul_pegawai")
+
+  jenis SilakapJenisLayanan @relation(fields: [jenisLayananId], references: [id], map: "fk_usul_jenis_layanan")
+
+  dokumenUsul SilakapDokumenUsul[]
+  layananLog  SilakapLayananLog[]
+
+  siasnSync SilakapSiasnSync[]
+  siasnJobs SilakapSiasnJob[]
+
+  pensiunDetail SilakapPensiunDetail?
+
+  parentDependencies SilakapUsulDependency[] @relation("ParentUsulDependency")
+
+  childDependencies SilakapUsulDependency[] @relation("ChildUsulDependency")
+
+  disposisi  SilakapDisposisi[]
+  peremajaan SilakapPeremajaan?
+
+  @@index([pegawaiId])
+  @@index([jenisLayananId])
+  @@index([status])
+  @@index([pegawaiId, status])
+  @@index([jenisLayananId, status])
+  @@index([pegawaiId, tanggalUsul])
+  @@index([slaDeadline])
+  @@index([id, status]) // penting untuk workflow engine
+  @@map("silakap_usul_layanan")
+}
+
+// ======================================================
+// ===================== PENSIUN ========================
+// ======================================================
+
+model SilakapPensiunDetail {
+  id     BigInt @id @default(autoincrement()) @map("id")
+  usulId BigInt @unique @map("usul_id")
+
+  jenisPensiunId BigInt   @map("jenis_pensiun_id")
+  tmtPensiun     DateTime @map("tmt_pensiun")
+  dasarHukum     String?  @map("dasar_hukum") @db.VarChar(255)
+  keterangan     String?  @map("keterangan") @db.Text
+
+  nipSnapshot          String    @map("nip_snapshot") @db.VarChar(30)
+  namaSnapshot         String    @map("nama_snapshot") @db.VarChar(200)
+  tempatLahirSnapshot  String?   @map("tempat_lahir_snapshot") @db.VarChar(100)
+  tanggalLahirSnapshot DateTime? @map("tanggal_lahir_snapshot")
+
+  golonganSnapshot        String?   @map("golongan_snapshot") @db.VarChar(50)
+  pangkatSnapshot         String?   @map("pangkat_snapshot") @db.VarChar(150)
+  jabatanSnapshot         String?   @map("jabatan_snapshot") @db.VarChar(250)
+  unitKerjaSnapshot       String?   @map("unit_kerja_snapshot") @db.VarChar(250)
+  tmtPnsSnapshot          DateTime? @map("tmt_pns_snapshot")
+  masaKerjaTahunSnapshot  Int?      @map("masa_kerja_tahun_snapshot")
+  masaKerjaBulanSnapshot  Int?      @map("masa_kerja_bulan_snapshot")
+  usiaSaatPensiunSnapshot Int?      @map("usia_saat_pensiun_snapshot")
+
+  deletedAt DateTime? @map("deleted_at")
+
+  usul  SilakapUsulLayanan @relation(fields: [usulId], references: [id])
+  jenis RefJenisPensiun    @relation(fields: [jenisPensiunId], references: [id])
+
+  perhitungan SilakapPensiunPerhitungan?
+  sk          SilakapPensiunSk?
+
+  @@index([jenisPensiunId])
+  @@index([deletedAt])
+  @@map("silakap_pensiun_detail")
+}
+
+model SilakapPensiunPerhitungan {
+  id        BigInt @id @default(autoincrement()) @map("id")
+  pensiunId BigInt @unique @map("pensiun_id")
+
+  masaKerjaTahun  Int     @map("masa_kerja_tahun")
+  masaKerjaBulan  Int     @map("masa_kerja_bulan")
+  gajiPokok       Decimal @map("gaji_pokok") @db.Decimal(12, 2)
+  estimasiPensiun Decimal @map("estimasi_pensiun") @db.Decimal(12, 2)
+
+  pensiun SilakapPensiunDetail @relation(fields: [pensiunId], references: [id])
+
+  @@map("silakap_pensiun_perhitungan")
+}
+
+model SilakapPensiunSk {
+  id        BigInt @id @default(autoincrement()) @map("id")
+  pensiunId BigInt @unique @map("pensiun_id")
+
+  nomorSk   String   @map("nomor_sk")
+  tanggalSk DateTime @map("tanggal_sk")
+  dokumenId BigInt   @map("dokumen_id")
+  statusTte String   @default("BELUM_TTE") @map("status_tte")
+
+  pensiun SilakapPensiunDetail @relation(fields: [pensiunId], references: [id])
+  dokumen SilakapDokumen       @relation(fields: [dokumenId], references: [id])
+
+  @@index([dokumenId]) // ← TAMBAHAN
+  @@map("silakap_pensiun_sk")
+}
+
+// ======================================================
+// ===================== DEPENDENCY =====================
+// ======================================================
+
+model SilakapUsulDependency {
+  id BigInt @id @default(autoincrement())
+
+  parentUsulId BigInt
+  childUsulId  BigInt
+
+  parentUsul SilakapUsulLayanan @relation("ParentUsulDependency", fields: [parentUsulId], references: [id])
+
+  childUsul SilakapUsulLayanan @relation("ChildUsulDependency", fields: [childUsulId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([parentUsulId, childUsulId])
+  @@index([parentUsulId])
+  @@index([childUsulId])
+  @@map("silakap_usul_dependency")
+}
+
+// ======================================================
+// ===================== DISPOSISI ======================
+// ======================================================
+
+model SilakapDisposisi {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  usulId BigInt          @map("usul_id")
+  status DisposisiStatus @default(SENT) @map("status")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  usul SilakapUsulLayanan @relation(fields: [usulId], references: [id])
+
+  @@index([usulId])
+  @@map("silakap_disposisi")
+}
+
+// ======================================================
+// ===================== SIASN JOB ======================
+// ======================================================
+
+model SilakapSiasnJob {
+
+  id BigInt @id @default(autoincrement())
+
+  usulId BigInt
+
+  status SiasnJobStatus @default(QUEUED)
+
+  createdAt DateTime @default(now())
+
+  usul SilakapUsulLayanan @relation(fields: [usulId], references: [id], map: "fk_siasn_job_usul")
+
+  @@index([usulId])
+  @@map("silakap_siasn_job")
+}
+
+// ======================================================
+// ===================== SIASN SYNC =====================
+// ======================================================
+
+model SilakapSiasnSync {
+  id         BigInt   @id @default(autoincrement()) @map("id")
+  usulId     BigInt   @map("usul_id")
+  status     String   @map("status")
+  request    Json?    @map("request")
+  response   Json?    @map("response")
+  retryCount Int      @default(0) @map("retry_count")
+  lastError  String?  @map("last_error")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  usul SilakapUsulLayanan @relation(fields: [usulId], references: [id])
+
+  @@index([usulId])
+  @@index([status]) // ← TAMBAHAN
+  @@map("silakap_siasn_sync")
+}
+
+// ======================================================
+// ===================== LAYANAN LOG ====================
+// ======================================================
+
+model SilakapLayananLog {
+  id         BigInt        @id @default(autoincrement()) @map("id")
+  usulId     BigInt        @map("usul_id")
+  roleId     BigInt?       @map("role_id")
+  status     LayananStatus @map("status")
+  createdAt  DateTime      @default(now()) @map("created_at")
+  keterangan String?
+
+  usul SilakapUsulLayanan @relation(fields: [usulId], references: [id])
+  role SilakapRole?       @relation(fields: [roleId], references: [id])
+
+  @@index([usulId])
+  @@index([roleId]) // ← TAMBAHAN
+  @@index([status])
+  @@index([usulId, createdAt])
+  @@map("silakap_layanan_log")
+}
+
+// ======================================================
+// ===================== LAYANAN BIDANG =================
+// ======================================================
+
+model SilakapLayananBidang {
+  id             BigInt @id @default(autoincrement()) @map("id")
+  jenisLayananId BigInt @map("jenis_layanan_id")
+  bidangId       BigInt @map("bidang_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  layanan SilakapJenisLayanan @relation(name: "LayananToBidang", fields: [jenisLayananId], references: [id])
+  bidang  SilakapBidang       @relation(name: "BidangToLayanan", fields: [bidangId], references: [id])
+
+  @@unique([jenisLayananId, bidangId])
+  @@index([jenisLayananId])
+  @@index([bidangId])
+  @@map("silakap_layanan_bidang")
+}
+
+// ======================================================
+// ===================== WORKFLOW DEPENDENCY ============
+// ======================================================
+
+model SilakapWorkflowDependency {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  parentJenisLayananId BigInt @map("parent_jenis_layanan_id")
+  childJenisLayananId  BigInt @map("child_jenis_layanan_id")
+
+  triggerStatus  LayananStatus @map("trigger_status")
+  blockingStatus LayananStatus @map("blocking_status")
+
+  autoCreate Boolean @default(true) @map("auto_create")
+
+  condition Json? @map("condition") // (NEW)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  parentJenis SilakapJenisLayanan @relation("WorkflowParent", fields: [parentJenisLayananId], references: [id])
+  childJenis  SilakapJenisLayanan @relation("WorkflowChild", fields: [childJenisLayananId], references: [id])
+
+  @@unique([parentJenisLayananId, childJenisLayananId, triggerStatus]) // (FIX)
+  @@index([parentJenisLayananId])
+  @@index([childJenisLayananId])
+  @@index([triggerStatus]) // (NEW)
+  @@map("silakap_workflow_dependency")
+}
+
+model SilakapWorkflowTemplate {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  jenisLayananId BigInt @map("jenis_layanan_id")
+  fromStatus     LayananStatus @map("from_status")
+  toStatus       LayananStatus @map("to_status")
+  actionCode     String @map("action_code")
+  roleRequired   String @map("role_required")
+  requiresDisposisi Boolean @default(false) @map("requires_disposisi")
+  requiresDependency Boolean @default(false) @map("requires_dependency")
+  requiresSiasn  Boolean @default(false) @map("requires_siasn")
+  requiresCompleteness Boolean @default(false) @map("requires_completeness")
+  approvalStage  Int? @map("approval_stage")
+  orderNo        Int @map("order_no")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  jenisLayanan SilakapJenisLayanan @relation(fields: [jenisLayananId], references: [id])
+
+  @@index([jenisLayananId])
+  @@index([fromStatus])
+  @@unique([jenisLayananId, fromStatus, toStatus])
+  @@map("silakap_workflow_template")
+}
+
+model SilakapWorkflowTransition {
+  id BigInt @id @default(autoincrement())
+
+  jenisLayananId BigInt
+
+  fromState  LayananStatus
+  actionCode String
+  toState    LayananStatus
+
+  role String?
+
+  orderNo Int?
+
+  createdAt DateTime @default(now())
+
+  jenisLayanan SilakapJenisLayanan @relation(fields: [jenisLayananId], references: [id])
+
+  @@index([jenisLayananId])
+  @@index([jenisLayananId, fromState])
+  @@index([jenisLayananId, toState])
+  @@index([actionCode])
+  @@map("silakap_workflow_transition")
+}
+
+model SilakapWorkflowTimeline {
+  id BigInt @id @default(autoincrement())
+
+  usulId BigInt
+
+  fromStatus LayananStatus
+  toStatus   LayananStatus
+
+  actorId BigInt?
+
+  createdAt DateTime @default(now())
+
+  @@index([usulId])
+  @@index([usulId, createdAt])
+  @@map("silakap_workflow_timeline")
+}
+
+model SilakapWorkflowSLA {
+  id BigInt @id @default(autoincrement())
+
+  jenisLayananId BigInt
+
+  state LayananStatus
+
+  durationMinutes Int
+
+  createdAt DateTime @default(now())
+
+  jenisLayanan SilakapJenisLayanan @relation(fields: [jenisLayananId], references: [id], onDelete: Cascade)
+
+  @@unique([jenisLayananId, state])
+  @@index([state, jenisLayananId])
+  @@index([state]) // (NEW)
+  @@map("silakap_workflow_sla")
+}
+
+model SilakapWorkflowSLAInstance {
+  id BigInt @id @default(autoincrement())
+
+  usulId BigInt
+
+  state LayananStatus
+
+  startedAt DateTime @default(now())
+
+  dueAt DateTime
+
+  finishedAt DateTime?
+
+  isBreached Boolean @default(false)
+
+  warningSent Boolean @default(false)
+
+  @@index([usulId])
+  @@index([dueAt])
+  @@index([finishedAt])
+  @@index([state])
+  @@map("silakap_workflow_sla_instance")
+}
+
+// ======================================================
+// ================= DOKUMEN ============================
+// ======================================================
+
+model RefJenisDokumen {
+  id BigInt @id @default(autoincrement()) @map("id")
+
+  kode String @unique @map("kode") @db.VarChar(50)
+  nama String @map("nama") @db.VarChar(200)
+
+  deskripsi String? @map("deskripsi") @db.Text
+
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  createdBy BigInt? @map("created_by")
+  updatedBy BigInt? @map("updated_by")
+
+  dokumenPegawai           SilakapDokumen[]
+  dokumenUsul              SilakapDokumenUsul[]
+  syaratLayanan            SilakapSyaratLayanan[]
+  SilakapKelengkapanDetail SilakapKelengkapanDetail[]
+
+  @@index([kode])
+  @@index([nama])
+  @@index([isActive])
+  @@map("ref_jenis_dokumen")
+}
+
+model SilakapDokumen {
+  id BigInt @id @default(autoincrement())
+
+  pegawaiId BigInt
+  jenisId   BigInt
+
+  filePath String
+
+  createdAt DateTime @default(now())
+
+  pegawai SilakapPegawai  @relation(fields: [pegawaiId], references: [id])
+  jenis   RefJenisDokumen @relation(fields: [jenisId], references: [id])
+
+  usulDocs  SilakapDokumenUsul[]
+  pensiunSk SilakapPensiunSk[]
+
+  @@index([pegawaiId])
+  @@index([jenisId])
+  @@map("silakap_dokumen")
+}
+
+model SilakapDokumenUsul {
+  id BigInt @id @default(autoincrement())
+
+  usulId    BigInt
+  dokumenId BigInt?
+  jenisId   BigInt
+
+  nama     String?
+  filePath String?
+
+  createdAt DateTime @default(now())
+
+  usul    SilakapUsulLayanan @relation(fields: [usulId], references: [id])
+  dokumen SilakapDokumen?    @relation(fields: [dokumenId], references: [id])
+  jenis   RefJenisDokumen    @relation(fields: [jenisId], references: [id])
+
+  @@index([usulId])
+  @@index([jenisId])
+  @@map("silakap_dokumen_usul")
+}
+
+model SilakapSyaratLayanan {
+  id BigInt @id @default(autoincrement())
+
+  layananId BigInt
+  jenisId   BigInt
+
+  wajib Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  layanan SilakapJenisLayanan @relation(fields: [layananId], references: [id])
+  jenis   RefJenisDokumen     @relation(fields: [jenisId], references: [id])
+
+  @@unique([layananId, jenisId])
+  @@index([layananId])
+  @@map("silakap_syarat_layanan")
+}
+
+model SilakapKelengkapanPegawai {
+  id BigInt @id @default(autoincrement())
+
+  pegawaiId BigInt
+  layananId BigInt
+
+  isLengkap Boolean @default(false)
+
+  totalSyarat Int
+  terpenuhi   Int
+
+  updatedAt DateTime @updatedAt
+
+  pegawai SilakapPegawai      @relation(fields: [pegawaiId], references: [id])
+  layanan SilakapJenisLayanan @relation(fields: [layananId], references: [id])
+
+  details SilakapKelengkapanDetail[]
+
+  @@unique([pegawaiId, layananId])
+  @@index([pegawaiId])
+  @@map("silakap_kelengkapan_pegawai")
+}
+
+model SilakapKelengkapanDetail {
+  id BigInt @id @default(autoincrement())
+
+  pegawaiId BigInt
+  layananId BigInt
+  jenisId   BigInt
+
+  wajib      Boolean
+  status     Boolean @default(false)
+  keterangan String?
+
+  jenis RefJenisDokumen @relation(fields: [jenisId], references: [id], map: "fk_kelengkapan_detail_jenis")
+
+  kelengkapanPegawaiId BigInt
+  kelengkapanPegawai   SilakapKelengkapanPegawai @relation(fields: [kelengkapanPegawaiId], references: [id], map: "fk_kelengkapan_detail_pegawai")
+
+  @@unique([pegawaiId, layananId, jenisId])
+  @@index([pegawaiId])
+  @@index([layananId])
+  @@index([jenisId])
+  @@map("silakap_kelengkapan_detail")
+}
+
+// ======================================================
+// ================= AUDIT & SESSION ====================
+// ======================================================
+
+model AuditLog {
+  id String @id @default(cuid()) @map("id")
+
+  action   String  @map("action")
+  entity   String  @map("entity")
+  entityId String? @map("entity_id")
+  payload  Json?   @map("payload")
+
+  userId    BigInt?  @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user SilakapUser? @relation(fields: [userId], references: [id])
+
+  @@index([entity])
+  @@index([entityId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_log")
+}
+
+model Outbox {
+  id Int @id @default(autoincrement()) @map("id")
+
+  aggregateType String @map("aggregate_type")
+  aggregateId   String @map("aggregate_id")
+  eventType     String @map("event_type")
+  payload       Json   @map("payload")
+
+  status      String    @default("PENDING") @map("status")
+  retryCount  Int       @default(0) @map("retry_count")
+  nextRetryAt DateTime? @map("next_retry_at")
+  lockedBy    String?   @map("locked_by")
+  lockedAt    DateTime? @map("locked_at")
+
+  createdAt   DateTime  @default(now()) @map("created_at")
+  processedAt DateTime? @map("processed_at")
+  error       String?   @map("error")
+
+  @@index([status])
+  @@index([nextRetryAt])
+  @@index([aggregateType, aggregateId])
+  @@map("outbox")
+}
+
+model SilakapActivity {
+  id          BigInt   @id @default(autoincrement()) @map("id")
+  userId      BigInt?  @map("user_id")
+  title       String   @map("title")
+  description String?  @map("description")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user SilakapUser? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("silakap_activity")
+}
+
+model SilakapNotification {
+  id        BigInt   @id @default(autoincrement()) @map("id")
+  userId    BigInt   @map("user_id")
+  title     String   @map("title")
+  message   String   @map("message")
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user SilakapUser @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("silakap_notification")
+}
+
+model AuthSession {
+  id String @id @default(cuid()) @map("id")
+
+  userId      BigInt  @map("user_id")
+  refreshHash String  @map("refresh_hash")
+  userAgent   String? @map("user_agent")
+  ipAddress   String? @map("ip_address")
+
+  expiresAt DateTime  @map("expires_at")
+  revoked   Boolean   @default(false) @map("revoked")
+  revokedAt DateTime? @map("revoked_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user SilakapUser @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("auth_session")
+}
+
+// ======================================================
+// ================= BIDANG & RELASI (FINAL) ============
+// ======================================================
+
+model SilakapBidang {
+  id   BigInt @id @default(autoincrement()) @map("id")
+  nama String @unique @map("nama")
+
+  roles   SilakapRole[]
+  layanan SilakapLayananBidang[] @relation("BidangToLayanan")
+
+  @@map("silakap_bidang")
+}
+
+model SilakapImportLog {
+  id        BigInt   @id @default(autoincrement()) @map("id")
+  jenis     String   @map("jenis")
+  fileName  String   @map("file_name")
+  totalRows Int      @map("total_rows")
+  success   Int      @map("success")
+  failed    Int      @map("failed")
+  errors    Json?    @map("errors")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("silakap_import_log")
+}
+
+// ======================================================
+// ================= HUMAN CAPITAL ============
+// ======================================================
+model RefJabatanAnjab {
+  id BigInt @id @default(autoincrement())
+
+  jabatanId   BigInt
+  kodeJabatan String? @db.VarChar(50)
+
+  namaJabatan String @db.VarChar(200)
+
+  ikhtisarJabatan String? @db.Text
+  tugasPokok      String? @db.Text
+  tanggungJawab   String? @db.Text
+  wewenang        String? @db.Text
+
+  persyaratanPendidikan String? @db.VarChar(200)
+  persyaratanPelatihan  String? @db.Text
+  pengalamanKerja       String? @db.Text
+
+  kelasJabatan Int?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+
+  jabatan RefJabatan @relation(fields: [jabatanId], references: [id])
+
+  tugas RefJabatanTugas[]
+
+  @@index([jabatanId])
+  @@map("ref_jabatan_anjab")
+}
+
+model RefJabatanTugas {
+  id BigInt @id @default(autoincrement())
+
+  jabatanAnjabId BigInt
+
+  namaTugas   String  @db.Text
+  outputKerja String? @db.VarChar(200)
+
+  satuanOutput String? @db.VarChar(100)
+
+  waktuPenyelesaian Int? @map("waktu_penyelesaian")
+
+  createdAt DateTime @default(now())
+
+  jabatanAnjab RefJabatanAnjab @relation(fields: [jabatanAnjabId], references: [id])
+
+  // BACK RELATION
+  abkBebanKerja AbkBebanKerja[]
+
+  @@index([jabatanAnjabId])
+  @@map("ref_jabatan_tugas")
+}
+
+model AbkBebanKerja {
+  id BigInt @id @default(autoincrement())
+
+  tahun Int
+
+  unorId    BigInt
+  jabatanId BigInt
+  tugasId   BigInt
+
+  volumeKerja Int @map("volume_kerja")
+
+  createdAt DateTime @default(now())
+
+  unor    RefUnor         @relation(fields: [unorId], references: [id])
+  jabatan RefJabatan      @relation(fields: [jabatanId], references: [id])
+  tugas   RefJabatanTugas @relation(fields: [tugasId], references: [id])
+
+  @@index([tahun])
+  @@index([unorId])
+  @@index([jabatanId])
+  @@map("abk_beban_kerja")
+}
+
+model AbkHasilPerhitungan {
+  id BigInt @id @default(autoincrement())
+
+  tahun Int
+
+  unorId    BigInt
+  jabatanId BigInt
+
+  totalBeban   Int @map("total_beban")
+  kebutuhanAsn Int @map("kebutuhan_asn")
+
+  createdAt DateTime @default(now())
+
+  unor    RefUnor    @relation(fields: [unorId], references: [id])
+  jabatan RefJabatan @relation(fields: [jabatanId], references: [id])
+
+  @@index([tahun])
+  @@index([unorId])
+  @@index([jabatanId])
+  @@map("abk_hasil_perhitungan")
+}
+
+model WorkforceFormasi {
+  id BigInt @id @default(autoincrement())
+
+  tahun Int
+
+  unorId    BigInt
+  jabatanId BigInt
+
+  kebutuhanAbk Int @map("kebutuhan_abk")
+  asnAktif     Int @map("asn_aktif")
+
+  pensiun5Tahun Int @map("pensiun_5_tahun")
+
+  rekomendasiFormasi Int @map("rekomendasi_formasi")
+
+  createdAt DateTime @default(now())
+
+  unor    RefUnor    @relation(fields: [unorId], references: [id])
+  jabatan RefJabatan @relation(fields: [jabatanId], references: [id])
+
+  @@index([tahun])
+  @@index([unorId])
+  @@index([jabatanId])
+  @@map("workforce_formasi")
+}
+
+model TalentPool {
+  id BigInt @id @default(autoincrement())
+
+  pegawaiId BigInt
+
+  kategori String @db.VarChar(100)
+
+  skor Int?
+
+  potensi String? @db.VarChar(50)
+
+  rekomendasi String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+
+  @@index([pegawaiId])
+  @@map("talent_pool")
+}

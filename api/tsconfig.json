@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    /* ================= BASIC ================= */
+    "module": "commonjs",
+    "target": "ES2021",
+    "lib": ["ES2021"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+
+    /* ================= STRICT MODE ================= */
+    "strict": true,
+    "strictPropertyInitialization": true,
+    "noImplicitAny": true,
+    "forceConsistentCasingInFileNames": true,
+
+    /* ================= NESTJS DECORATORS (WAJIB) ================= */
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "useDefineForClassFields": false,
+
+    /* ================= MODULE RESOLUTION ================= */
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+
+    "ignoreDeprecations": "5.0",
+    
+    /* ================= PATH ALIAS ================= */
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"],
+      "@/core/*": ["src/core/*"], 
+      "@/modules/*": ["src/modules/*"], 
+      "@/prisma/*": ["src/prisma/*"]      
+    },
+
+    /* ================= PERFORMANCE ================= */
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "prisma"]
+}

@@ -1,0 +1,1 @@
+export { default as JenisPensiunListPage } from "./JenisPensiunPage"

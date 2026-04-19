@@ -1,0 +1,26 @@
+[
+  { "role": "ADMIN_BKPSDM", "permission": "ASN.READ" },
+  { "role": "ADMIN_BKPSDM", "permission": "ASN.UPDATE" },
+  { "role": "ADMIN_BKPSDM", "permission": "SERVICE.VERIFY" },
+  { "role": "ADMIN_BKPSDM", "permission": "SERVICE.APPROVE" },
+  { "role": "ADMIN_BKPSDM", "permission": "SERVICE.VIEW.ALL" },
+  { "role": "ADMIN_BKPSDM", "permission": "DOC.READ" },
+  { "role": "ADMIN_BKPSDM", "permission": "SIASN.SYNC.VIEW" },
+
+  { "role": "VERIFIKATOR", "permission": "SERVICE.VERIFY" },
+  { "role": "VERIFIKATOR", "permission": "SERVICE.RETURN" },
+  { "role": "VERIFIKATOR", "permission": "SERVICE.VIEW.OPD" },
+  { "role": "VERIFIKATOR", "permission": "DOC.READ" },
+
+  { "role": "PPK", "permission": "SERVICE.APPROVE" },
+  { "role": "PPK", "permission": "SERVICE.REJECT" },
+  { "role": "PPK", "permission": "DOC.SIGN.TTE" },
+
+  { "role": "OPERATOR", "permission": "SERVICE.CREATE" },
+  { "role": "OPERATOR", "permission": "SERVICE.SUBMIT" },
+  { "role": "OPERATOR", "permission": "SERVICE.VIEW.OPD" },
+  { "role": "OPERATOR", "permission": "DOC.UPLOAD" },
+
+  { "role": "ASN", "permission": "SERVICE.VIEW.SELF" },
+  { "role": "ASN", "permission": "DOC.READ" }
+]

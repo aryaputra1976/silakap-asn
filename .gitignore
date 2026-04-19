@@ -1,0 +1,40 @@
+## Dependencies
+node_modules/
+api/node_modules/
+web/node_modules/
+
+## Build output
+dist/
+build/
+.next/
+coverage/
+api/dist/
+web/dist/
+*.tsbuildinfo
+
+## Test output
+playwright-report/
+test-results/
+web/playwright-report/
+web/test-results/
+
+## Runtime files
+*.log
+logs/
+tmp/
+api/logs/
+api/tmp/
+api/uploads/
+api/data/import/
+
+## Environment files
+.env
+.env.*
+api/.env
+api/.env.*
+web/.env
+web/.env.*
+!.env.example
+## OS / editor
+.DS_Store
+Thumbs.db

@@ -1,0 +1,11 @@
+export function normalizeBigInt(data: any) {
+
+  return JSON.parse(
+    JSON.stringify(
+      data,
+      (_, value) =>
+        typeof value === "bigint" ? value.toString() : value
+    )
+  )
+
+}

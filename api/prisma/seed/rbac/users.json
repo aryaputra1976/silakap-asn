@@ -1,0 +1,36 @@
+[
+  {
+    "username": "superadmin",
+    "password": "SuperAdmin123!",
+    "roles": ["SUPER_ADMIN"]
+  },
+  {
+    "username": "admin",
+    "password": "AdminBkpsdm123!",
+    "roles": ["ADMIN_BKPSDM"]
+  },
+  {
+    "username": "operator.opd1",
+    "password": "Operator123!",
+    "roles": ["OPERATOR"],
+    "pegawai_nip": "198001012010011001"
+  },
+  {
+    "username": "verifikator.opd1",
+    "password": "Verifikator123!",
+    "roles": ["VERIFIKATOR"],
+    "pegawai_nip": "198002022010012002"
+  },
+  {
+    "username": "ppk.bkpsdm",
+    "password": "Ppk123!",
+    "roles": ["PPK"],
+    "pegawai_nip": "197912122005011001"
+  },
+  {
+    "username": "asn.demo",
+    "password": "Asn123!",
+    "roles": ["ASN"],
+    "pegawai_nip": "199001012020011001"
+  }
+]
