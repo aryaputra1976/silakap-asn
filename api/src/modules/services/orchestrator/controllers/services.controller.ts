@@ -38,23 +38,17 @@ export class ServicesController {
 
   @Public()
   @Get(':service/dashboard')
-  async dashboard(
-    @Param('service') service: string,
-  ) {
+  async dashboard(@Param('service') service: string) {
     return this.dashboardService.getDashboard(service)
   }
 
   @Get(':service')
-  async list(
-    @Param('service') service: string,
-  ) {
+  async list(@Param('service') service: string) {
     return this.queryService.listByServiceCode(service)
   }
 
   @Get(':service/:id')
-  async getById(
-    @Param('id') id: string,
-  ) {
+  async getById(@Param('id') id: string) {
     return this.queryService.getById(BigInt(id))
   }
 
@@ -73,11 +67,7 @@ export class ServicesController {
     @Body() body: ServiceMutationBody,
     @Req() req: ServicesRequest,
   ) {
-    return this.servicesService.submit(
-      service,
-      body,
-      req.user ?? {},
-    )
+    return this.servicesService.submit(service, body, req.user ?? {})
   }
 
   @Post(':service/workflow')
@@ -87,10 +77,6 @@ export class ServicesController {
     @Body() body: ServiceMutationBody,
     @Req() req: ServicesRequest,
   ) {
-    return this.servicesService.workflow(
-      service,
-      body,
-      req.user ?? {},
-    )
+    return this.servicesService.workflow(service, body, req.user ?? {})
   }
 }

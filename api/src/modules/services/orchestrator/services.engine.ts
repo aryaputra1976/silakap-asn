@@ -86,10 +86,7 @@ export class ServicesEngine {
 
       const usul = rows[0]
 
-      await this.dependencyService.validateDependencies(
-        tx,
-        usulId,
-      )
+      await this.dependencyService.validateDependencies(tx, usulId)
 
       await this.workflowGuard.validateForExecution(tx, {
         ...params,
