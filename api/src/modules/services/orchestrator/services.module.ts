@@ -17,6 +17,7 @@ import { ServicesWorkflowService } from './service/services.workflow.service'
 @Module({
   controllers: [ServicesController, LayananController],
   providers: [
+    CompletenessService,
     ServicesService,
     ServicesEngine,
     ServicesSubmitService,
@@ -26,10 +27,6 @@ import { ServicesWorkflowService } from './service/services.workflow.service'
     ServicesDependencyService,
     ServicesDocumentService,
     ServicesWorkflowGuard,
-    {
-      provide: CompletenessService,
-      useClass: CompletenessService,
-    },
   ],
   exports: [
     ServicesService,

@@ -1,6 +1,8 @@
 import {
+  Body,
   Controller,
   Get,
+  Param,
   Post,
   Req,
   UseGuards,
@@ -21,65 +23,65 @@ type OrchestratorUser = {
 }
 
 type ServicesRequest = Request & {
-  body?: Record<string, unknown>
-  params: Record<string, string | undefined>
   user?: OrchestratorUser
 }
 
 @Controller('services')
 export class ServicesController {
   constructor(
-    private readonly servicesService?: ServicesService,
-    private readonly queryService?: ServicesQueryService,
-    private readonly dashboardService?: ServicesDashboardService,
+    private readonly servicesService: ServicesService,
+    private readonly queryService: ServicesQueryService,
+    private readonly dashboardService: ServicesDashboardService,
   ) {}
 
   @Public()
   @Get(':service/dashboard')
-  async dashboard(@Req() req: ServicesRequest) {
-    return this.dashboardService!.getDashboard(
-      String(req.params.service ?? ''),
-    )
+  async dashboard(@Param('service') service: string) {
+    return this.dashboardService.getDashboard(service)
   }
 
   @Get(':service')
-  async list(@Req() req: ServicesRequest) {
-    return this.queryService!.listByServiceCode(
-      String(req.params.service ?? ''),
-    )
+  async list(@Param('service') service: string) {
+    return this.queryService.listByServiceCode(service)
   }
 
   @Get(':service/:id')
-  async getById(@Req() req: ServicesRequest) {
-    return this.queryService!.getById(
-      BigInt(String(req.params.id ?? '')),
-    )
+  async getById(@Param('id') id: string) {
+    return this.queryService.getById(BigInt(id))
   }
 
   @Post(':service')
-  async create(@Req() req: ServicesRequest) {
-    return this.servicesService!.create(
-      String(req.params.service ?? ''),
-      req.body,
-    )
+  async create(
+    @Param('service') service: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.servicesService.create(service, body)
   }
 
   @Post(':service/submit')
   @UseGuards(JwtGuard)
-  async submit(@Req() req: ServicesRequest) {
-    return this.servicesService!.submit(
-      String(req.params.service ?? ''),
-      req.body,
+  async submit(
+    @Param('service') service: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req: ServicesRequest,
+  ) {
+    return this.servicesService.submit(
+      service,
+      body,
       req.user ?? {},
     )
   }
 
   @Post(':service/workflow')
   @UseGuards(JwtGuard)
-  async workflow(@Req() req: ServicesRequest) {
-    return this.servicesService!.workflow(
-      String(req.params.service ?? ''),
-      req.body,
+  async workflow(
+    @Param('service') service: string,
+    @Body() body: Record<string, unknown>,
+    @Req() req: ServicesRequest,
+  ) {
+    return this.servicesService.workflow(
+      service,
+      body,
       req.user ?? {},
     )
   }

@@ -14,11 +14,11 @@ import { ServicesWorkflowService } from './service/services.workflow.service'
 @Injectable()
 export class ServicesEngine {
   constructor(
-    private readonly prisma?: PrismaService,
-    private readonly workflowService?: ServicesWorkflowService,
-    private readonly dependencyService?: ServicesDependencyService,
-    private readonly workflowGuard?: ServicesWorkflowGuard,
-    private readonly completenessService?: CompletenessService,
+    private readonly prisma: PrismaService,
+    private readonly workflowService: ServicesWorkflowService,
+    private readonly dependencyService: ServicesDependencyService,
+    private readonly workflowGuard: ServicesWorkflowGuard,
+    private readonly completenessService: CompletenessService,
   ) {}
 
   async createDetail(params: {
@@ -28,7 +28,7 @@ export class ServicesEngine {
   }) {
     const { usulId, jenisKode, payload } = params
 
-    return this.prisma!.$transaction(async (tx) => {
+    return this.prisma.$transaction(async (tx) => {
       const handler = ServicesRegistry.resolve(jenisKode as never)
 
       if (!handler?.createDetail) {
@@ -86,18 +86,18 @@ export class ServicesEngine {
 
       const usul = rows[0]
 
-      await this.dependencyService!.validateDependencies(
+      await this.dependencyService.validateDependencies(
         tx,
         usulId,
       )
 
-      await this.workflowGuard!.validateForExecution(tx, {
+      await this.workflowGuard.validateForExecution(tx, {
         ...params,
         actionCode: action,
       })
 
       const completeness =
-        await this.completenessService!.calculateByPegawai(
+        await this.completenessService.calculateByPegawai(
           tx,
           pegawaiId,
           jenisLayananId,
@@ -110,7 +110,7 @@ export class ServicesEngine {
         )
       }
 
-      return await this.workflowService!.transition(tx, {
+      return await this.workflowService.transition(tx, {
         usulId,
         currentStatus: usul.status,
         actionCode: action,

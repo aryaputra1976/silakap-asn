@@ -1,6 +1,11 @@
 import { Prisma } from "@prisma/client"
+import { PrismaService } from "@/prisma/prisma.service"
+import { CompletenessService } from "../../completeness/completeness.service"
 import { ServicesRegistry } from "../../registry/services.registry"
 import { ServicesEngine } from "../services.engine"
+import { ServicesDependencyService } from "./services.dependency.service"
+import { ServicesWorkflowGuard } from "./services.workflow.guard"
+import { ServicesWorkflowService } from "./services.workflow.service"
 import { BusinessError } from "@/core/errors/business.error"
 
 export class ServicesSubmitService {
@@ -100,7 +105,13 @@ export class ServicesSubmitService {
      * EXECUTE WORKFLOW ENGINE
      * ACTION: SUBMIT
      */
-    const engine = new ServicesEngine()
+    const engine = new ServicesEngine(
+      new PrismaService(),
+      new ServicesWorkflowService(),
+      new ServicesDependencyService(),
+      new ServicesWorkflowGuard(),
+      new CompletenessService()
+    )
 
     const result =
       await engine.execute(

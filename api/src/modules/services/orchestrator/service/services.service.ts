@@ -16,8 +16,8 @@ type OrchestratorUser = {
 @Injectable()
 export class ServicesService {
   constructor(
-    private readonly prisma?: PrismaService,
-    private readonly engine?: ServicesEngine,
+    private readonly prisma: PrismaService,
+    private readonly engine: ServicesEngine,
   ) {}
 
   async createUsul(
@@ -87,7 +87,7 @@ export class ServicesService {
 
     const jenisLayananId = await this.resolveJenisLayananId(service)
 
-    return this.prisma!.$transaction(
+    return this.prisma.$transaction(
       async (tx) =>
         this.createUsul(
           tx,
@@ -124,7 +124,7 @@ export class ServicesService {
 
     return this.prisma!.$transaction(
       async (tx) =>
-        this.engine!.execute(tx, {
+        this.engine.execute(tx, {
           usulId,
           pegawaiId: body?.pegawaiId
             ? BigInt(String(body.pegawaiId))
@@ -173,9 +173,9 @@ export class ServicesService {
       ? BigInt(String(body.jenisLayananId))
       : await this.resolveJenisLayananId(service)
 
-    return this.prisma!.$transaction(
+    return this.prisma.$transaction(
       async (tx) =>
-        this.engine!.execute(tx, {
+        this.engine.execute(tx, {
           usulId,
           pegawaiId: body?.pegawaiId
             ? BigInt(String(body.pegawaiId))
@@ -196,7 +196,7 @@ export class ServicesService {
 
   async resolveJenisLayananId(service: string): Promise<bigint> {
     const jenis =
-      await this.prisma!.silakapJenisLayanan.findFirst({
+      await this.prisma.silakapJenisLayanan.findFirst({
         where: { kode: service },
         select: { id: true },
       })
@@ -213,7 +213,7 @@ export class ServicesService {
 
   async resolveUsulContext(usulId: bigint) {
     const usul =
-      await this.prisma!.silakapUsulLayanan.findUnique({
+      await this.prisma.silakapUsulLayanan.findUnique({
         where: { id: usulId },
         select: {
           pegawaiId: true,
@@ -246,7 +246,7 @@ export class ServicesService {
       )
     }
 
-    const role = await this.prisma!.silakapRole.findFirst({
+    const role = await this.prisma.silakapRole.findFirst({
       where: { name: roleName },
       select: { id: true },
     })
@@ -287,7 +287,7 @@ export class ServicesService {
       typeof normalizedPayload.nip === 'string'
     ) {
       const pegawai =
-        await this.prisma!.silakapPegawai.findUnique({
+        await this.prisma.silakapPegawai.findUnique({
           where: {
             nip: normalizedPayload.nip.trim(),
           },
@@ -317,7 +317,7 @@ export class ServicesService {
       typeof normalizedPayload.jenisPensiun === 'string'
     ) {
       const jenisPensiun =
-        await this.prisma!.refJenisPensiun.findFirst({
+        await this.prisma.refJenisPensiun.findFirst({
           where: {
             kode: normalizedPayload.jenisPensiun
               .trim()

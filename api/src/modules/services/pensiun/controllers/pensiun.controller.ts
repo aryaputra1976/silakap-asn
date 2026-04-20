@@ -1,16 +1,27 @@
 import { Request, Response } from "express"
 
 import { prisma } from "@/core/prisma/prisma.client"
+import { PrismaService } from "@/prisma/prisma.service"
 import { normalizeBigInt } from "@/utils/normalizeBigInt"
 
+import { CompletenessService } from "../../completeness/completeness.service"
 import { ServicesEngine } from "../../orchestrator/services.engine"
+import { ServicesDependencyService } from "../../orchestrator/service/services.dependency.service"
+import { ServicesWorkflowGuard } from "../../orchestrator/service/services.workflow.guard"
+import { ServicesWorkflowService } from "../../orchestrator/service/services.workflow.service"
 
 import { PensiunQueryService } from "../query/pensiun.query.service"
 import { PensiunMonitorService } from "../monitoring/pensiun.monitoring.service"
 import { PensiunProjectionService } from "../domain/services/pensiun.projection.service"
 import { PensiunDPCPService } from "../domain/services/pensiun.dpcp.service"
 
-const servicesEngine = new ServicesEngine()
+const servicesEngine = new ServicesEngine(
+  new PrismaService(),
+  new ServicesWorkflowService(),
+  new ServicesDependencyService(),
+  new ServicesWorkflowGuard(),
+  new CompletenessService()
+)
 
 const queryService = new PensiunQueryService()
 const monitoringService = new PensiunMonitorService()
