@@ -35,6 +35,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module'
 import { SiasnImportModule } from './modules/siasn-import/siasn-import.module'
 import { AsnModule } from "./modules/asn/asn.module"
 import { RefUnorModule } from "@/modules/ref-unor/ref-unor.module"
+import { DmsMonitoringModule } from './modules/dms-monitoring/dms-monitoring.module'
 
 /* ================= STATISTICS ================= */
 import { WorkforceModule } from "./modules/statistics/workforce/workforce.module"
@@ -81,6 +82,7 @@ import { ServicesModule } from './modules/services/orchestrator/services.module'
     SiasnImportModule,
     AsnModule,
     RefUnorModule,
+    DmsMonitoringModule,
 
     /* ================= STATISTICS ================= */
     WorkforceModule,

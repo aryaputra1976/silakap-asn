@@ -46,6 +46,13 @@ enum RegistrasiStatus {
   CANCELLED
 }
 
+enum DmsImportStatus {
+  DRAFT
+  IMPORTED
+  PARTIAL
+  FAILED
+}
+
 // ======================================================
 // PEREMAJAAN
 // ======================================================
@@ -624,6 +631,8 @@ model RefUnor {
   pegawaiUnor      SilakapPegawai[]        @relation("UnorPegawai")
   pegawaiUnorInduk SilakapPegawai[]        @relation("UnorIndukPegawai")
   registrations    SilakapRegistrasiUser[]
+  dmsBatches       SilakapDmsBatch[]
+  dmsSnapshots     SilakapDmsSnapshot[]
   riwayatJabatan   SilakapRiwayatJabatan[]
   kecamatanId      BigInt?                 @map("kecamatan_id")
   kecamatan        RefKecamatan?           @relation(fields: [kecamatanId], references: [id])
@@ -834,6 +843,7 @@ model SilakapPegawai {
   talentPool         TalentPool[]
   user               SilakapUser?
   registrations      SilakapRegistrasiUser[]
+  dmsSnapshots       SilakapDmsSnapshot[]
   kelengkapan        SilakapKelengkapanPegawai[]
 
   // INDEX OPTIMASI
@@ -1712,6 +1722,64 @@ model SilakapImportLog {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("silakap_import_log")
+}
+
+model SilakapDmsBatch {
+  id          BigInt          @id @default(autoincrement()) @map("id")
+  namaFile    String          @map("nama_file") @db.VarChar(255)
+  unorId      BigInt?         @map("unor_id")
+  periodeLabel String?        @map("periode_label") @db.VarChar(100)
+  status      DmsImportStatus @default(DRAFT) @map("status")
+  totalRows   Int             @default(0) @map("total_rows")
+  successRows Int             @default(0) @map("success_rows")
+  failedRows  Int             @default(0) @map("failed_rows")
+  catatan     String?         @map("catatan") @db.Text
+  importedBy  BigInt?         @map("imported_by")
+  importedAt  DateTime?       @map("imported_at")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  unor      RefUnor?             @relation(fields: [unorId], references: [id])
+  snapshots SilakapDmsSnapshot[]
+
+  @@index([unorId])
+  @@index([status])
+  @@index([importedAt])
+  @@map("silakap_dms_batch")
+}
+
+model SilakapDmsSnapshot {
+  id                   BigInt    @id @default(autoincrement()) @map("id")
+  batchId              BigInt    @map("batch_id")
+  pegawaiId            BigInt?   @map("pegawai_id")
+  nip                  String    @map("nip") @db.VarChar(30)
+  namaSnapshot         String    @map("nama_snapshot") @db.VarChar(200)
+  unorId               BigInt?   @map("unor_id")
+  unitKerjaRaw         String?   @map("unit_kerja_raw") @db.VarChar(250)
+  drh                  Boolean   @default(false) @map("drh")
+  cpns                 Boolean   @default(false) @map("cpns")
+  d2np                 Boolean   @default(false) @map("d2np")
+  spmt                 Boolean   @default(false) @map("spmt")
+  pns                  Boolean   @default(false) @map("pns")
+  skorArsip            Decimal?  @map("skor_arsip") @db.Decimal(8, 2)
+  kategoriKelengkapan  String?   @map("kategori_kelengkapan") @db.VarChar(100)
+  lastSync             DateTime? @map("last_sync")
+  isMatchedPegawai     Boolean   @default(false) @map("is_matched_pegawai")
+  isMatchedUnor        Boolean   @default(false) @map("is_matched_unor")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  batch   SilakapDmsBatch @relation(fields: [batchId], references: [id])
+  pegawai SilakapPegawai? @relation(fields: [pegawaiId], references: [id])
+  unor    RefUnor?        @relation(fields: [unorId], references: [id])
+
+  @@index([batchId])
+  @@index([pegawaiId])
+  @@index([nip])
+  @@index([unorId])
+  @@index([kategoriKelengkapan])
+  @@index([lastSync])
+  @@map("silakap_dms_snapshot")
 }
 
 // ======================================================
