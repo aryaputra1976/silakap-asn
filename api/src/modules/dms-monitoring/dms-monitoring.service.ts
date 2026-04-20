@@ -1,38 +1,23 @@
-import { Injectable } from '@nestjs/common'
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common'
 import * as XLSX from 'xlsx'
 
 import { normalizeBigInt } from '@/utils/normalizeBigInt'
 
+import {
+  type DmsImportStatusValue,
+} from './dms-monitoring.constants'
+import { CreateDmsBatchDto } from './dto/create-dms-batch.dto'
+import { ImportDmsDto } from './dto/import-dms.dto'
+import { QueryDmsBatchesDto } from './dto/query-dms-batches.dto'
+import { QueryDmsSnapshotsDto } from './dto/query-dms-snapshots.dto'
 import { DmsMonitoringRepository } from './dms-monitoring.repository'
-
-type CreateDmsBatchInput = {
-  namaFile: string
-  unorId?: string | number | null
-  periodeLabel?: string | null
-  catatan?: string | null
-}
-
-type ImportDmsInput = {
-  unorId?: string | number | null
-  periodeLabel?: string | null
-  catatan?: string | null
-}
-
-type BatchQuery = {
-  unorId?: string
-  status?: string
-  page?: string
-  limit?: string
-}
-
-type SnapshotQuery = {
-  batchId?: string
-  unorId?: string
-  kategori?: string
-  nip?: string
-  page?: string
-  limit?: string
-}
 
 type RawExcelRow = {
   No?: string | number
@@ -62,6 +47,15 @@ type ParsedDmsRow = {
   skorArsip: number | null
   kategoriKelengkapan: string | null
   lastSync: Date | null
+}
+
+type ParsedWorkbookResult = {
+  rows: ParsedDmsRow[]
+  errors: Array<{
+    rowNumber: number
+    nip: string
+    message: string
+  }>
 }
 
 type SnapshotInsertInput = {
@@ -97,13 +91,14 @@ type UnorLookup = {
 @Injectable()
 export class DmsMonitoringService {
   private readonly IMPORT_BATCH_SIZE = 200
+  private readonly ALLOWED_EXTENSIONS = new Set(['.xlsx', '.xls'])
 
   constructor(
     private readonly repo: DmsMonitoringRepository,
   ) {}
 
   async createBatch(
-    input: CreateDmsBatchInput,
+    input: CreateDmsBatchDto,
     importedBy?: bigint | string | null,
   ) {
     const data = await this.repo.createBatch({
@@ -114,38 +109,113 @@ export class DmsMonitoringService {
       importedBy,
     })
 
+    if (!data?.id) {
+      throw new InternalServerErrorException(
+        'Gagal membuat batch import DMS',
+      )
+    }
+
+    await this.repo.createAuditLog({
+      action: 'DMS_BATCH_CREATED',
+      entityId: String(data.id),
+      payload: {
+        namaFile: input.namaFile,
+        unorId: input.unorId ?? null,
+        periodeLabel: input.periodeLabel ?? null,
+      },
+      userId: importedBy,
+    })
+
     return normalizeBigInt(data)
   }
 
   async importFile(
     file: Express.Multer.File,
-    input: ImportDmsInput,
+    input: ImportDmsDto,
     importedBy?: bigint | string | null,
   ) {
-    if (!file?.buffer?.length) {
-      throw new Error('File Excel wajib diunggah')
+    this.validateUploadedFile(file)
+
+    const parsedWorkbook = this.parseWorkbook(file.buffer)
+
+    if (
+      parsedWorkbook.rows.length === 0 &&
+      parsedWorkbook.errors.length === 0
+    ) {
+      throw new UnprocessableEntityException(
+        'File Excel tidak memiliki data yang dapat diproses',
+      )
     }
 
-    const parsedRows = this.parseWorkbook(file.buffer)
+    const batch = input.batchId
+      ? await this.prepareExistingBatch(
+          input.batchId,
+          input,
+          file.originalname,
+        )
+      : await this.createImportBatch(input, file.originalname, importedBy)
 
-    if (!parsedRows.length) {
-      throw new Error('File Excel tidak memiliki data yang valid')
-    }
-
-    const batch = await this.repo.createBatch({
-      namaFile: file.originalname,
-      unorId: input.unorId,
-      periodeLabel: input.periodeLabel,
-      catatan: input.catatan,
-      importedBy,
+    await this.repo.createAuditLog({
+      action: 'DMS_IMPORT_STARTED',
+      entityId: String(batch.id),
+      payload: {
+        fileName: file.originalname,
+        batchId: String(batch.id),
+        autoCreatedBatch: !input.batchId,
+      },
+      userId: importedBy,
     })
 
-    if (!batch?.id) {
-      throw new Error('Gagal membuat batch import DMS')
+    const rowsToImport = this.deduplicateRows(
+      parsedWorkbook.rows,
+      parsedWorkbook.errors,
+    )
+
+    const totalRows =
+      rowsToImport.length + parsedWorkbook.errors.length
+
+    if (rowsToImport.length === 0) {
+      const finalStatus: DmsImportStatusValue =
+        parsedWorkbook.errors.length > 0
+          ? 'FAILED'
+          : 'DRAFT'
+
+      await this.repo.completeBatch({
+        batchId: String(batch.id),
+        status: finalStatus,
+        totalRows,
+        successRows: 0,
+        failedRows: parsedWorkbook.errors.length,
+        catatan: this.buildImportNote(parsedWorkbook.errors.length),
+      })
+
+      await this.repo.createAuditLog({
+        action: 'DMS_IMPORT_FAILED',
+        entityId: String(batch.id),
+        payload: {
+          totalRows,
+          successRows: 0,
+          failedRows: parsedWorkbook.errors.length,
+          errors: parsedWorkbook.errors.slice(0, 25),
+        },
+        userId: importedBy,
+      })
+
+      return normalizeBigInt({
+        batch,
+        summary: await this.repo.getBatchSummary(String(batch.id)),
+        imported: {
+          totalRows,
+          successRows: 0,
+          failedRows: parsedWorkbook.errors.length,
+          status: finalStatus,
+          errors: parsedWorkbook.errors.slice(0, 100),
+        },
+      })
     }
 
     const defaultUnorId = this.toBigIntOrNull(input.unorId)
-    const nips = [...new Set(parsedRows.map((row) => row.nip))]
+    const nips = [...new Set(rowsToImport.map((row) => row.nip))]
 
     const [pegawaiRows, unorRows] = await Promise.all([
       this.repo.findPegawaiByNips(nips),
@@ -155,23 +225,18 @@ export class DmsMonitoringService {
     const pegawaiMap = new Map<string, PegawaiLookup>(
       pegawaiRows.map((pegawai) => [pegawai.nip, pegawai]),
     )
-
     const unorMap = this.buildUnorMap(unorRows)
 
     let successRows = 0
-    let failedRows = 0
-    const errors: Array<{
-      rowNumber: number
-      nip: string
-      message: string
-    }> = []
+    let failedRows = parsedWorkbook.errors.length
+    const errors = [...parsedWorkbook.errors]
 
     for (
       let index = 0;
-      index < parsedRows.length;
+      index < rowsToImport.length;
       index += this.IMPORT_BATCH_SIZE
     ) {
-      const chunk = parsedRows.slice(
+      const chunk = rowsToImport.slice(
         index,
         index + this.IMPORT_BATCH_SIZE,
       )
@@ -189,7 +254,7 @@ export class DmsMonitoringService {
             pegawai?.unorId ?? mappedUnor?.id ?? defaultUnorId
 
           inserts.push({
-            batchId: batch.id as bigint,
+            batchId: BigInt(String(batch.id)),
             pegawaiId: pegawai?.id ?? null,
             nip: row.nip,
             namaSnapshot: row.namaSnapshot,
@@ -206,8 +271,6 @@ export class DmsMonitoringService {
             isMatchedPegawai: Boolean(pegawai),
             isMatchedUnor: Boolean(chosenUnorId),
           })
-
-          successRows += 1
         } catch (error) {
           failedRows += 1
           errors.push({
@@ -221,12 +284,30 @@ export class DmsMonitoringService {
         }
       }
 
-      if (inserts.length > 0) {
+      if (inserts.length === 0) {
+        continue
+      }
+
+      try {
         await this.repo.insertSnapshots(inserts)
+        successRows += inserts.length
+      } catch (error) {
+        failedRows += inserts.length
+
+        for (const row of chunk) {
+          errors.push({
+            rowNumber: row.rowNumber,
+            nip: row.nip,
+            message:
+              error instanceof Error
+                ? error.message
+                : 'Gagal menyimpan snapshot DMS',
+          })
+        }
       }
     }
 
-    const finalStatus =
+    const finalStatus: DmsImportStatusValue =
       failedRows === 0
         ? 'IMPORTED'
         : successRows > 0
@@ -236,22 +317,37 @@ export class DmsMonitoringService {
     await this.repo.completeBatch({
       batchId: String(batch.id),
       status: finalStatus,
-      totalRows: parsedRows.length,
+      totalRows,
       successRows,
       failedRows,
-      catatan:
-        errors.length > 0
-          ? `Terdapat ${errors.length} baris gagal diproses`
-          : input.catatan ?? null,
+      catatan: this.buildImportNote(failedRows, input.catatan),
+    })
+
+    await this.repo.createAuditLog({
+      action:
+        finalStatus === 'IMPORTED'
+          ? 'DMS_IMPORT_COMPLETED'
+          : finalStatus === 'PARTIAL'
+            ? 'DMS_IMPORT_PARTIAL'
+            : 'DMS_IMPORT_FAILED',
+      entityId: String(batch.id),
+      payload: {
+        totalRows,
+        successRows,
+        failedRows,
+        status: finalStatus,
+        errors: errors.slice(0, 25),
+      },
+      userId: importedBy,
     })
 
     const summary = await this.repo.getBatchSummary(String(batch.id))
 
     return normalizeBigInt({
-      batch,
+      batch: await this.repo.getBatchById(String(batch.id)),
       summary,
       imported: {
-        totalRows: parsedRows.length,
+        totalRows,
         successRows,
         failedRows,
         status: finalStatus,
@@ -260,37 +356,34 @@ export class DmsMonitoringService {
     })
   }
 
-  async getBatches(query: BatchQuery) {
-    const data = await this.repo.getBatches({
-      unorId: query.unorId,
-      status: query.status,
-      page: query.page,
-      limit: query.limit,
-    })
-
+  async getBatches(query: QueryDmsBatchesDto) {
+    const data = await this.repo.getBatches(query)
     return normalizeBigInt(data)
   }
 
   async getBatchById(id: string) {
     const data = await this.repo.getBatchById(id)
+
+    if (!data) {
+      throw new NotFoundException('Batch DMS tidak ditemukan')
+    }
+
     return normalizeBigInt(data)
   }
 
   async getBatchSummary(id: string) {
+    const batch = await this.repo.getBatchById(id)
+
+    if (!batch) {
+      throw new NotFoundException('Batch DMS tidak ditemukan')
+    }
+
     const data = await this.repo.getBatchSummary(id)
     return normalizeBigInt(data)
   }
 
-  async getSnapshots(query: SnapshotQuery) {
-    const data = await this.repo.getSnapshots({
-      batchId: query.batchId,
-      unorId: query.unorId,
-      kategori: query.kategori,
-      nip: query.nip,
-      page: query.page,
-      limit: query.limit,
-    })
-
+  async getSnapshots(query: QueryDmsSnapshotsDto) {
+    const data = await this.repo.getSnapshots(query)
     return normalizeBigInt(data)
   }
 
@@ -299,16 +392,106 @@ export class DmsMonitoringService {
     return normalizeBigInt(data)
   }
 
-  private parseWorkbook(buffer: Buffer) {
-    const workbook = XLSX.read(buffer, {
-      type: 'buffer',
-      cellDates: false,
+  private async createImportBatch(
+    input: ImportDmsDto,
+    originalName: string,
+    importedBy?: bigint | string | null,
+  ) {
+    const batch = await this.repo.createBatch({
+      namaFile: originalName,
+      unorId: input.unorId,
+      periodeLabel: input.periodeLabel,
+      catatan: input.catatan,
+      importedBy,
     })
+
+    if (!batch?.id) {
+      throw new InternalServerErrorException(
+        'Gagal membuat batch import DMS',
+      )
+    }
+
+    return batch
+  }
+
+  private async prepareExistingBatch(
+    batchId: string,
+    input: ImportDmsDto,
+    originalName: string,
+  ) {
+    const batch = await this.repo.getBatchImportContext(batchId)
+
+    if (!batch) {
+      throw new NotFoundException('Batch DMS tidak ditemukan')
+    }
+
+    if (String(batch.status) !== 'DRAFT') {
+      throw new ConflictException(
+        'Batch DMS hanya dapat diimpor ulang saat masih berstatus DRAFT',
+      )
+    }
+
+    if (Number(batch.snapshotCount ?? 0) > 0) {
+      throw new ConflictException(
+        'Batch DMS yang sudah memiliki snapshot tidak dapat diimpor ulang',
+      )
+    }
+
+    await this.repo.updateBatchMetadata({
+      batchId,
+      namaFile: originalName,
+      unorId: input.unorId,
+      periodeLabel: input.periodeLabel,
+      catatan: input.catatan,
+    })
+
+    const refreshed = await this.repo.getBatchById(batchId)
+
+    if (!refreshed?.id) {
+      throw new InternalServerErrorException(
+        'Gagal menyiapkan batch import DMS',
+      )
+    }
+
+    return refreshed
+  }
+
+  private validateUploadedFile(file?: Express.Multer.File) {
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('File Excel wajib diunggah')
+    }
+
+    const fileName = file.originalname?.toLowerCase() ?? ''
+    const hasValidExtension = [...this.ALLOWED_EXTENSIONS].some(
+      (extension) => fileName.endsWith(extension),
+    )
+
+    if (!hasValidExtension) {
+      throw new BadRequestException(
+        'File harus berformat .xlsx atau .xls',
+      )
+    }
+  }
+
+  private parseWorkbook(buffer: Buffer): ParsedWorkbookResult {
+    let workbook: XLSX.WorkBook
+    try {
+      workbook = XLSX.read(buffer, {
+        type: 'buffer',
+        cellDates: false,
+      })
+    } catch {
+      throw new UnprocessableEntityException(
+        'File Excel tidak valid atau tidak dapat dibaca',
+      )
+    }
 
     const sheet = workbook.Sheets[workbook.SheetNames[0]]
 
     if (!sheet) {
-      return []
+      throw new UnprocessableEntityException(
+        'Sheet Excel tidak ditemukan',
+      )
     }
 
     const rows = XLSX.utils.sheet_to_json<RawExcelRow>(sheet, {
@@ -316,15 +499,43 @@ export class DmsMonitoringService {
       raw: false,
     })
 
-    return rows
-      .map((row, index) => this.parseRow(row, index + 2))
-      .filter((row): row is ParsedDmsRow => row !== null)
+    const parsed: ParsedWorkbookResult = {
+      rows: [],
+      errors: [],
+    }
+
+    rows.forEach((row, index) => {
+      const rowNumber = index + 2
+      const result = this.parseRow(row, rowNumber)
+
+      if (!result) {
+        return
+      }
+
+      if ('error' in result) {
+        parsed.errors.push(result.error)
+        return
+      }
+
+      parsed.rows.push(result.row)
+    })
+
+    return parsed
   }
 
   private parseRow(
     row: RawExcelRow,
     rowNumber: number,
-  ): ParsedDmsRow | null {
+  ):
+    | { row: ParsedDmsRow }
+    | {
+        error: {
+          rowNumber: number
+          nip: string
+          message: string
+        }
+      }
+    | null {
     const nip = this.normalizeText(row.NIP)
     const namaSnapshot = this.normalizeText(row.Nama)
     const unitKerjaRaw = this.normalizeText(row['Unit Kerja'])
@@ -334,25 +545,61 @@ export class DmsMonitoringService {
     }
 
     if (!nip) {
-      throw new Error(`NIP kosong pada baris ${rowNumber}`)
+      return {
+        error: {
+          rowNumber,
+          nip: '-',
+          message: 'NIP kosong',
+        },
+      }
     }
 
     return {
-      rowNumber,
-      nip,
-      namaSnapshot: namaSnapshot ?? '',
-      unitKerjaRaw,
-      drh: this.toBooleanFlag(row.DRH),
-      cpns: this.toBooleanFlag(row.CPNS),
-      d2np: this.toBooleanFlag(row.D2NP),
-      spmt: this.toBooleanFlag(row.SPMT),
-      pns: this.toBooleanFlag(row.PNS),
-      skorArsip: this.toNumber(row['Skor Arsip']),
-      kategoriKelengkapan: this.normalizeText(
-        row['Kategori Kelengkapan'],
-      ),
-      lastSync: this.toDate(row.Last_Sync),
+      row: {
+        rowNumber,
+        nip,
+        namaSnapshot: namaSnapshot ?? '',
+        unitKerjaRaw,
+        drh: this.toBooleanFlag(row.DRH),
+        cpns: this.toBooleanFlag(row.CPNS),
+        d2np: this.toBooleanFlag(row.D2NP),
+        spmt: this.toBooleanFlag(row.SPMT),
+        pns: this.toBooleanFlag(row.PNS),
+        skorArsip: this.toNumber(row['Skor Arsip']),
+        kategoriKelengkapan: this.normalizeText(
+          row['Kategori Kelengkapan'],
+        ),
+        lastSync: this.toDate(row.Last_Sync),
+      },
     }
+  }
+
+  private deduplicateRows(
+    rows: ParsedDmsRow[],
+    errors: Array<{
+      rowNumber: number
+      nip: string
+      message: string
+    }>,
+  ) {
+    const seen = new Set<string>()
+    const deduped: ParsedDmsRow[] = []
+
+    for (const row of rows) {
+      if (seen.has(row.nip)) {
+        errors.push({
+          rowNumber: row.rowNumber,
+          nip: row.nip,
+          message: 'NIP duplikat dalam file import',
+        })
+        continue
+      }
+
+      seen.add(row.nip)
+      deduped.push(row)
+    }
+
+    return deduped
   }
 
   private buildUnorMap(units: UnorLookup[]) {
@@ -362,6 +609,17 @@ export class DmsMonitoringService {
         unit,
       ]),
     )
+  }
+
+  private buildImportNote(
+    failedRows: number,
+    fallbackNote?: string,
+  ) {
+    if (failedRows > 0) {
+      return `Terdapat ${failedRows} baris gagal diproses`
+    }
+
+    return fallbackNote ?? null
   }
 
   private normalizeUnitName(value: string) {
@@ -390,9 +648,17 @@ export class DmsMonitoringService {
       .trim()
       .toLowerCase()
 
-    return ['✓', '✔', 'v', 'yes', 'y', '1', 'true'].includes(
-      normalized,
-    )
+    return [
+      '✓',
+      '✔',
+      'check',
+      'checked',
+      'v',
+      'yes',
+      'y',
+      '1',
+      'true',
+    ].includes(normalized)
   }
 
   private toNumber(value: unknown) {

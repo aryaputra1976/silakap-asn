@@ -3,18 +3,26 @@ import {
   Controller,
   Get,
   Param,
-  ParseIntPipe,
   Post,
   Query,
   Req,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common'
 import { FileInterceptor } from '@nestjs/platform-express'
-import { memoryStorage } from 'multer'
 import { ApiConsumes, ApiTags } from '@nestjs/swagger'
 import type { Request } from 'express'
+import { memoryStorage } from 'multer'
 
+import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard'
+
+import { CreateDmsBatchDto } from './dto/create-dms-batch.dto'
+import { DmsIdParamDto } from './dto/dms-id-param.dto'
+import { ImportDmsDto } from './dto/import-dms.dto'
+import { QueryDmsBatchesDto } from './dto/query-dms-batches.dto'
+import { QueryDmsDashboardDto } from './dto/query-dms-dashboard.dto'
+import { QueryDmsSnapshotsDto } from './dto/query-dms-snapshots.dto'
 import { DmsMonitoringService } from './dms-monitoring.service'
 
 type DmsRequestUser = {
@@ -25,20 +33,8 @@ type DmsRequest = Request & {
   user?: DmsRequestUser
 }
 
-type CreateDmsBatchBody = {
-  namaFile: string
-  unorId?: string | number | null
-  periodeLabel?: string | null
-  catatan?: string | null
-}
-
-type ImportDmsBody = {
-  unorId?: string | number | null
-  periodeLabel?: string | null
-  catatan?: string | null
-}
-
 @ApiTags('DMS Monitoring')
+@UseGuards(JwtAuthGuard)
 @Controller('dms-monitoring')
 export class DmsMonitoringController {
   constructor(
@@ -47,7 +43,7 @@ export class DmsMonitoringController {
 
   @Post('batches')
   async createBatch(
-    @Body() body: CreateDmsBatchBody,
+    @Body() body: CreateDmsBatchDto,
     @Req() req: DmsRequest,
   ) {
     return this.service.createBatch(body, req.user?.id)
@@ -65,58 +61,34 @@ export class DmsMonitoringController {
   )
   async importFile(
     @UploadedFile() file: Express.Multer.File,
-    @Body() body: ImportDmsBody,
+    @Body() body: ImportDmsDto,
     @Req() req: DmsRequest,
   ) {
     return this.service.importFile(file, body, req.user?.id)
   }
 
   @Get('batches')
-  async getBatches(
-    @Query('unorId') unorId?: string,
-    @Query('status') status?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.service.getBatches({
-      unorId,
-      status,
-      page,
-      limit,
-    })
+  async getBatches(@Query() query: QueryDmsBatchesDto) {
+    return this.service.getBatches(query)
   }
 
   @Get('batches/:id')
-  async getBatchById(@Param('id') id: string) {
-    return this.service.getBatchById(id)
+  async getBatchById(@Param() params: DmsIdParamDto) {
+    return this.service.getBatchById(params.id)
   }
 
   @Get('batches/:id/summary')
-  async getBatchSummary(@Param('id') id: string) {
-    return this.service.getBatchSummary(id)
+  async getBatchSummary(@Param() params: DmsIdParamDto) {
+    return this.service.getBatchSummary(params.id)
   }
 
   @Get('snapshots')
-  async getSnapshots(
-    @Query('batchId') batchId?: string,
-    @Query('unorId') unorId?: string,
-    @Query('kategori') kategori?: string,
-    @Query('nip') nip?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.service.getSnapshots({
-      batchId,
-      unorId,
-      kategori,
-      nip,
-      page,
-      limit,
-    })
+  async getSnapshots(@Query() query: QueryDmsSnapshotsDto) {
+    return this.service.getSnapshots(query)
   }
 
   @Get('dashboard')
-  async getDashboard(@Query('unorId') unorId?: string) {
-    return this.service.getDashboard(unorId)
+  async getDashboard(@Query() query: QueryDmsDashboardDto) {
+    return this.service.getDashboard(query.unorId)
   }
 }

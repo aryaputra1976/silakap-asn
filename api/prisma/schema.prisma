@@ -1773,6 +1773,7 @@ model SilakapDmsSnapshot {
   pegawai SilakapPegawai? @relation(fields: [pegawaiId], references: [id])
   unor    RefUnor?        @relation(fields: [unorId], references: [id])
 
+  @@unique([batchId, nip])
   @@index([batchId])
   @@index([pegawaiId])
   @@index([nip])

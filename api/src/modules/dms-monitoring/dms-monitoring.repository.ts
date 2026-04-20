@@ -3,6 +3,9 @@ import { Prisma } from '@prisma/client'
 
 import { PrismaService } from '@/prisma/prisma.service'
 
+import { QueryDmsBatchesDto } from './dto/query-dms-batches.dto'
+import { QueryDmsSnapshotsDto } from './dto/query-dms-snapshots.dto'
+
 type CreateDmsBatchParams = {
   namaFile: string
   unorId?: string | number | bigint | null
@@ -11,20 +14,12 @@ type CreateDmsBatchParams = {
   importedBy?: bigint | string | null
 }
 
-type BatchQueryParams = {
-  unorId?: string
-  status?: string
-  page?: string
-  limit?: string
-}
-
-type SnapshotQueryParams = {
-  batchId?: string
-  unorId?: string
-  kategori?: string
-  nip?: string
-  page?: string
-  limit?: string
+type UpdateDmsBatchMetadataParams = {
+  batchId: string
+  namaFile: string
+  unorId?: string | number | bigint | null
+  periodeLabel?: string | null
+  catatan?: string | null
 }
 
 type SnapshotInsertInput = {
@@ -44,6 +39,13 @@ type SnapshotInsertInput = {
   lastSync?: Date | null
   isMatchedPegawai: boolean
   isMatchedUnor: boolean
+}
+
+type CreateAuditLogParams = {
+  action: string
+  entityId?: string | null
+  payload?: Prisma.InputJsonValue | null
+  userId?: bigint | string | null
 }
 
 @Injectable()
@@ -112,6 +114,41 @@ export class DmsMonitoringRepository {
     })
   }
 
+  async updateBatchMetadata(params: UpdateDmsBatchMetadataParams) {
+    await this.prisma.$executeRaw(Prisma.sql`
+      UPDATE silakap_dms_batch
+      SET
+        nama_file = ${params.namaFile},
+        unor_id = COALESCE(${this.toBigIntOrNull(params.unorId)}, unor_id),
+        periode_label = COALESCE(${params.periodeLabel ?? null}, periode_label),
+        catatan = COALESCE(${params.catatan ?? null}, catatan),
+        updated_at = ${new Date()}
+      WHERE id = ${BigInt(params.batchId)}
+    `)
+  }
+
+  async getBatchImportContext(batchId: string) {
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        id: bigint
+        status: string
+        snapshotCount: bigint
+      }>
+    >(Prisma.sql`
+      SELECT
+        b.id,
+        b.status,
+        COUNT(s.id) AS snapshotCount
+      FROM silakap_dms_batch b
+      LEFT JOIN silakap_dms_snapshot s ON s.batch_id = b.id
+      WHERE b.id = ${BigInt(batchId)}
+      GROUP BY b.id, b.status
+      LIMIT 1
+    `)
+
+    return rows[0] ?? null
+  }
+
   async completeBatch(params: {
     batchId: string
     status: string
@@ -141,50 +178,62 @@ export class DmsMonitoringRepository {
       return
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      for (const row of rows) {
-        await tx.$executeRaw(Prisma.sql`
-          INSERT INTO silakap_dms_snapshot (
-            batch_id,
-            pegawai_id,
-            nip,
-            nama_snapshot,
-            unor_id,
-            unit_kerja_raw,
-            drh,
-            cpns,
-            d2np,
-            spmt,
-            pns,
-            skor_arsip,
-            kategori_kelengkapan,
-            last_sync,
-            is_matched_pegawai,
-            is_matched_unor,
-            created_at,
-            updated_at
-          ) VALUES (
-            ${row.batchId},
-            ${row.pegawaiId ?? null},
-            ${row.nip},
-            ${row.namaSnapshot},
-            ${row.unorId ?? null},
-            ${row.unitKerjaRaw ?? null},
-            ${row.drh},
-            ${row.cpns},
-            ${row.d2np},
-            ${row.spmt},
-            ${row.pns},
-            ${row.skorArsip ?? null},
-            ${row.kategoriKelengkapan ?? null},
-            ${row.lastSync ?? null},
-            ${row.isMatchedPegawai},
-            ${row.isMatchedUnor},
-            ${new Date()},
-            ${new Date()}
-          )
-        `)
-      }
+    const now = new Date()
+    const values = rows.map((row) => Prisma.sql`(
+      ${row.batchId},
+      ${row.pegawaiId ?? null},
+      ${row.nip},
+      ${row.namaSnapshot},
+      ${row.unorId ?? null},
+      ${row.unitKerjaRaw ?? null},
+      ${row.drh},
+      ${row.cpns},
+      ${row.d2np},
+      ${row.spmt},
+      ${row.pns},
+      ${row.skorArsip ?? null},
+      ${row.kategoriKelengkapan ?? null},
+      ${row.lastSync ?? null},
+      ${row.isMatchedPegawai},
+      ${row.isMatchedUnor},
+      ${now},
+      ${now}
+    )`)
+
+    await this.prisma.$executeRaw(Prisma.sql`
+      INSERT INTO silakap_dms_snapshot (
+        batch_id,
+        pegawai_id,
+        nip,
+        nama_snapshot,
+        unor_id,
+        unit_kerja_raw,
+        drh,
+        cpns,
+        d2np,
+        spmt,
+        pns,
+        skor_arsip,
+        kategori_kelengkapan,
+        last_sync,
+        is_matched_pegawai,
+        is_matched_unor,
+        created_at,
+        updated_at
+      ) VALUES ${Prisma.join(values)}
+    `)
+  }
+
+  async createAuditLog(params: CreateAuditLogParams) {
+    await this.prisma.auditLog.create({
+      data: {
+        action: params.action,
+        entity: 'DMS_MONITORING',
+        entityId: params.entityId ?? null,
+        payload: params.payload ?? undefined,
+        userId: this.toBigIntOrNull(params.userId),
+        createdAt: new Date(),
+      },
     })
   }
 
@@ -226,7 +275,7 @@ export class DmsMonitoringRepository {
     `)
   }
 
-  async getBatches(params: BatchQueryParams) {
+  async getBatches(params: QueryDmsBatchesDto) {
     const page = this.toPage(params.page)
     const limit = this.toLimit(params.limit)
     const offset = (page - 1) * limit
@@ -379,7 +428,7 @@ export class DmsMonitoringRepository {
     }
   }
 
-  async getSnapshots(params: SnapshotQueryParams) {
+  async getSnapshots(params: QueryDmsSnapshotsDto) {
     const page = this.toPage(params.page)
     const limit = this.toLimit(params.limit)
     const offset = (page - 1) * limit
@@ -530,7 +579,7 @@ export class DmsMonitoringRepository {
     }
   }
 
-  private buildBatchWhereClause(params: BatchQueryParams) {
+  private buildBatchWhereClause(params: QueryDmsBatchesDto) {
     const conditions: Prisma.Sql[] = []
 
     if (params.unorId) {
@@ -540,17 +589,18 @@ export class DmsMonitoringRepository {
     }
 
     if (params.status) {
-      conditions.push(
-        Prisma.sql`b.status = ${params.status.toUpperCase()}`,
-      )
+      conditions.push(Prisma.sql`b.status = ${params.status}`)
     }
 
     return conditions.length > 0
-      ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+      ? Prisma.sql`WHERE ${Prisma.join(
+          conditions,
+          ' AND ',
+        )}`
       : Prisma.sql``
   }
 
-  private buildSnapshotWhereClause(params: SnapshotQueryParams) {
+  private buildSnapshotWhereClause(params: QueryDmsSnapshotsDto) {
     const conditions: Prisma.Sql[] = []
 
     if (params.batchId) {
@@ -578,16 +628,19 @@ export class DmsMonitoringRepository {
     }
 
     return conditions.length > 0
-      ? Prisma.sql`WHERE ${Prisma.join(conditions, ' AND ')}`
+      ? Prisma.sql`WHERE ${Prisma.join(
+          conditions,
+          ' AND ',
+        )}`
       : Prisma.sql``
   }
 
-  private toPage(value?: string) {
+  private toPage(value?: number) {
     const page = Number(value ?? 1)
     return Number.isFinite(page) && page > 0 ? page : 1
   }
 
-  private toLimit(value?: string) {
+  private toLimit(value?: number) {
     const limit = Number(value ?? 20)
     if (!Number.isFinite(limit) || limit <= 0) {
       return 20
