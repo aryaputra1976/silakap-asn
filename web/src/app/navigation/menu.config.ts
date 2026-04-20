@@ -205,6 +205,11 @@ export const menuConfig: MenuItemConfig[] = [
         path: "/integrasi/log",
         permission: PERMISSIONS.SIASN_SYNC_VIEW,
       },
+      {
+        title: "DMS Monitoring",
+        path: "/dms-monitoring",
+        permission: PERMISSIONS.SIASN_SYNC_VIEW,
+      },
     ],
   },
 
