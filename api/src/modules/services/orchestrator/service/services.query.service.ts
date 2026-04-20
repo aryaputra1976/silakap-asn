@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 
-import { PrismaService } from '@/prisma/prisma.service'
 import { BusinessError } from '@/core/errors/business.error'
+import { PrismaService } from '@/prisma/prisma.service'
 
 @Injectable()
 export class ServicesQueryService {
   constructor(
-    private readonly prisma: PrismaService = new PrismaService(),
+    private readonly prisma: PrismaService,
   ) {}
 
   async getById(usulId: bigint) {

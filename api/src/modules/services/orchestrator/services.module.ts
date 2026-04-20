@@ -1,24 +1,21 @@
 import { Module } from '@nestjs/common'
 
-import { ServicesController } from './controllers/services.controller'
-import { LayananController } from './controllers/layanan.controller'
-import { ServicesEngine } from './services.engine'
+import { CompletenessService } from '../completeness/completeness.service'
 
-import { ServicesService } from './service/services.service'
-import { ServicesSubmitService } from './service/services.submit.service'
-import { ServicesWorkflowService } from './service/services.workflow.service'
-import { ServicesQueryService } from './service/services.query.service'
+import { LayananController } from './controllers/layanan.controller'
+import { ServicesController } from './controllers/services.controller'
+import { ServicesEngine } from './services.engine'
 import { ServicesDashboardService } from './service/services.dashboard.service'
 import { ServicesDependencyService } from './service/services.dependency.service'
 import { ServicesDocumentService } from './service/services.document.service'
+import { ServicesQueryService } from './service/services.query.service'
+import { ServicesService } from './service/services.service'
+import { ServicesSubmitService } from './service/services.submit.service'
 import { ServicesWorkflowGuard } from './service/services.workflow.guard'
-import { CompletenessService } from '../completeness/completeness.service'
+import { ServicesWorkflowService } from './service/services.workflow.service'
 
 @Module({
-  controllers: [
-    ServicesController,
-    LayananController
-  ],
+  controllers: [ServicesController, LayananController],
   providers: [
     ServicesService,
     ServicesEngine,
@@ -31,8 +28,8 @@ import { CompletenessService } from '../completeness/completeness.service'
     ServicesWorkflowGuard,
     {
       provide: CompletenessService,
-      useValue: new CompletenessService()
-    }
+      useClass: CompletenessService,
+    },
   ],
   exports: [
     ServicesService,
@@ -41,7 +38,8 @@ import { CompletenessService } from '../completeness/completeness.service'
     ServicesDashboardService,
     ServicesWorkflowService,
     ServicesDependencyService,
-    ServicesWorkflowGuard
-  ]
+    ServicesWorkflowGuard,
+    CompletenessService,
+  ],
 })
 export class ServicesModule {}

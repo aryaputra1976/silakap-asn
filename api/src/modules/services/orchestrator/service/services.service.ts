@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common'
 import { Prisma } from '@prisma/client'
 
-import { PrismaService } from '@/prisma/prisma.service'
 import { BusinessError } from '@/core/errors/business.error'
+import { PrismaService } from '@/prisma/prisma.service'
 
 import { ServicesRegistry } from '../../registry/services.registry'
 import { ServicesEngine } from '../services.engine'
@@ -16,8 +16,8 @@ type OrchestratorUser = {
 @Injectable()
 export class ServicesService {
   constructor(
-    private readonly prisma: PrismaService = new PrismaService(),
-    private readonly engine: ServicesEngine = new ServicesEngine(),
+    private readonly prisma?: PrismaService,
+    private readonly engine?: ServicesEngine,
   ) {}
 
   async createUsul(
@@ -87,7 +87,7 @@ export class ServicesService {
 
     const jenisLayananId = await this.resolveJenisLayananId(service)
 
-    return this.prisma.$transaction(
+    return this.prisma!.$transaction(
       async (tx) =>
         this.createUsul(
           tx,
@@ -111,7 +111,10 @@ export class ServicesService {
     const usulIdRaw = body?.usulId ?? body?.id
 
     if (!usulIdRaw) {
-      throw new Error('usulId wajib diisi')
+      throw new BusinessError(
+        'USUL_REQUIRED',
+        'usulId wajib diisi',
+      )
     }
 
     const usulId = BigInt(String(usulIdRaw))
@@ -119,9 +122,9 @@ export class ServicesService {
     const usulContext = await this.resolveUsulContext(usulId)
     const jenisLayananId = await this.resolveJenisLayananId(service)
 
-    return this.prisma.$transaction(
+    return this.prisma!.$transaction(
       async (tx) =>
-        this.engine.execute(tx, {
+        this.engine!.execute(tx, {
           usulId,
           pegawaiId: body?.pegawaiId
             ? BigInt(String(body.pegawaiId))
@@ -149,11 +152,17 @@ export class ServicesService {
     const actionCodeRaw = body?.actionCode
 
     if (!usulIdRaw) {
-      throw new Error('usulId wajib diisi')
+      throw new BusinessError(
+        'USUL_REQUIRED',
+        'usulId wajib diisi',
+      )
     }
 
     if (!actionCodeRaw) {
-      throw new Error('actionCode wajib diisi')
+      throw new BusinessError(
+        'ACTION_REQUIRED',
+        'actionCode wajib diisi',
+      )
     }
 
     const usulId = BigInt(String(usulIdRaw))
@@ -164,9 +173,9 @@ export class ServicesService {
       ? BigInt(String(body.jenisLayananId))
       : await this.resolveJenisLayananId(service)
 
-    return this.prisma.$transaction(
+    return this.prisma!.$transaction(
       async (tx) =>
-        this.engine.execute(tx, {
+        this.engine!.execute(tx, {
           usulId,
           pegawaiId: body?.pegawaiId
             ? BigInt(String(body.pegawaiId))
@@ -186,29 +195,37 @@ export class ServicesService {
   }
 
   async resolveJenisLayananId(service: string): Promise<bigint> {
-    const jenis = await this.prisma.silakapJenisLayanan.findFirst({
-      where: { kode: service },
-      select: { id: true },
-    })
+    const jenis =
+      await this.prisma!.silakapJenisLayanan.findFirst({
+        where: { kode: service },
+        select: { id: true },
+      })
 
     if (!jenis) {
-      throw new Error('Jenis layanan tidak ditemukan')
+      throw new BusinessError(
+        'LAYANAN_NOT_FOUND',
+        'Jenis layanan tidak ditemukan',
+      )
     }
 
     return jenis.id
   }
 
   async resolveUsulContext(usulId: bigint) {
-    const usul = await this.prisma.silakapUsulLayanan.findUnique({
-      where: { id: usulId },
-      select: {
-        pegawaiId: true,
-        jenisLayananId: true,
-      },
-    })
+    const usul =
+      await this.prisma!.silakapUsulLayanan.findUnique({
+        where: { id: usulId },
+        select: {
+          pegawaiId: true,
+          jenisLayananId: true,
+        },
+      })
 
     if (!usul) {
-      throw new Error('Usul layanan tidak ditemukan')
+      throw new BusinessError(
+        'USUL_NOT_FOUND',
+        'Usul layanan tidak ditemukan',
+      )
     }
 
     return usul
@@ -223,16 +240,22 @@ export class ServicesService {
           : null
 
     if (!roleName) {
-      throw new Error('Role user tidak ditemukan')
+      throw new BusinessError(
+        'ROLE_REQUIRED',
+        'Role user tidak ditemukan',
+      )
     }
 
-    const role = await this.prisma.silakapRole.findFirst({
+    const role = await this.prisma!.silakapRole.findFirst({
       where: { name: roleName },
       select: { id: true },
     })
 
     if (!role) {
-      throw new Error(`Role ${roleName} tidak ditemukan`)
+      throw new BusinessError(
+        'ROLE_NOT_FOUND',
+        `Role ${roleName} tidak ditemukan`,
+      )
     }
 
     return role.id
@@ -264,7 +287,7 @@ export class ServicesService {
       typeof normalizedPayload.nip === 'string'
     ) {
       const pegawai =
-        await this.prisma.silakapPegawai.findUnique({
+        await this.prisma!.silakapPegawai.findUnique({
           where: {
             nip: normalizedPayload.nip.trim(),
           },
@@ -272,14 +295,20 @@ export class ServicesService {
         })
 
       if (!pegawai) {
-        throw new Error('Pegawai tidak ditemukan dari NIP')
+        throw new BusinessError(
+          'PEGAWAI_NOT_FOUND',
+          'Pegawai tidak ditemukan dari NIP',
+        )
       }
 
       resolvedPegawaiId = pegawai.id.toString()
     }
 
     if (!resolvedPegawaiId) {
-      throw new Error('pegawaiId tidak boleh kosong')
+      throw new BusinessError(
+        'PEGAWAI_REQUIRED',
+        'pegawaiId tidak boleh kosong',
+      )
     }
 
     if (
@@ -288,7 +317,7 @@ export class ServicesService {
       typeof normalizedPayload.jenisPensiun === 'string'
     ) {
       const jenisPensiun =
-        await this.prisma.refJenisPensiun.findFirst({
+        await this.prisma!.refJenisPensiun.findFirst({
           where: {
             kode: normalizedPayload.jenisPensiun
               .trim()
@@ -299,7 +328,10 @@ export class ServicesService {
         })
 
       if (!jenisPensiun) {
-        throw new Error('Jenis pensiun tidak ditemukan')
+        throw new BusinessError(
+          'JENIS_PENSIUN_NOT_FOUND',
+          'Jenis pensiun tidak ditemukan',
+        )
       }
 
       normalizedPayload.jenisPensiunId = jenisPensiun.id
