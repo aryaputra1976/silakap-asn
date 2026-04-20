@@ -43,6 +43,9 @@ const DMS_READ_ROLES = [
 
 type DmsRequestUser = {
   id?: bigint | string | null
+  role?: string | null
+  roles?: string[]
+  unitKerjaId?: string | null
 }
 
 type DmsRequest = Request & {
@@ -63,7 +66,7 @@ export class DmsMonitoringController {
     @Body() body: CreateDmsBatchDto,
     @Req() req: DmsRequest,
   ) {
-    return this.service.createBatch(body, req.user?.id)
+    return this.service.createBatch(body, req.user)
   }
 
   @Post('import')
@@ -82,36 +85,51 @@ export class DmsMonitoringController {
     @Body() body: ImportDmsDto,
     @Req() req: DmsRequest,
   ) {
-    return this.service.importFile(file, body, req.user?.id)
+    return this.service.importFile(file, body, req.user)
   }
 
   @Get('batches')
   @AllowDmsRoles(...DMS_READ_ROLES)
-  async getBatches(@Query() query: QueryDmsBatchesDto) {
-    return this.service.getBatches(query)
+  async getBatches(
+    @Query() query: QueryDmsBatchesDto,
+    @Req() req: DmsRequest,
+  ) {
+    return this.service.getBatches(query, req.user)
   }
 
   @Get('batches/:id')
   @AllowDmsRoles(...DMS_READ_ROLES)
-  async getBatchById(@Param() params: DmsIdParamDto) {
-    return this.service.getBatchById(params.id)
+  async getBatchById(
+    @Param() params: DmsIdParamDto,
+    @Req() req: DmsRequest,
+  ) {
+    return this.service.getBatchById(params.id, req.user)
   }
 
   @Get('batches/:id/summary')
   @AllowDmsRoles(...DMS_READ_ROLES)
-  async getBatchSummary(@Param() params: DmsIdParamDto) {
-    return this.service.getBatchSummary(params.id)
+  async getBatchSummary(
+    @Param() params: DmsIdParamDto,
+    @Req() req: DmsRequest,
+  ) {
+    return this.service.getBatchSummary(params.id, req.user)
   }
 
   @Get('snapshots')
   @AllowDmsRoles(...DMS_READ_ROLES)
-  async getSnapshots(@Query() query: QueryDmsSnapshotsDto) {
-    return this.service.getSnapshots(query)
+  async getSnapshots(
+    @Query() query: QueryDmsSnapshotsDto,
+    @Req() req: DmsRequest,
+  ) {
+    return this.service.getSnapshots(query, req.user)
   }
 
   @Get('dashboard')
   @AllowDmsRoles(...DMS_READ_ROLES)
-  async getDashboard(@Query() query: QueryDmsDashboardDto) {
-    return this.service.getDashboard(query.unorId)
+  async getDashboard(
+    @Query() query: QueryDmsDashboardDto,
+    @Req() req: DmsRequest,
+  ) {
+    return this.service.getDashboard(query.unorId, req.user)
   }
 }

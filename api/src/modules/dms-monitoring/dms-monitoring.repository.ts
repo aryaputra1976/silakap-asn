@@ -86,6 +86,10 @@ type DmsDashboardByUnorRow = {
   latestSync: Date | null
 }
 
+type DmsScopeParams = {
+  scopedUnorIds?: string[]
+}
+
 type CreateDmsBatchParams = {
   namaFile: string
   unorId?: string | number | bigint | null
@@ -350,7 +354,9 @@ export class DmsMonitoringRepository {
     `)
   }
 
-  async getBatches(params: QueryDmsBatchesDto) {
+  async getBatches(
+    params: QueryDmsBatchesDto & DmsScopeParams,
+  ) {
     const page = this.toPage(params.page)
     const limit = this.toLimit(params.limit)
     const offset = (page - 1) * limit
@@ -402,7 +408,12 @@ export class DmsMonitoringRepository {
     }
   }
 
-  async getBatchById(id: string) {
+  async getBatchById(
+    id: string,
+    scopedUnorIds?: string[],
+  ) {
+    const scopeClause = this.buildSingleBatchScopeClause(scopedUnorIds)
+
     const data = await this.prisma.$queryRaw<DmsBatchRow[]>(Prisma.sql`
       SELECT
         b.id,
@@ -424,14 +435,19 @@ export class DmsMonitoringRepository {
       LEFT JOIN ref_unor u ON u.id = b.unor_id
       LEFT JOIN silakap_user usr ON usr.id = b.imported_by
       WHERE b.id = ${BigInt(id)}
+      ${scopeClause}
       LIMIT 1
     `)
 
     return data[0] ?? null
   }
 
-  async getBatchSummary(id: string) {
+  async getBatchSummary(
+    id: string,
+    scopedUnorIds?: string[],
+  ) {
     const batchId = BigInt(id)
+    const scopeClause = this.buildSnapshotScopeClause(scopedUnorIds)
 
     const summary =
       await this.prisma.$queryRaw<DmsBatchSummaryAggregateRow[]>(
@@ -444,6 +460,7 @@ export class DmsMonitoringRepository {
         MAX(s.last_sync) AS latestSync
       FROM silakap_dms_snapshot s
       WHERE s.batch_id = ${batchId}
+      ${scopeClause}
     `)
 
     const byKategori =
@@ -454,6 +471,7 @@ export class DmsMonitoringRepository {
         COUNT(*) AS total
       FROM silakap_dms_snapshot s
       WHERE s.batch_id = ${batchId}
+      ${scopeClause}
       GROUP BY s.kategori_kelengkapan
       ORDER BY total DESC
     `)
@@ -469,6 +487,7 @@ export class DmsMonitoringRepository {
         SUM(CASE WHEN s.pns = 1 THEN 1 ELSE 0 END) AS pns
       FROM silakap_dms_snapshot s
       WHERE s.batch_id = ${batchId}
+      ${scopeClause}
     `)
 
     return {
@@ -490,7 +509,9 @@ export class DmsMonitoringRepository {
     }
   }
 
-  async getSnapshots(params: QueryDmsSnapshotsDto) {
+  async getSnapshots(
+    params: QueryDmsSnapshotsDto & DmsScopeParams,
+  ) {
     const page = this.toPage(params.page)
     const limit = this.toLimit(params.limit)
     const offset = (page - 1) * limit
@@ -547,10 +568,14 @@ export class DmsMonitoringRepository {
     }
   }
 
-  async getDashboard(unorId?: string) {
-    const whereClause = unorId
-      ? Prisma.sql`WHERE s.unor_id = ${BigInt(unorId)}`
-      : Prisma.sql``
+  async getDashboard(
+    unorId?: string,
+    scopedUnorIds?: string[],
+  ) {
+    const whereClause = this.buildDashboardWhereClause(
+      unorId,
+      scopedUnorIds,
+    )
 
     const summary =
       await this.prisma.$queryRaw<DmsBatchSummaryAggregateRow[]>(
@@ -627,8 +652,18 @@ export class DmsMonitoringRepository {
     }
   }
 
-  private buildBatchWhereClause(params: QueryDmsBatchesDto) {
+  private buildBatchWhereClause(
+    params: QueryDmsBatchesDto & DmsScopeParams,
+  ) {
     const conditions: Prisma.Sql[] = []
+
+    if (params.scopedUnorIds?.length) {
+      conditions.push(
+        Prisma.sql`b.unor_id IN (${Prisma.join(
+          params.scopedUnorIds.map((id) => BigInt(id)),
+        )})`,
+      )
+    }
 
     if (params.unorId) {
       conditions.push(
@@ -648,8 +683,18 @@ export class DmsMonitoringRepository {
       : Prisma.sql``
   }
 
-  private buildSnapshotWhereClause(params: QueryDmsSnapshotsDto) {
+  private buildSnapshotWhereClause(
+    params: QueryDmsSnapshotsDto & DmsScopeParams,
+  ) {
     const conditions: Prisma.Sql[] = []
+
+    if (params.scopedUnorIds?.length) {
+      conditions.push(
+        Prisma.sql`s.unor_id IN (${Prisma.join(
+          params.scopedUnorIds.map((id) => BigInt(id)),
+        )})`,
+      )
+    }
 
     if (params.batchId) {
       conditions.push(
@@ -672,6 +717,54 @@ export class DmsMonitoringRepository {
     if (params.nip) {
       conditions.push(
         Prisma.sql`s.nip LIKE ${`%${params.nip}%`}`,
+      )
+    }
+
+    return conditions.length > 0
+      ? Prisma.sql`WHERE ${Prisma.join(
+          conditions,
+          ' AND ',
+        )}`
+      : Prisma.sql``
+  }
+
+  private buildSingleBatchScopeClause(scopedUnorIds?: string[]) {
+    if (!scopedUnorIds?.length) {
+      return Prisma.sql``
+    }
+
+    return Prisma.sql`AND b.unor_id IN (${Prisma.join(
+      scopedUnorIds.map((id) => BigInt(id)),
+    )})`
+  }
+
+  private buildSnapshotScopeClause(scopedUnorIds?: string[]) {
+    if (!scopedUnorIds?.length) {
+      return Prisma.sql``
+    }
+
+    return Prisma.sql`AND s.unor_id IN (${Prisma.join(
+      scopedUnorIds.map((id) => BigInt(id)),
+    )})`
+  }
+
+  private buildDashboardWhereClause(
+    unorId?: string,
+    scopedUnorIds?: string[],
+  ) {
+    const conditions: Prisma.Sql[] = []
+
+    if (scopedUnorIds?.length) {
+      conditions.push(
+        Prisma.sql`s.unor_id IN (${Prisma.join(
+          scopedUnorIds.map((id) => BigInt(id)),
+        )})`,
+      )
+    }
+
+    if (unorId) {
+      conditions.push(
+        Prisma.sql`s.unor_id = ${BigInt(unorId)}`,
       )
     }
 

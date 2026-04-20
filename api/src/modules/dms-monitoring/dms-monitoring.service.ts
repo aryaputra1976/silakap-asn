@@ -5,9 +5,11 @@ import {
   InternalServerErrorException,
   NotFoundException,
   UnprocessableEntityException,
+  ForbiddenException,
 } from '@nestjs/common'
 import * as XLSX from 'xlsx'
 
+import { PrismaService } from '@/prisma/prisma.service'
 import { normalizeBigInt } from '@/utils/normalizeBigInt'
 
 import {
@@ -88,6 +90,13 @@ type UnorLookup = {
   nama: string
 }
 
+type DmsMonitoringUser = {
+  id?: bigint | string | null
+  role?: string | null
+  roles?: string[]
+  unitKerjaId?: string | null
+}
+
 @Injectable()
 export class DmsMonitoringService {
   private readonly IMPORT_BATCH_SIZE = 200
@@ -95,17 +104,22 @@ export class DmsMonitoringService {
 
   constructor(
     private readonly repo: DmsMonitoringRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async createBatch(
     input: CreateDmsBatchDto,
-    importedBy?: bigint | string | null,
+    user?: DmsMonitoringUser,
   ) {
+    const importedBy = user?.id
+    const scope = await this.resolveUserScope(user)
+    const normalizedInput = this.applyManageScope(input, scope)
+
     const data = await this.repo.createBatch({
-      namaFile: input.namaFile,
-      unorId: input.unorId,
-      periodeLabel: input.periodeLabel,
-      catatan: input.catatan,
+      namaFile: normalizedInput.namaFile,
+      unorId: normalizedInput.unorId,
+      periodeLabel: normalizedInput.periodeLabel,
+      catatan: normalizedInput.catatan,
       importedBy,
     })
 
@@ -119,9 +133,9 @@ export class DmsMonitoringService {
       action: 'DMS_BATCH_CREATED',
       entityId: String(data.id),
       payload: {
-        namaFile: input.namaFile,
-        unorId: input.unorId ?? null,
-        periodeLabel: input.periodeLabel ?? null,
+        namaFile: normalizedInput.namaFile,
+        unorId: normalizedInput.unorId ?? null,
+        periodeLabel: normalizedInput.periodeLabel ?? null,
       },
       userId: importedBy,
     })
@@ -132,9 +146,12 @@ export class DmsMonitoringService {
   async importFile(
     file: Express.Multer.File,
     input: ImportDmsDto,
-    importedBy?: bigint | string | null,
+    user?: DmsMonitoringUser,
   ) {
+    const importedBy = user?.id
     this.validateUploadedFile(file)
+    const scope = await this.resolveUserScope(user)
+    const normalizedInput = this.applyManageScope(input, scope)
 
     const parsedWorkbook = this.parseWorkbook(file.buffer)
 
@@ -147,13 +164,18 @@ export class DmsMonitoringService {
       )
     }
 
-    const batch = input.batchId
+    const batch = normalizedInput.batchId
       ? await this.prepareExistingBatch(
-          input.batchId,
-          input,
+          normalizedInput.batchId,
+          normalizedInput,
           file.originalname,
+          scope,
         )
-      : await this.createImportBatch(input, file.originalname, importedBy)
+      : await this.createImportBatch(
+          normalizedInput,
+          file.originalname,
+          importedBy,
+        )
 
     await this.repo.createAuditLog({
       action: 'DMS_IMPORT_STARTED',
@@ -161,7 +183,7 @@ export class DmsMonitoringService {
       payload: {
         fileName: file.originalname,
         batchId: String(batch.id),
-        autoCreatedBatch: !input.batchId,
+        autoCreatedBatch: !normalizedInput.batchId,
       },
       userId: importedBy,
     })
@@ -214,7 +236,7 @@ export class DmsMonitoringService {
       })
     }
 
-    const defaultUnorId = this.toBigIntOrNull(input.unorId)
+    const defaultUnorId = this.toBigIntOrNull(normalizedInput.unorId)
     const nips = [...new Set(rowsToImport.map((row) => row.nip))]
 
     const [pegawaiRows, unorRows] = await Promise.all([
@@ -320,7 +342,10 @@ export class DmsMonitoringService {
       totalRows,
       successRows,
       failedRows,
-      catatan: this.buildImportNote(failedRows, input.catatan),
+      catatan: this.buildImportNote(
+        failedRows,
+        normalizedInput.catatan,
+      ),
     })
 
     await this.repo.createAuditLog({
@@ -356,13 +381,25 @@ export class DmsMonitoringService {
     })
   }
 
-  async getBatches(query: QueryDmsBatchesDto) {
-    const data = await this.repo.getBatches(query)
+  async getBatches(
+    query: QueryDmsBatchesDto,
+    user?: DmsMonitoringUser,
+  ) {
+    const scope = await this.resolveUserScope(user)
+    const scopedQuery = this.applyReadScopeToQuery(query, scope)
+    const data = await this.repo.getBatches(scopedQuery)
     return normalizeBigInt(data)
   }
 
-  async getBatchById(id: string) {
-    const data = await this.repo.getBatchById(id)
+  async getBatchById(
+    id: string,
+    user?: DmsMonitoringUser,
+  ) {
+    const scope = await this.resolveUserScope(user)
+    const data = await this.repo.getBatchById(
+      id,
+      scope.scopedUnorIds,
+    )
 
     if (!data) {
       throw new NotFoundException('Batch DMS tidak ditemukan')
@@ -371,24 +408,50 @@ export class DmsMonitoringService {
     return normalizeBigInt(data)
   }
 
-  async getBatchSummary(id: string) {
-    const batch = await this.repo.getBatchById(id)
+  async getBatchSummary(
+    id: string,
+    user?: DmsMonitoringUser,
+  ) {
+    const scope = await this.resolveUserScope(user)
+    const batch = await this.repo.getBatchById(
+      id,
+      scope.scopedUnorIds,
+    )
 
     if (!batch) {
       throw new NotFoundException('Batch DMS tidak ditemukan')
     }
 
-    const data = await this.repo.getBatchSummary(id)
+    const data = await this.repo.getBatchSummary(
+      id,
+      scope.scopedUnorIds,
+    )
     return normalizeBigInt(data)
   }
 
-  async getSnapshots(query: QueryDmsSnapshotsDto) {
-    const data = await this.repo.getSnapshots(query)
+  async getSnapshots(
+    query: QueryDmsSnapshotsDto,
+    user?: DmsMonitoringUser,
+  ) {
+    const scope = await this.resolveUserScope(user)
+    const scopedQuery = this.applyReadScopeToQuery(query, scope)
+    const data = await this.repo.getSnapshots(scopedQuery)
     return normalizeBigInt(data)
   }
 
-  async getDashboard(unorId?: string) {
-    const data = await this.repo.getDashboard(unorId)
+  async getDashboard(
+    unorId?: string,
+    user?: DmsMonitoringUser,
+  ) {
+    const scope = await this.resolveUserScope(user)
+    const effectiveUnorId = this.resolveRequestedUnorId(
+      unorId,
+      scope,
+    )
+    const data = await this.repo.getDashboard(
+      effectiveUnorId,
+      scope.scopedUnorIds,
+    )
     return normalizeBigInt(data)
   }
 
@@ -418,11 +481,27 @@ export class DmsMonitoringService {
     batchId: string,
     input: ImportDmsDto,
     originalName: string,
+    scope: Awaited<
+      ReturnType<DmsMonitoringService['resolveUserScope']>
+    >,
   ) {
     const batch = await this.repo.getBatchImportContext(batchId)
 
     if (!batch) {
       throw new NotFoundException('Batch DMS tidak ditemukan')
+    }
+
+    if (
+      scope.scopedUnorIds &&
+      batch.id &&
+      !(await this.repo.getBatchById(
+        batchId,
+        scope.scopedUnorIds,
+      ))
+    ) {
+      throw new ForbiddenException(
+        'Batch DMS berada di luar scope unit kerja Anda',
+      )
     }
 
     if (String(batch.status) !== 'DRAFT') {
@@ -471,6 +550,185 @@ export class DmsMonitoringService {
         'File harus berformat .xlsx atau .xls',
       )
     }
+  }
+
+  private isOperator(user?: DmsMonitoringUser) {
+    return Boolean(
+      user?.role?.toUpperCase() === 'OPERATOR' ||
+        user?.roles?.some((role) => role === 'OPERATOR'),
+    )
+  }
+
+  private async resolveUserScope(user?: DmsMonitoringUser) {
+    if (!this.isOperator(user)) {
+      return {
+        rootUnorId: null as string | null,
+        scopedUnorIds: undefined as string[] | undefined,
+      }
+    }
+
+    const unitKerjaId = user?.unitKerjaId
+
+    if (!unitKerjaId) {
+      throw new ForbiddenException(
+        'Akun operator belum memiliki scope unit kerja',
+      )
+    }
+
+    const rootUnorId = await this.resolveOperatorScopeUnorId(
+      unitKerjaId,
+    )
+    const scopedUnorIds = await this.collectScopedUnorIds(
+      rootUnorId,
+    )
+
+    return {
+      rootUnorId,
+      scopedUnorIds,
+    }
+  }
+
+  private async resolveOperatorScopeUnorId(unitKerjaId: string) {
+    let current = await this.prisma.refUnor.findUnique({
+      where: { id: BigInt(unitKerjaId) },
+      select: {
+        id: true,
+        level: true,
+        parentId: true,
+      },
+    })
+
+    while (current) {
+      if (current.level === 2) {
+        return current.id.toString()
+      }
+
+      if (!current.parentId) {
+        break
+      }
+
+      current = await this.prisma.refUnor.findUnique({
+        where: { id: current.parentId },
+        select: {
+          id: true,
+          level: true,
+          parentId: true,
+        },
+      })
+    }
+
+    return unitKerjaId
+  }
+
+  private async collectScopedUnorIds(rootUnorId: string) {
+    const collected = new Set<string>([rootUnorId])
+    let frontier = [BigInt(rootUnorId)]
+
+    while (frontier.length > 0) {
+      const children = await this.prisma.refUnor.findMany({
+        where: {
+          parentId: { in: frontier },
+          deletedAt: null,
+          isActive: true,
+        },
+        select: { id: true },
+      })
+
+      if (!children.length) {
+        break
+      }
+
+      frontier = []
+      for (const child of children) {
+        const id = child.id.toString()
+        if (!collected.has(id)) {
+          collected.add(id)
+          frontier.push(child.id)
+        }
+      }
+    }
+
+    return [...collected]
+  }
+
+  private applyManageScope<
+    T extends CreateDmsBatchDto | ImportDmsDto,
+  >(
+    input: T,
+    scope: {
+      rootUnorId: string | null
+      scopedUnorIds?: string[]
+    },
+  ): T {
+    if (!scope.scopedUnorIds || !scope.rootUnorId) {
+      return input
+    }
+
+    if (
+      input.unorId &&
+      !scope.scopedUnorIds.includes(input.unorId)
+    ) {
+      throw new ForbiddenException(
+        'Unit organisasi berada di luar scope operator',
+      )
+    }
+
+    return {
+      ...input,
+      unorId: input.unorId ?? scope.rootUnorId,
+    }
+  }
+
+  private applyReadScopeToQuery<
+    T extends QueryDmsBatchesDto | QueryDmsSnapshotsDto,
+  >(
+    query: T,
+    scope: {
+      rootUnorId: string | null
+      scopedUnorIds?: string[]
+    },
+  ) {
+    if (!scope.scopedUnorIds || !scope.rootUnorId) {
+      return query
+    }
+
+    if (
+      query.unorId &&
+      !scope.scopedUnorIds.includes(query.unorId)
+    ) {
+      throw new ForbiddenException(
+        'Filter unit organisasi berada di luar scope operator',
+      )
+    }
+
+    return {
+      ...query,
+      scopedUnorIds: scope.scopedUnorIds,
+    }
+  }
+
+  private resolveRequestedUnorId(
+    requestedUnorId: string | undefined,
+    scope: {
+      rootUnorId: string | null
+      scopedUnorIds?: string[]
+    },
+  ) {
+    if (!scope.scopedUnorIds || !scope.rootUnorId) {
+      return requestedUnorId
+    }
+
+    if (!requestedUnorId) {
+      return undefined
+    }
+
+    if (!scope.scopedUnorIds.includes(requestedUnorId)) {
+      throw new ForbiddenException(
+        'Filter dashboard berada di luar scope operator',
+      )
+    }
+
+    return requestedUnorId
   }
 
   private parseWorkbook(buffer: Buffer): ParsedWorkbookResult {
