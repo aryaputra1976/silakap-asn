@@ -1,15 +1,16 @@
-import { Prisma, LayananStatus } from '@prisma/client'
+import { Injectable } from '@nestjs/common'
+import { LayananStatus, Prisma } from '@prisma/client'
+
 import { BusinessError } from '@/core/errors/business.error'
 
+@Injectable()
 export class ServicesWorkflowGuard {
-
   async validate(
     tx: Prisma.TransactionClient,
     usulId: bigint,
     actionCode: string,
-    actorRoleId?: bigint
+    actorRoleId?: bigint,
   ) {
-
     const normalizedAction = actionCode.toUpperCase()
 
     const usul = await tx.silakapUsulLayanan.findUnique({
@@ -17,65 +18,56 @@ export class ServicesWorkflowGuard {
       select: {
         id: true,
         status: true,
-        jenisLayananId: true
-      }
+        jenisLayananId: true,
+      },
     })
 
     if (!usul) {
       throw new BusinessError(
         'USUL_NOT_FOUND',
-        'Usul tidak ditemukan'
+        'Usul tidak ditemukan',
       )
     }
 
     const transition =
       await tx.silakapWorkflowTransition.findFirst({
-
         where: {
           jenisLayananId: usul.jenisLayananId,
           fromState: usul.status,
-          actionCode: normalizedAction
+          actionCode: normalizedAction,
         },
-
         select: {
           id: true,
           fromState: true,
           toState: true,
-          role: true
-        }
-
+          role: true,
+        },
       })
 
     if (!transition) {
-
       throw new BusinessError(
         'WORKFLOW_NOT_FOUND',
-        `Workflow tidak ditemukan: jenisLayananId=${usul.jenisLayananId}, fromState=${usul.status}, action=${normalizedAction}`
+        `Workflow tidak ditemukan: jenisLayananId=${usul.jenisLayananId}, fromState=${usul.status}, action=${normalizedAction}`,
       )
-
     }
 
-    /**
-     * ROLE VALIDATION
-     */
     if (transition.role) {
-
       if (!actorRoleId) {
         throw new BusinessError(
           'ROLE_REQUIRED',
-          'Role diperlukan untuk aksi ini'
+          'Role diperlukan untuk aksi ini',
         )
       }
 
       const role = await tx.silakapRole.findUnique({
         where: { id: actorRoleId },
-        select: { name: true }
+        select: { name: true },
       })
 
       if (!role) {
         throw new BusinessError(
           'ROLE_NOT_FOUND',
-          'Role tidak ditemukan'
+          'Role tidak ditemukan',
         )
       }
 
@@ -85,46 +77,37 @@ export class ServicesWorkflowGuard {
       ) {
         throw new BusinessError(
           'FORBIDDEN',
-          `Role ${role.name} tidak diizinkan`
+          `Role ${role.name} tidak diizinkan`,
         )
       }
-
     }
 
     return transition
-
   }
 
   async validateTransition(
     tx: Prisma.TransactionClient,
     jenisLayananId: bigint,
     currentState: LayananStatus,
-    nextState: LayananStatus
+    nextState: LayananStatus,
   ) {
-
     const rule = await tx.silakapWorkflowTransition.findFirst({
-
       where: {
         jenisLayananId,
         fromState: currentState,
-        toState: nextState
+        toState: nextState,
       },
-
-      select: { id: true }
-
+      select: { id: true },
     })
 
     if (!rule) {
-
       throw new BusinessError(
         'INVALID_WORKFLOW_TRANSITION',
-        `Transisi ${currentState} → ${nextState} tidak diizinkan`
+        `Transisi ${currentState} → ${nextState} tidak diizinkan`,
       )
-
     }
 
     return true
-
   }
 
   async validateForExecution(
@@ -135,25 +118,22 @@ export class ServicesWorkflowGuard {
       jenisLayananId: bigint
       actionCode: string
       actorRoleId?: bigint
-    }
+    },
   ) {
-
     const transition = await this.validate(
       tx,
       params.usulId,
       params.actionCode,
-      params.actorRoleId
+      params.actorRoleId,
     )
 
     await this.validateTransition(
       tx,
       params.jenisLayananId,
       transition.fromState,
-      transition.toState
+      transition.toState,
     )
 
     return transition
-
   }
-
 }

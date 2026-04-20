@@ -1,9 +1,11 @@
-import { Prisma, LayananStatus } from "@prisma/client"
-import { BusinessError } from "@/core/errors/business.error"
-import { WorkflowTimelineService } from "@/modules/workflow/service/workflow.timeline.service"
+import { Injectable } from '@nestjs/common'
+import { LayananStatus, Prisma } from '@prisma/client'
 
+import { BusinessError } from '@/core/errors/business.error'
+import { WorkflowTimelineService } from '@/modules/workflow/service/workflow.timeline.service'
+
+@Injectable()
 export class ServicesWorkflowService {
-
   async transition(
     tx: Prisma.TransactionClient,
     params: {
@@ -13,87 +15,64 @@ export class ServicesWorkflowService {
       actorUserId?: bigint
       actorRoleId?: bigint
       jenisLayananId: bigint
-    }
+    },
   ) {
-
     const actionCode = params.actionCode.toUpperCase()
 
     const template =
       await tx.silakapWorkflowTransition.findFirst({
-
         where: {
           jenisLayananId: params.jenisLayananId,
           fromState: params.currentStatus,
-          actionCode
+          actionCode,
         },
-
         select: {
-          toState: true
-        }
-
+          toState: true,
+        },
       })
 
     if (!template) {
-
       throw new BusinessError(
-        "WORKFLOW_NOT_FOUND",
-        "Workflow transition tidak ditemukan"
+        'WORKFLOW_NOT_FOUND',
+        'Workflow transition tidak ditemukan',
       )
-
     }
 
     const nextStatus = template.toState
 
-    /**
-     * CALCULATE SLA
-     */
-    const slaDeadline =
-      await this.calculateSLADeadline(
-        tx,
-        params.jenisLayananId,
-        nextStatus
-      )
+    const slaDeadline = await this.calculateSLADeadline(
+      tx,
+      params.jenisLayananId,
+      nextStatus,
+    )
 
-    /**
-     * UPDATE STATUS
-     */
     const updated =
       await tx.silakapUsulLayanan.updateMany({
-
         where: {
           id: params.usulId,
-          status: params.currentStatus
+          status: params.currentStatus,
         },
-
         data: {
           status: nextStatus,
           slaDeadline,
-          updatedAt: new Date()
-        }
-
+          updatedAt: new Date(),
+        },
       })
 
     if (!updated.count) {
-
       throw new BusinessError(
-        "WORKFLOW_RACE_CONDITION",
-        "Workflow conflict"
+        'WORKFLOW_RACE_CONDITION',
+        'Workflow conflict',
       )
-
     }
 
-    /**
-     * INSERT LOG
-     */
     await tx.silakapLayananLog.create({
-
       data: {
         usulId: params.usulId,
         roleId: params.actorRoleId ?? null,
         status: nextStatus,
-        keterangan: `Action: ${actionCode}`
-      }
-
+        keterangan: `Action: ${actionCode}`,
+      },
     })
 
     await WorkflowTimelineService.create(
@@ -101,58 +80,50 @@ export class ServicesWorkflowService {
       params.usulId,
       params.currentStatus,
       nextStatus,
-      params.actorUserId
+      params.actorUserId,
     )
 
     await tx.auditLog.create({
       data: {
-        entity: "LAYANAN",
+        entity: 'LAYANAN',
         entityId: params.usulId.toString(),
         action: actionCode,
         userId: params.actorUserId ?? null,
         payload: {
           from: params.currentStatus,
-          to: nextStatus
-        }
-      }
+          to: nextStatus,
+        },
+      },
     })
 
     return {
       usulId: params.usulId,
       status: nextStatus,
-      slaDeadline
+      slaDeadline,
     }
-
   }
 
   private async calculateSLADeadline(
     tx: Prisma.TransactionClient,
     jenisLayananId: bigint,
-    state: LayananStatus
+    state: LayananStatus,
   ): Promise<Date | null> {
-
-    const sla =
-      await tx.silakapWorkflowSLA.findUnique({
-
-        where: {
-          jenisLayananId_state: {
-            jenisLayananId,
-            state
-          }
+    const sla = await tx.silakapWorkflowSLA.findUnique({
+      where: {
+        jenisLayananId_state: {
+          jenisLayananId,
+          state,
         },
-
-        select: {
-          durationMinutes: true
-        }
-
-      })
+      },
+      select: {
+        durationMinutes: true,
+      },
+    })
 
     if (!sla?.durationMinutes) return null
 
     return new Date(
-      Date.now() + Number(sla.durationMinutes) * 60000
+      Date.now() + Number(sla.durationMinutes) * 60000,
     )
-
   }
-
 }

@@ -1,63 +1,53 @@
-import { Prisma, LayananStatus } from '@prisma/client'
-import { prisma } from '@/core/prisma/prisma.client'
+import { Inject, Injectable } from '@nestjs/common'
+import { LayananStatus, Prisma } from '@prisma/client'
+
+import { PrismaService } from '@/prisma/prisma.service'
+import { BusinessError } from '@/core/errors/business.error'
+
+import { CompletenessService } from '../completeness/completeness.service'
+import { ServicesRegistry } from '../registry/services.registry'
 
 import { ServicesWorkflowService } from './service/services.workflow.service'
 import { ServicesDependencyService } from './service/services.dependency.service'
 import { ServicesWorkflowGuard } from './service/services.workflow.guard'
-import { CompletenessService } from '../completeness/completeness.service'
-import { ServicesRegistry } from '../registry/services.registry'
 
-import { BusinessError } from '@/core/errors/business.error'
-
+@Injectable()
 export class ServicesEngine {
+  constructor(
+    private readonly prisma: PrismaService = new PrismaService(),
+    private readonly workflowService: ServicesWorkflowService = new ServicesWorkflowService(),
+    private readonly dependencyService: ServicesDependencyService = new ServicesDependencyService(),
+    private readonly workflowGuard: ServicesWorkflowGuard = new ServicesWorkflowGuard(),
+    @Inject(CompletenessService)
+    private readonly completenessService: CompletenessService = new CompletenessService(),
+  ) {}
 
-  private workflowService = new ServicesWorkflowService()
-  private dependencyService = new ServicesDependencyService()
-  private workflowGuard = new ServicesWorkflowGuard()
-  private completenessService = new CompletenessService()
-
-  /**
-   * CREATE SERVICE DETAIL
-   */
-  async createDetail(
-    params: {
-      usulId: bigint
-      jenisKode: string
-      payload?: unknown
-    }
-  ) {
-
+  async createDetail(params: {
+    usulId: bigint
+    jenisKode: string
+    payload?: unknown
+  }) {
     const { usulId, jenisKode, payload } = params
 
-    return prisma.$transaction(async (tx) => {
-
-      const handler = ServicesRegistry.resolve(jenisKode as any)
+    return this.prisma.$transaction(async (tx) => {
+      const handler = ServicesRegistry.resolve(jenisKode as never)
 
       if (!handler?.createDetail) {
         throw new BusinessError(
           'SERVICE_DETAIL_NOT_SUPPORTED',
-          `Service ${jenisKode} tidak mendukung createDetail`
+          `Service ${jenisKode} tidak mendukung createDetail`,
         )
       }
 
-      await handler.createDetail(
-        tx,
-        usulId,
-        payload
-      )
+      await handler.createDetail(tx, usulId, payload)
 
       return {
         usulId,
-        detailCreated: true
+        detailCreated: true,
       }
-
     })
-
   }
 
-  /**
-   * WORKFLOW EXECUTION
-   */
   async execute(
     tx: Prisma.TransactionClient,
     params: {
@@ -67,23 +57,18 @@ export class ServicesEngine {
       actionCode: string
       actorRoleId?: bigint
       actorUserId?: bigint
-    }
+    },
   ) {
-
     const {
       usulId,
       pegawaiId,
       jenisLayananId,
-      actorRoleId
+      actorRoleId,
     } = params
 
     const action = params.actionCode.toUpperCase()
 
     try {
-
-      /**
-       * HARD LOCK
-       */
       const rows = await tx.$queryRaw<
         { id: bigint; status: LayananStatus }[]
       >`
@@ -96,84 +81,58 @@ export class ServicesEngine {
       if (!rows.length) {
         throw new BusinessError(
           'USUL_NOT_FOUND',
-          'Usul layanan tidak ditemukan'
+          'Usul layanan tidak ditemukan',
         )
       }
 
       const usul = rows[0]
 
-      /**
-       * VALIDASI DEPENDENCY
-       */
       await this.dependencyService.validateDependencies(
         tx,
-        usulId
+        usulId,
       )
 
-      /**
-       * VALIDASI WORKFLOW
-       */
-      const transition =
-        await this.workflowGuard.validateForExecution(
-          tx,
-          {
-            ...params,
-            actionCode: action
-          }
-        )
+      await this.workflowGuard.validateForExecution(tx, {
+        ...params,
+        actionCode: action,
+      })
 
-      /**
-       * VALIDASI KELENGKAPAN DOKUMEN
-       */
       const completeness =
         await this.completenessService.calculateByPegawai(
           tx,
           pegawaiId,
-          jenisLayananId
+          jenisLayananId,
         )
 
       if (!completeness.isComplete) {
-
         throw new BusinessError(
           'DATA_NOT_COMPLETE',
-          `Dokumen belum lengkap: ${completeness.missing.join(', ')}`
+          `Dokumen belum lengkap: ${completeness.missing.join(', ')}`,
         )
-
       }
 
-      /**
-       * EXECUTE WORKFLOW
-       */
-      return await this.workflowService.transition(
-        tx,
-        {
-          usulId,
-          currentStatus: usul.status,
-          actionCode: action,
-          actorUserId: params.actorUserId,
-          actorRoleId,
-          jenisLayananId
-        }
-      )
-
-    } catch (err: unknown) {
-
-      if (err instanceof BusinessError) {
-        throw err
+      return await this.workflowService.transition(tx, {
+        usulId,
+        currentStatus: usul.status,
+        actionCode: action,
+        actorUserId: params.actorUserId,
+        actorRoleId,
+        jenisLayananId,
+      })
+    } catch (error: unknown) {
+      if (error instanceof BusinessError) {
+        throw error
       }
 
       const message =
-        err instanceof Error
-          ? err.message
+        error instanceof Error
+          ? error.message
           : 'Workflow engine execution error'
 
       throw new BusinessError(
         'ENGINE_EXECUTION_FAILED',
-        message
+        message,
       )
-
     }
-
   }
-
 }

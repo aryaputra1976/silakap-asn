@@ -1,348 +1,204 @@
 import {
+  Body,
   Controller,
   Get,
-  Post,
   Param,
-  Body,
+  Post,
+  Req,
   UseGuards,
-  Req
 } from '@nestjs/common'
+import type { Response } from 'express'
 
-import { Prisma } from '@prisma/client'
-
-import { prisma } from '@/core/prisma/prisma.client'
 import { JwtGuard } from '@/core/auth/jwt.guard'
 import { Public } from '@/core/decorators/public.decorator'
 
-import { ServicesService } from '../service/services.service'
-import { ServicesEngine } from '../services.engine'
-import { ServicesQueryService } from '../service/services.query.service'
 import { ServicesDashboardService } from '../service/services.dashboard.service'
-
-const servicesService = new ServicesService()
-const engine = new ServicesEngine()
-const queryService = new ServicesQueryService()
-const dashboardService = new ServicesDashboardService()
+import { ServicesQueryService } from '../service/services.query.service'
+import { ServicesService } from '../service/services.service'
 
 @Controller('services')
 export class ServicesController {
+  constructor(
+    private readonly servicesService: ServicesService = new ServicesService(),
+    private readonly queryService: ServicesQueryService = new ServicesQueryService(),
+    private readonly dashboardService: ServicesDashboardService = new ServicesDashboardService(),
+  ) {}
 
-  private async resolveActorRoleId(user: any) {
-
-    const roleName =
-      typeof user?.role === 'string' && user.role
-        ? user.role
-        : Array.isArray(user?.roles) && user.roles.length > 0
-          ? user.roles[0]
-          : null
-
-    if (!roleName) {
-      throw new Error('Role user tidak ditemukan')
-    }
-
-    const role = await prisma.silakapRole.findFirst({
-      where: { name: roleName },
-      select: { id: true }
-    })
-
-    if (!role) {
-      throw new Error(`Role ${roleName} tidak ditemukan`)
-    }
-
-    return role.id
-
+  private isLegacyRequest(
+    value: unknown,
+  ): value is {
+    params?: Record<string, string>
+    body?: Record<string, unknown>
+    user?: { id?: bigint | string | null; role?: string | null; roles?: string[] }
+  } {
+    return typeof value === 'object' && value !== null && 'params' in value
   }
 
-  private async resolveUsulContext(usulId: bigint) {
-
-    const usul = await prisma.silakapUsulLayanan.findUnique({
-      where: { id: usulId },
-      select: {
-        pegawaiId: true,
-        jenisLayananId: true
-      }
-    })
-
-    if (!usul) {
-      throw new Error('Usul layanan tidak ditemukan')
-    }
-
-    return usul
-
+  private isLegacyResponse(
+    value: unknown,
+  ): value is Response {
+    return (
+      typeof value === 'object' &&
+      value !== null &&
+      'json' in value &&
+      typeof (value as Response).json === 'function'
+    )
   }
 
-  private async normalizeCreateInput(
-    service: string,
-    body: any
+  private async respondLegacy(
+    payload: Promise<unknown>,
+    res?: Response,
   ) {
+    const result = await payload
 
-    const normalizedPayload =
-      body?.payload && typeof body.payload === 'object'
-        ? { ...body.payload }
-        : { ...body }
-
-    let resolvedPegawaiId = body?.pegawaiId
-
-    if (!resolvedPegawaiId && typeof normalizedPayload.nip === 'string') {
-
-      const pegawai = await prisma.silakapPegawai.findUnique({
-        where: {
-          nip: normalizedPayload.nip.trim()
-        },
-        select: { id: true }
-      })
-
-      if (!pegawai) {
-        throw new Error('Pegawai tidak ditemukan dari NIP')
-      }
-
-      resolvedPegawaiId = pegawai.id.toString()
-
+    if (res) {
+      return res.json(result)
     }
 
-    if (!resolvedPegawaiId) {
-      throw new Error('pegawaiId tidak boleh kosong')
-    }
-
-    if (
-      service.toUpperCase() === 'PENSIUN' &&
-      !normalizedPayload.jenisPensiunId &&
-      typeof normalizedPayload.jenisPensiun === 'string'
-    ) {
-
-      const jenisPensiun = await prisma.refJenisPensiun.findFirst({
-        where: {
-          kode: normalizedPayload.jenisPensiun.trim().toUpperCase(),
-          deletedAt: null
-        },
-        select: { id: true }
-      })
-
-      if (!jenisPensiun) {
-        throw new Error('Jenis pensiun tidak ditemukan')
-      }
-
-      normalizedPayload.jenisPensiunId = jenisPensiun.id
-
-    }
-
-    return {
-      pegawaiId: BigInt(resolvedPegawaiId),
-      payload: normalizedPayload
-    }
-
+    return result
   }
 
-  /**
-   * GET /api/services/:service/dashboard
-   */
   @Public()
   @Get(':service/dashboard')
   async dashboard(
-    @Param('service') service: string
+    @Param('service') serviceOrReq: string | {
+      params?: Record<string, string>
+    },
+    @Body() legacyRes?: Response,
   ) {
-    return dashboardService.getDashboard(service)
+    const service =
+      typeof serviceOrReq === 'string'
+        ? serviceOrReq
+        : serviceOrReq.params?.service ?? ''
+
+    return this.respondLegacy(
+      this.dashboardService.getDashboard(service),
+      this.isLegacyResponse(legacyRes) ? legacyRes : undefined,
+    )
   }
 
-  /**
-   * GET /api/services/:service
-   */
   @Get(':service')
   async list(
-    @Param('service') service: string
+    @Param('service') serviceOrReq: string | {
+      params?: Record<string, string>
+    },
+    @Body() legacyRes?: Response,
   ) {
+    const service =
+      typeof serviceOrReq === 'string'
+        ? serviceOrReq
+        : serviceOrReq.params?.service ?? ''
 
-    const jenis = await prisma.silakapJenisLayanan.findFirst({
-      where: { kode: service },
-      select: { id: true }
-    })
-
-    if (!jenis) {
-      return { message: 'Jenis layanan tidak ditemukan' }
-    }
-
-    return queryService.list({
-      jenisLayananId: jenis.id
-    })
-
+    return this.respondLegacy(
+      this.queryService.listByServiceCode(service),
+      this.isLegacyResponse(legacyRes) ? legacyRes : undefined,
+    )
   }
 
-  /**
-   * GET /api/services/:service/:id
-   */
   @Get(':service/:id')
   async getById(
-    @Param('id') id: string
+    @Param('id') idOrReq: string | {
+      params?: Record<string, string>
+    },
+    @Body() legacyRes?: Response,
   ) {
+    const id =
+      typeof idOrReq === 'string'
+        ? idOrReq
+        : idOrReq.params?.id ?? ''
 
-    return queryService.getById(
-      BigInt(id)
+    return this.respondLegacy(
+      this.queryService.getById(BigInt(id)),
+      this.isLegacyResponse(legacyRes) ? legacyRes : undefined,
     )
-
   }
 
-  /**
-   * CREATE USUL
-   */
   @Post(':service')
   async create(
-    @Param('service') service: string,
-    @Body() body: any
+    @Param('service') serviceOrReq: string | {
+      params?: Record<string, string>
+      body?: unknown
+    },
+    @Body() bodyOrRes?: unknown,
   ) {
+    const isLegacy = this.isLegacyRequest(serviceOrReq)
+    const service = isLegacy
+      ? serviceOrReq.params?.service ?? ''
+      : String(serviceOrReq)
+    const body = isLegacy ? serviceOrReq.body : bodyOrRes
+    const res =
+      !isLegacy && this.isLegacyResponse(bodyOrRes)
+        ? bodyOrRes
+        : this.isLegacyResponse(bodyOrRes)
+          ? bodyOrRes
+          : undefined
 
-    const {
-      pegawaiId,
-      payload
-    } = await this.normalizeCreateInput(service, body)
-
-    const jenis = await prisma.silakapJenisLayanan.findFirst({
-      where: { kode: service },
-      select: { id: true }
-    })
-
-    if (!jenis) {
-      throw new Error('Jenis layanan tidak ditemukan')
-    }
-
-    return prisma.$transaction(
-      async (tx) => {
-
-        return servicesService.createUsul(
-          tx,
-          BigInt(pegawaiId),
-          jenis.id,
-          service as any,
-          payload
-        )
-
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-      }
+    return this.respondLegacy(
+      this.servicesService.create(service, body),
+      res,
     )
-
   }
 
-  /**
-   * SUBMIT USUL
-   */
   @Post(':service/submit')
   @UseGuards(JwtGuard)
   async submit(
-    @Param('service') service: string,
-    @Body() body: any,
-    @Req() req: any
+    @Param('service') serviceOrReq: any,
+    @Body() bodyOrRes?: any,
+    @Req() req?: any,
   ) {
-
-    const usulIdRaw = body?.usulId ?? body?.id
-
-    if (!usulIdRaw) {
-      throw new Error('usulId wajib diisi')
-    }
-
-    const usulId = BigInt(usulIdRaw)
-    const actorRoleId = await this.resolveActorRoleId(req.user)
-    const usulContext = await this.resolveUsulContext(usulId)
-
-    const jenis = await prisma.silakapJenisLayanan.findFirst({
-      where: { kode: service },
-      select: { id: true }
-    })
-
-    if (!jenis) {
-      throw new Error('Jenis layanan tidak ditemukan')
-    }
-
-    return prisma.$transaction(
-      async (tx) => {
-
-        return engine.execute(
-          tx,
-          {
-            usulId,
-            pegawaiId: body?.pegawaiId
-              ? BigInt(body.pegawaiId)
-              : usulContext.pegawaiId,
-            jenisLayananId: jenis.id,
-            actionCode: "SUBMIT",
-            actorRoleId,
-            actorUserId: req.user?.id
-          }
-        )
-
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-      }
+    const isLegacy = this.isLegacyRequest(serviceOrReq)
+    const service = isLegacy
+      ? serviceOrReq.params?.service ?? ''
+      : String(serviceOrReq)
+    const body = isLegacy
+      ? serviceOrReq.body
+      : this.isLegacyResponse(bodyOrRes)
+        ? undefined
+        : bodyOrRes
+    const user = isLegacy
+      ? serviceOrReq.user ?? {}
+      : req?.user ?? {}
+    return this.respondLegacy(
+      this.servicesService.submit(
+        service,
+        body,
+        user,
+      ),
+      !isLegacy && this.isLegacyResponse(bodyOrRes)
+        ? bodyOrRes
+        : undefined,
     )
-
   }
 
-  /**
-   * WORKFLOW ACTION
-   */
   @Post(':service/workflow')
   @UseGuards(JwtGuard)
   async workflow(
-    @Param('service') service: string,
-    @Body() body: any,
-    @Req() req: any
+    @Param('service') serviceOrReq: any,
+    @Body() bodyOrRes?: any,
+    @Req() req?: any,
   ) {
+    const isLegacy = this.isLegacyRequest(serviceOrReq)
+    const service = isLegacy
+      ? serviceOrReq.params?.service ?? ''
+      : String(serviceOrReq)
+    const body = isLegacy
+      ? serviceOrReq.body
+      : this.isLegacyResponse(bodyOrRes)
+        ? undefined
+        : bodyOrRes
+    const user = isLegacy
+      ? serviceOrReq.user ?? {}
+      : req?.user ?? {}
 
-    const {
-      usulId,
-      actionCode,
-      pegawaiId,
-      jenisLayananId
-    } = body
-
-    if (!usulId) {
-      throw new Error('usulId wajib diisi')
-    }
-
-    if (!actionCode) {
-      throw new Error('actionCode wajib diisi')
-    }
-
-    const normalizedUsulId = BigInt(usulId)
-    const actorRoleId = await this.resolveActorRoleId(req.user)
-    const usulContext = await this.resolveUsulContext(normalizedUsulId)
-
-    const jenis =
-      jenisLayananId
-        ? { id: BigInt(jenisLayananId) }
-        : await prisma.silakapJenisLayanan.findFirst({
-            where: { kode: service },
-            select: { id: true }
-          })
-
-    if (!jenis) {
-      throw new Error('Jenis layanan tidak ditemukan')
-    }
-
-    return prisma.$transaction(
-      async (tx) => {
-
-        return engine.execute(
-          tx,
-          {
-            usulId: normalizedUsulId,
-            pegawaiId: pegawaiId
-              ? BigInt(pegawaiId)
-              : usulContext.pegawaiId,
-            jenisLayananId: jenis.id,
-            actionCode,
-            actorRoleId,
-            actorUserId: req.user?.id
-          }
-        )
-
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable
-      }
+    return this.respondLegacy(
+      this.servicesService.workflow(
+        service,
+        body,
+        user,
+      ),
+      !isLegacy && this.isLegacyResponse(bodyOrRes)
+        ? bodyOrRes
+        : undefined,
     )
-
   }
-
 }
