@@ -122,7 +122,7 @@ export class ServicesService {
     const usulContext = await this.resolveUsulContext(usulId)
     const jenisLayananId = await this.resolveJenisLayananId(service)
 
-    return this.prisma!.$transaction(
+    return this.prisma.$transaction(
       async (tx) =>
         this.engine.execute(tx, {
           usulId,

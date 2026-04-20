@@ -10,7 +10,6 @@ import { ServicesDependencyService } from './service/services.dependency.service
 import { ServicesDocumentService } from './service/services.document.service'
 import { ServicesQueryService } from './service/services.query.service'
 import { ServicesService } from './service/services.service'
-import { ServicesSubmitService } from './service/services.submit.service'
 import { ServicesWorkflowGuard } from './service/services.workflow.guard'
 import { ServicesWorkflowService } from './service/services.workflow.service'
 
@@ -20,7 +19,6 @@ import { ServicesWorkflowService } from './service/services.workflow.service'
     CompletenessService,
     ServicesService,
     ServicesEngine,
-    ServicesSubmitService,
     ServicesWorkflowService,
     ServicesQueryService,
     ServicesDashboardService,
@@ -29,6 +27,7 @@ import { ServicesWorkflowService } from './service/services.workflow.service'
     ServicesWorkflowGuard,
   ],
   exports: [
+    CompletenessService,
     ServicesService,
     ServicesEngine,
     ServicesQueryService,
@@ -36,7 +35,6 @@ import { ServicesWorkflowService } from './service/services.workflow.service'
     ServicesWorkflowService,
     ServicesDependencyService,
     ServicesWorkflowGuard,
-    CompletenessService,
   ],
 })
 export class ServicesModule {}

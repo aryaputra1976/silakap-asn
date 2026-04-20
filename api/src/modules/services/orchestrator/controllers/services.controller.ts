@@ -26,6 +26,8 @@ type ServicesRequest = Request & {
   user?: OrchestratorUser
 }
 
+type ServiceMutationBody = Record<string, unknown>
+
 @Controller('services')
 export class ServicesController {
   constructor(
@@ -36,24 +38,30 @@ export class ServicesController {
 
   @Public()
   @Get(':service/dashboard')
-  async dashboard(@Param('service') service: string) {
+  async dashboard(
+    @Param('service') service: string,
+  ) {
     return this.dashboardService.getDashboard(service)
   }
 
   @Get(':service')
-  async list(@Param('service') service: string) {
+  async list(
+    @Param('service') service: string,
+  ) {
     return this.queryService.listByServiceCode(service)
   }
 
   @Get(':service/:id')
-  async getById(@Param('id') id: string) {
+  async getById(
+    @Param('id') id: string,
+  ) {
     return this.queryService.getById(BigInt(id))
   }
 
   @Post(':service')
   async create(
     @Param('service') service: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: ServiceMutationBody,
   ) {
     return this.servicesService.create(service, body)
   }
@@ -62,7 +70,7 @@ export class ServicesController {
   @UseGuards(JwtGuard)
   async submit(
     @Param('service') service: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: ServiceMutationBody,
     @Req() req: ServicesRequest,
   ) {
     return this.servicesService.submit(
@@ -76,7 +84,7 @@ export class ServicesController {
   @UseGuards(JwtGuard)
   async workflow(
     @Param('service') service: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: ServiceMutationBody,
     @Req() req: ServicesRequest,
   ) {
     return this.servicesService.workflow(
