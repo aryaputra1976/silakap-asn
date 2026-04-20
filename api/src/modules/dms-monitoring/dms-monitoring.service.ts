@@ -494,6 +494,8 @@ export class DmsMonitoringService {
       )
     }
 
+    this.validateSheetHeaders(sheet)
+
     const rows = XLSX.utils.sheet_to_json<RawExcelRow>(sheet, {
       defval: '',
       raw: false,
@@ -521,6 +523,32 @@ export class DmsMonitoringService {
     })
 
     return parsed
+  }
+
+  private validateSheetHeaders(sheet: XLSX.WorkSheet) {
+    const rows = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
+      header: 1,
+      defval: '',
+      blankrows: false,
+    })
+
+    const headerRow = Array.isArray(rows[0]) ? rows[0] : []
+    const normalizedHeaders = new Set(
+      headerRow
+        .map((cell) => this.normalizeHeaderName(cell))
+        .filter((header): header is string => Boolean(header)),
+    )
+
+    const requiredHeaders = ['nip', 'nama', 'unit kerja']
+    const missingHeaders = requiredHeaders.filter(
+      (header) => !normalizedHeaders.has(header),
+    )
+
+    if (missingHeaders.length > 0) {
+      throw new UnprocessableEntityException(
+        `Template Excel tidak valid. Header wajib yang belum ada: ${missingHeaders.join(', ')}`,
+      )
+    }
   }
 
   private parseRow(
@@ -554,11 +582,21 @@ export class DmsMonitoringService {
       }
     }
 
+    if (!namaSnapshot) {
+      return {
+        error: {
+          rowNumber,
+          nip,
+          message: 'Nama kosong',
+        },
+      }
+    }
+
     return {
       row: {
         rowNumber,
         nip,
-        namaSnapshot: namaSnapshot ?? '',
+        namaSnapshot,
         unitKerjaRaw,
         drh: this.toBooleanFlag(row.DRH),
         cpns: this.toBooleanFlag(row.CPNS),
@@ -637,6 +675,11 @@ export class DmsMonitoringService {
 
     const text = String(value).trim()
     return text.length > 0 ? text : null
+  }
+
+  private normalizeHeaderName(value: unknown) {
+    const normalized = this.normalizeText(value)
+    return normalized?.toLowerCase() ?? null
   }
 
   private toBooleanFlag(value: unknown) {

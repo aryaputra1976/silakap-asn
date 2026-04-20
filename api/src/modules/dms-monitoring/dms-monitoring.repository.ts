@@ -6,6 +6,86 @@ import { PrismaService } from '@/prisma/prisma.service'
 import { QueryDmsBatchesDto } from './dto/query-dms-batches.dto'
 import { QueryDmsSnapshotsDto } from './dto/query-dms-snapshots.dto'
 
+type DmsBatchRow = {
+  id: bigint
+  namaFile: string
+  unorId: bigint | null
+  unorNama: string | null
+  periodeLabel: string | null
+  status: string
+  totalRows: number
+  successRows: number
+  failedRows: number
+  catatan: string | null
+  importedBy: bigint | null
+  importedByUsername: string | null
+  importedAt: Date | null
+  createdAt: Date
+  updatedAt: Date
+}
+
+type DmsBatchImportContextRow = {
+  id: bigint
+  status: string
+  snapshotCount: bigint
+}
+
+type DmsBatchCountRow = {
+  total: bigint
+}
+
+type DmsBatchSummaryAggregateRow = {
+  totalAsn: bigint
+  matchedPegawai: bigint
+  matchedUnor: bigint
+  avgSkorArsip: number | null
+  latestSync: Date | null
+}
+
+type DmsKategoriCountRow = {
+  kategori: string | null
+  total: bigint
+}
+
+type DmsDokumenStatsRow = {
+  drh: bigint
+  cpns: bigint
+  d2np: bigint
+  spmt: bigint
+  pns: bigint
+}
+
+type DmsSnapshotRow = {
+  id: bigint
+  batchId: bigint
+  pegawaiId: bigint | null
+  nip: string
+  namaSnapshot: string
+  unorId: bigint | null
+  unorNama: string | null
+  unitKerjaRaw: string | null
+  drh: boolean
+  cpns: boolean
+  d2np: boolean
+  spmt: boolean
+  pns: boolean
+  skorArsip: Prisma.Decimal | number | null
+  kategoriKelengkapan: string | null
+  lastSync: Date | null
+  isMatchedPegawai: boolean
+  isMatchedUnor: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+type DmsDashboardByUnorRow = {
+  unorId: bigint | null
+  unorNama: string | null
+  totalAsn: bigint
+  avgSkorArsip: number | null
+  latestSync: Date | null
+}
+
 type CreateDmsBatchParams = {
   namaFile: string
   unorId?: string | number | bigint | null
@@ -86,9 +166,7 @@ export class DmsMonitoringRepository {
         )
       `)
 
-      const inserted = await tx.$queryRaw<
-        Array<Record<string, unknown>>
-      >(Prisma.sql`
+      const inserted = await tx.$queryRaw<DmsBatchRow[]>(Prisma.sql`
         SELECT
           b.id,
           b.nama_file AS namaFile,
@@ -101,11 +179,13 @@ export class DmsMonitoringRepository {
           b.failed_rows AS failedRows,
           b.catatan,
           b.imported_by AS importedBy,
+          usr.username AS importedByUsername,
           b.imported_at AS importedAt,
           b.created_at AS createdAt,
           b.updated_at AS updatedAt
         FROM silakap_dms_batch b
         LEFT JOIN ref_unor u ON u.id = b.unor_id
+        LEFT JOIN silakap_user usr ON usr.id = b.imported_by
         WHERE b.id = LAST_INSERT_ID()
         LIMIT 1
       `)
@@ -128,13 +208,8 @@ export class DmsMonitoringRepository {
   }
 
   async getBatchImportContext(batchId: string) {
-    const rows = await this.prisma.$queryRaw<
-      Array<{
-        id: bigint
-        status: string
-        snapshotCount: bigint
-      }>
-    >(Prisma.sql`
+    const rows = await this.prisma.$queryRaw<DmsBatchImportContextRow[]>(
+      Prisma.sql`
       SELECT
         b.id,
         b.status,
@@ -281,9 +356,7 @@ export class DmsMonitoringRepository {
     const offset = (page - 1) * limit
     const whereClause = this.buildBatchWhereClause(params)
 
-    const data = await this.prisma.$queryRaw<
-      Array<Record<string, unknown>>
-    >(Prisma.sql`
+    const data = await this.prisma.$queryRaw<DmsBatchRow[]>(Prisma.sql`
       SELECT
         b.id,
         b.nama_file AS namaFile,
@@ -296,20 +369,21 @@ export class DmsMonitoringRepository {
         b.failed_rows AS failedRows,
         b.catatan,
         b.imported_by AS importedBy,
+        usr.username AS importedByUsername,
         b.imported_at AS importedAt,
         b.created_at AS createdAt,
         b.updated_at AS updatedAt
       FROM silakap_dms_batch b
       LEFT JOIN ref_unor u ON u.id = b.unor_id
+      LEFT JOIN silakap_user usr ON usr.id = b.imported_by
       ${whereClause}
       ORDER BY b.id DESC
       LIMIT ${limit}
       OFFSET ${offset}
     `)
 
-    const totalRows = await this.prisma.$queryRaw<
-      Array<{ total: bigint }>
-    >(Prisma.sql`
+    const totalRows = await this.prisma.$queryRaw<DmsBatchCountRow[]>(
+      Prisma.sql`
       SELECT COUNT(*) AS total
       FROM silakap_dms_batch b
       ${whereClause}
@@ -329,9 +403,7 @@ export class DmsMonitoringRepository {
   }
 
   async getBatchById(id: string) {
-    const data = await this.prisma.$queryRaw<
-      Array<Record<string, unknown>>
-    >(Prisma.sql`
+    const data = await this.prisma.$queryRaw<DmsBatchRow[]>(Prisma.sql`
       SELECT
         b.id,
         b.nama_file AS namaFile,
@@ -344,11 +416,13 @@ export class DmsMonitoringRepository {
         b.failed_rows AS failedRows,
         b.catatan,
         b.imported_by AS importedBy,
+        usr.username AS importedByUsername,
         b.imported_at AS importedAt,
         b.created_at AS createdAt,
         b.updated_at AS updatedAt
       FROM silakap_dms_batch b
       LEFT JOIN ref_unor u ON u.id = b.unor_id
+      LEFT JOIN silakap_user usr ON usr.id = b.imported_by
       WHERE b.id = ${BigInt(id)}
       LIMIT 1
     `)
@@ -359,15 +433,9 @@ export class DmsMonitoringRepository {
   async getBatchSummary(id: string) {
     const batchId = BigInt(id)
 
-    const summary = await this.prisma.$queryRaw<
-      Array<{
-        totalAsn: bigint
-        matchedPegawai: bigint
-        matchedUnor: bigint
-        avgSkorArsip: number | null
-        latestSync: Date | null
-      }>
-    >(Prisma.sql`
+    const summary =
+      await this.prisma.$queryRaw<DmsBatchSummaryAggregateRow[]>(
+        Prisma.sql`
       SELECT
         COUNT(*) AS totalAsn,
         SUM(CASE WHEN s.is_matched_pegawai = 1 THEN 1 ELSE 0 END) AS matchedPegawai,
@@ -378,9 +446,9 @@ export class DmsMonitoringRepository {
       WHERE s.batch_id = ${batchId}
     `)
 
-    const byKategori = await this.prisma.$queryRaw<
-      Array<{ kategori: string | null; total: bigint }>
-    >(Prisma.sql`
+    const byKategori =
+      await this.prisma.$queryRaw<DmsKategoriCountRow[]>(
+        Prisma.sql`
       SELECT
         s.kategori_kelengkapan AS kategori,
         COUNT(*) AS total
@@ -390,15 +458,9 @@ export class DmsMonitoringRepository {
       ORDER BY total DESC
     `)
 
-    const dokumenStats = await this.prisma.$queryRaw<
-      Array<{
-        drh: bigint
-        cpns: bigint
-        d2np: bigint
-        spmt: bigint
-        pns: bigint
-      }>
-    >(Prisma.sql`
+    const dokumenStats =
+      await this.prisma.$queryRaw<DmsDokumenStatsRow[]>(
+        Prisma.sql`
       SELECT
         SUM(CASE WHEN s.drh = 1 THEN 1 ELSE 0 END) AS drh,
         SUM(CASE WHEN s.cpns = 1 THEN 1 ELSE 0 END) AS cpns,
@@ -434,9 +496,8 @@ export class DmsMonitoringRepository {
     const offset = (page - 1) * limit
     const whereClause = this.buildSnapshotWhereClause(params)
 
-    const data = await this.prisma.$queryRaw<
-      Array<Record<string, unknown>>
-    >(Prisma.sql`
+    const data = await this.prisma.$queryRaw<DmsSnapshotRow[]>(
+      Prisma.sql`
       SELECT
         s.id,
         s.batch_id AS batchId,
@@ -466,9 +527,8 @@ export class DmsMonitoringRepository {
       OFFSET ${offset}
     `)
 
-    const totalRows = await this.prisma.$queryRaw<
-      Array<{ total: bigint }>
-    >(Prisma.sql`
+    const totalRows = await this.prisma.$queryRaw<DmsBatchCountRow[]>(
+      Prisma.sql`
       SELECT COUNT(*) AS total
       FROM silakap_dms_snapshot s
       ${whereClause}
@@ -492,15 +552,9 @@ export class DmsMonitoringRepository {
       ? Prisma.sql`WHERE s.unor_id = ${BigInt(unorId)}`
       : Prisma.sql``
 
-    const summary = await this.prisma.$queryRaw<
-      Array<{
-        totalAsn: bigint
-        matchedPegawai: bigint
-        matchedUnor: bigint
-        avgSkorArsip: number | null
-        latestSync: Date | null
-      }>
-    >(Prisma.sql`
+    const summary =
+      await this.prisma.$queryRaw<DmsBatchSummaryAggregateRow[]>(
+        Prisma.sql`
       SELECT
         COUNT(*) AS totalAsn,
         SUM(CASE WHEN s.is_matched_pegawai = 1 THEN 1 ELSE 0 END) AS matchedPegawai,
@@ -511,9 +565,9 @@ export class DmsMonitoringRepository {
       ${whereClause}
     `)
 
-    const byKategori = await this.prisma.$queryRaw<
-      Array<{ kategori: string | null; total: bigint }>
-    >(Prisma.sql`
+    const byKategori =
+      await this.prisma.$queryRaw<DmsKategoriCountRow[]>(
+        Prisma.sql`
       SELECT
         s.kategori_kelengkapan AS kategori,
         COUNT(*) AS total
@@ -523,15 +577,9 @@ export class DmsMonitoringRepository {
       ORDER BY total DESC
     `)
 
-    const dokumenStats = await this.prisma.$queryRaw<
-      Array<{
-        drh: bigint
-        cpns: bigint
-        d2np: bigint
-        spmt: bigint
-        pns: bigint
-      }>
-    >(Prisma.sql`
+    const dokumenStats =
+      await this.prisma.$queryRaw<DmsDokumenStatsRow[]>(
+        Prisma.sql`
       SELECT
         SUM(CASE WHEN s.drh = 1 THEN 1 ELSE 0 END) AS drh,
         SUM(CASE WHEN s.cpns = 1 THEN 1 ELSE 0 END) AS cpns,
@@ -542,9 +590,9 @@ export class DmsMonitoringRepository {
       ${whereClause}
     `)
 
-    const byUnor = await this.prisma.$queryRaw<
-      Array<Record<string, unknown>>
-    >(Prisma.sql`
+    const byUnor =
+      await this.prisma.$queryRaw<DmsDashboardByUnorRow[]>(
+        Prisma.sql`
       SELECT
         s.unor_id AS unorId,
         u.nama AS unorNama,

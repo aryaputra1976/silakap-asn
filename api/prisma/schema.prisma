@@ -93,6 +93,7 @@ model SilakapUser {
   auditLogs     AuditLog[]
   authSession   AuthSession[]
   reviewedRegistrations SilakapRegistrasiUser[] @relation("RegistrationReviewer")
+  dmsImportedBatches     SilakapDmsBatch[]      @relation("DmsImportedByUser")
 
   @@map("silakap_user")
 }
@@ -1739,8 +1740,9 @@ model SilakapDmsBatch {
   createdAt   DateTime        @default(now()) @map("created_at")
   updatedAt   DateTime        @updatedAt @map("updated_at")
 
-  unor      RefUnor?             @relation(fields: [unorId], references: [id])
-  snapshots SilakapDmsSnapshot[]
+  unor           RefUnor?             @relation(fields: [unorId], references: [id])
+  importedByUser SilakapUser?         @relation("DmsImportedByUser", fields: [importedBy], references: [id])
+  snapshots      SilakapDmsSnapshot[]
 
   @@index([unorId])
   @@index([status])
