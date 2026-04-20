@@ -623,6 +623,7 @@ model RefUnor {
   // ===============================
   pegawaiUnor      SilakapPegawai[]        @relation("UnorPegawai")
   pegawaiUnorInduk SilakapPegawai[]        @relation("UnorIndukPegawai")
+  registrations    SilakapRegistrasiUser[]
   riwayatJabatan   SilakapRiwayatJabatan[]
   kecamatanId      BigInt?                 @map("kecamatan_id")
   kecamatan        RefKecamatan?           @relation(fields: [kecamatanId], references: [id])
@@ -867,6 +868,7 @@ model SilakapRegistrasiUser {
   passwordHash     String           @map("password_hash")
   email            String           @map("email") @db.VarChar(150)
   noHp             String           @map("no_hp") @db.VarChar(30)
+  selectedUnorId   BigInt?          @map("selected_unor_id")
   requestedRoleId  BigInt?          @map("requested_role_id")
   status           RegistrasiStatus @default(PENDING) @map("status")
   reviewNote       String?          @map("review_note") @db.Text
@@ -877,11 +879,13 @@ model SilakapRegistrasiUser {
   updatedAt        DateTime         @updatedAt @map("updated_at")
 
   pegawai        SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+  selectedUnor   RefUnor?       @relation(fields: [selectedUnorId], references: [id])
   requestedRole  SilakapRole?   @relation("RequestedRegistrationRole", fields: [requestedRoleId], references: [id])
   reviewedByUser SilakapUser?   @relation("RegistrationReviewer", fields: [reviewedByUserId], references: [id])
 
   @@index([status])
   @@index([submittedAt])
+  @@index([selectedUnorId])
   @@index([requestedRoleId])
   @@index([reviewedByUserId])
   @@map("silakap_registrasi_user")

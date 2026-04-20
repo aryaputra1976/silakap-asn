@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Transform } from 'class-transformer'
 import {
   IsEmail,
+  IsNotEmpty,
   IsString,
   Matches,
   MaxLength,
@@ -50,4 +51,15 @@ export class RegisterDto {
     message: 'No. HP hanya boleh berisi angka dan tanda +',
   })
   noHp!: string
+
+  @ApiProperty({ example: '13' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^\d+$/, {
+    message: 'Unit organisasi wajib dipilih',
+  })
+  unorId!: string
 }

@@ -1,9 +1,12 @@
 import http from "@/core/http/httpClient"
 import type { DashboardSummary } from "../types"
 
-export async function getDashboardSummary(): Promise<any> {
-
-  const res = await http.get("/statistics/asn")
+export async function getDashboardSummary(
+  unorId?: number,
+): Promise<any> {
+  const res = await http.get("/statistics/asn", {
+    params: unorId ? { unorId } : undefined,
+  })
 
   const stats = res.data
 

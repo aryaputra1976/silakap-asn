@@ -42,6 +42,14 @@ type SessionWithUserAndRoles = Prisma.AuthSessionGetPayload<{
   include: {
     user: {
       include: {
+        pegawai: {
+          include: {
+            riwayatJabatan: {
+              orderBy: { tmtJabatan: 'desc' }
+              take: 1
+            }
+          }
+        }
         roles: {
           include: {
             role: true
@@ -64,6 +72,15 @@ type RegistrationRecord = {
   pegawai_nama: string
   pegawai_nip: string
   unor_nama: string | null
+  selected_unor_id: bigint | null
+}
+
+type LegacyUserUsage = {
+  role_count: bigint
+  session_count: bigint
+  audit_count: bigint
+  notif_count: bigint
+  activity_count: bigint
 }
 
 @Injectable()
@@ -74,6 +91,20 @@ export class AuthService {
     private rbac: RbacService,
   ) {}
 
+  private resolveUnitKerjaId(
+    user:
+      | UserWithRoles
+      | SessionWithUserAndRoles['user'],
+  ) {
+    const jabatanAktif = user.pegawai?.riwayatJabatan?.[0]
+
+    return (
+      jabatanAktif?.unorId?.toString() ??
+      user.pegawai?.unorId?.toString() ??
+      null
+    )
+  }
+
   // =====================
   // REGISTER
   // =====================
@@ -83,11 +114,13 @@ export class AuthService {
     nip: string
     email: string
     noHp: string
+    unorId: string
   }) {
     const nip = input.nip.replace(/\s+/g, '').trim()
     const email = input.email.trim()
     const noHp = input.noHp.trim()
     const username = nip
+    const selectedUnorId = BigInt(input.unorId.trim())
 
     if (input.password !== input.confirmPassword) {
       throw new BusinessException(
@@ -97,14 +130,12 @@ export class AuthService {
 
     const existingUser = await this.prisma.silakapUser.findUnique({
       where: { username },
-      select: { id: true },
+      select: {
+        id: true,
+        isActive: true,
+        pegawaiId: true,
+      },
     })
-
-    if (existingUser) {
-      throw new ConflictException(
-        'Pegawai dengan NIP tersebut sudah memiliki akun aktif',
-      )
-    }
 
     const pegawai = await this.prisma.silakapPegawai.findFirst({
       where: {
@@ -116,6 +147,7 @@ export class AuthService {
         nama: true,
         noHp: true,
         email: true,
+        unorId: true,
         unor: {
           select: {
             nama: true,
@@ -128,9 +160,79 @@ export class AuthService {
       throw new BusinessException('NIP tidak ditemukan')
     }
 
+    const selectedUnor = await this.prisma.refUnor.findUnique({
+      where: { id: selectedUnorId },
+      select: { id: true, nama: true },
+    })
+
+    if (!selectedUnor) {
+      throw new BusinessException(
+        'Unit organisasi yang dipilih tidak ditemukan',
+      )
+    }
+
+    let legacyInactiveUserId: bigint | null = null
+
+    if (existingUser) {
+      if (existingUser.isActive) {
+        throw new ConflictException(
+          'Pegawai dengan NIP tersebut sudah memiliki akun aktif',
+        )
+      }
+
+      const [usage] = await this.prisma.$queryRaw<LegacyUserUsage[]>(
+        Prisma.sql`
+          SELECT
+            CAST(COUNT(DISTINCT ur.role_id) AS UNSIGNED) AS role_count,
+            CAST(COUNT(DISTINCT s.id) AS UNSIGNED) AS session_count,
+            CAST(COUNT(DISTINCT a.id) AS UNSIGNED) AS audit_count,
+            CAST(COUNT(DISTINCT n.id) AS UNSIGNED) AS notif_count,
+            CAST(COUNT(DISTINCT ac.id) AS UNSIGNED) AS activity_count
+          FROM silakap_user u
+          LEFT JOIN silakap_user_role ur
+            ON ur.user_id = u.id
+          LEFT JOIN auth_session s
+            ON s.user_id = u.id
+          LEFT JOIN audit_log a
+            ON a.user_id = u.id
+          LEFT JOIN silakap_notification n
+            ON n.user_id = u.id
+          LEFT JOIN silakap_activity ac
+            ON ac.user_id = u.id
+          WHERE u.id = ${existingUser.id}
+          GROUP BY u.id
+        `,
+      )
+
+      const hasUsage =
+        Number(usage?.session_count ?? 0n) > 0 ||
+        Number(usage?.audit_count ?? 0n) > 0 ||
+        Number(usage?.notif_count ?? 0n) > 0 ||
+        Number(usage?.activity_count ?? 0n) > 0
+
+      const linkedToDifferentPegawai =
+        existingUser.pegawaiId !== null &&
+        existingUser.pegawaiId !== pegawai.id
+
+      if (hasUsage || linkedToDifferentPegawai) {
+        throw new ConflictException(
+          'NIP ini masih terhubung ke akun legacy yang perlu dibersihkan admin sebelum registrasi ulang',
+        )
+      }
+
+      legacyInactiveUserId = existingUser.id
+    }
+
     const existingPegawaiUser =
       await this.prisma.silakapUser.findFirst({
-        where: { pegawaiId: pegawai.id },
+        where: legacyInactiveUserId
+          ? {
+              pegawaiId: pegawai.id,
+              NOT: {
+                id: legacyInactiveUserId,
+              },
+            }
+          : { pegawaiId: pegawai.id },
         select: { id: true },
       })
 
@@ -169,6 +271,18 @@ export class AuthService {
 
     const registration = await this.prisma.$transaction(
       async (tx) => {
+        if (legacyInactiveUserId) {
+          await tx.$executeRaw(Prisma.sql`
+            DELETE FROM silakap_user_role
+            WHERE user_id = ${legacyInactiveUserId}
+          `)
+
+          await tx.$executeRaw(Prisma.sql`
+            DELETE FROM silakap_user
+            WHERE id = ${legacyInactiveUserId}
+          `)
+        }
+
         if (existingRegistration) {
           await tx.$executeRaw(Prisma.sql`
             UPDATE silakap_registrasi_user
@@ -177,6 +291,7 @@ export class AuthService {
               password_hash = ${hashedPassword},
               email = ${email},
               no_hp = ${noHp},
+              selected_unor_id = ${selectedUnor.id},
               requested_role_id = ${defaultRole?.id ?? null},
               status = 'PENDING',
               review_note = NULL,
@@ -193,6 +308,7 @@ export class AuthService {
               password_hash,
               email,
               no_hp,
+              selected_unor_id,
               requested_role_id,
               status,
               submitted_at,
@@ -205,6 +321,7 @@ export class AuthService {
               ${hashedPassword},
               ${email},
               ${noHp},
+              ${selectedUnor.id},
               ${defaultRole?.id ?? null},
               'PENDING',
               NOW(3),
@@ -227,14 +344,15 @@ export class AuthService {
               role.name AS requested_role_name,
               peg.nama AS pegawai_nama,
               peg.nip AS pegawai_nip,
-              unor.nama AS unor_nama
+              selected_unor.nama AS unor_nama,
+              r.selected_unor_id
             FROM silakap_registrasi_user r
             INNER JOIN silakap_pegawai peg
               ON peg.id = r.pegawai_id
             LEFT JOIN silakap_role role
               ON role.id = r.requested_role_id
-            LEFT JOIN ref_unor unor
-              ON unor.id = peg.unor_id
+            LEFT JOIN ref_unor selected_unor
+              ON selected_unor.id = r.selected_unor_id
             WHERE r.pegawai_id = ${pegawai.id}
             LIMIT 1
           `,
@@ -265,6 +383,8 @@ export class AuthService {
           unor: registration.unor_nama,
           email: registration.email,
           noHp: registration.no_hp,
+          unorId:
+            registration.selected_unor_id?.toString() ?? null,
         },
       },
     }
@@ -284,6 +404,7 @@ export class AuthService {
         nama: true,
         email: true,
         noHp: true,
+        unorId: true,
         unor: {
           select: {
             nama: true,
@@ -303,6 +424,7 @@ export class AuthService {
       nama: pegawai.nama,
       email: '',
       noHp: '',
+      unorId: pegawai.unorId?.toString() ?? '',
       unorNama: pegawai.unor?.nama ?? '-',
     }
   }
@@ -339,9 +461,8 @@ export class AuthService {
 
     const roleNames = user.roles.map((r) => r.role.name)
 
-    const jabatanAktif = user.pegawai?.riwayatJabatan?.[0]
-
     const permissions = await this.rbac.getUserPermissions(user.id)
+    const unitKerjaId = this.resolveUnitKerjaId(user)
 
     const payload = {
       sub: user.id.toString(),
@@ -349,7 +470,7 @@ export class AuthService {
       name: user.username,
       role: roleNames[0] ?? null,
       roles: roleNames,
-      unitKerjaId: jabatanAktif?.unorId?.toString() ?? null,
+      unitKerjaId,
       permissions,
     }
 
@@ -380,7 +501,7 @@ export class AuthService {
         id: user.id.toString(),
         username: user.username,
         roles: roleNames,
-        unitKerjaId: payload.unitKerjaId,
+        unitKerjaId,
       },
       permissions,
     }
@@ -404,7 +525,17 @@ export class AuthService {
         where: { refreshHash, revoked: false },
         include: {
           user: {
-            include: { roles: { include: { role: true } } },
+            include: {
+              pegawai: {
+                include: {
+                  riwayatJabatan: {
+                    orderBy: { tmtJabatan: 'desc' },
+                    take: 1,
+                  },
+                },
+              },
+              roles: { include: { role: true } },
+            },
           },
         },
       })
@@ -442,6 +573,7 @@ export class AuthService {
     const permissions = await this.rbac.getUserPermissions(session.userId)
 
     const roleNames = session.user.roles.map((r) => r.role.name)
+    const unitKerjaId = this.resolveUnitKerjaId(session.user)
 
     const payload = {
       sub: session.user.id.toString(),
@@ -449,6 +581,7 @@ export class AuthService {
       name: session.user.username,
       role: roleNames[0] ?? null,
       roles: roleNames,
+      unitKerjaId,
       permissions,
     }
 

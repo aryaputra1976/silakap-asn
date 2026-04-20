@@ -14,6 +14,11 @@ export class RefUnorService {
     return normalizeBigInt(data)
   }
 
+  async findRegisterOptions() {
+    const data = await this.repo.findRegisterOptions()
+    return normalizeBigInt(data)
+  }
+
   /* ================= DETAIL ================= */
 
   async findById(id: number) {

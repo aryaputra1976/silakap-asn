@@ -10,8 +10,10 @@ import { AsnTable } from "../components/AsnTable"
 import { AsnPagination } from "../components/AsnPagination"
 import { UnitTree } from "../components/UnitTree"
 import ExplorerLayout from "../components/ExplorerLayout"
+import { useOperatorOpdScope } from "@/features/auth/hooks/useOperatorOpdScope"
 
 export default function ProfilPage() {
+  const scope = useOperatorOpdScope()
 
   const [search, setSearch] = useState("")
   const [status, setStatus] = useState("PNS")
@@ -36,9 +38,11 @@ export default function ProfilPage() {
     jenisJabatanId !== "" ||
     filterUnorId !== undefined
 
-  const effectiveUnorId = isGlobalFilterActive
-    ? filterUnorId
-    : treeUnorId
+  const effectiveUnorId = scope.isOperatorScoped
+    ? scope.unorId
+    : isGlobalFilterActive
+      ? filterUnorId
+      : treeUnorId
 
   /* ===============================
      LOAD DATA
@@ -69,12 +73,16 @@ export default function ProfilPage() {
   }
 
   const handleUnor = (v?: string | number) => {
+    if (scope.isOperatorScoped) return
+
     const id = v ? Number(v) : undefined
     setFilterUnorId(id)
     setPage(1)
   }
 
   const handleTreeSelect = (id: number, name?: string) => {
+    if (scope.isOperatorScoped) return
+
     setTreeUnorId(id)
     if (name) setUnitName(name)
     setPage(1)
@@ -85,16 +93,42 @@ export default function ProfilPage() {
     setPage(1)
   }
 
+  if (scope.loading) {
+    return (
+      <div className="container-fluid">
+        <div className="card p-10 text-center">
+          Menyiapkan data ASN OPD...
+        </div>
+      </div>
+    )
+  }
+
   return (
 
     <div className="container-fluid">
 
       <ExplorerLayout
         sidebar={
-          <UnitTree
-            selected={treeUnorId}
-            onSelect={handleTreeSelect}
-          />
+          scope.isOperatorScoped ? (
+            <div className="card">
+              <div className="card-body">
+                <div className="fw-bold text-gray-900 mb-2">
+                  Scope OPD
+                </div>
+                <div className="text-gray-700">
+                  {scope.unorName ?? "Unit kerja operator"}
+                </div>
+                <div className="text-muted fs-7 mt-2">
+                  Data ASN dibatasi ke OPD aktif Anda.
+                </div>
+              </div>
+            </div>
+          ) : (
+            <UnitTree
+              selected={treeUnorId}
+              onSelect={handleTreeSelect}
+            />
+          )
         }
       >
 
@@ -104,6 +138,8 @@ export default function ProfilPage() {
           search={search}
           jabatan={jenisJabatanId}
           unor={filterUnorId}
+          hideUnorFilter={scope.isOperatorScoped}
+          fixedUnorLabel={scope.unorName}
           onSearch={handleSearch}
           onJabatan={handleJabatan}
           onUnor={handleUnor}
@@ -128,7 +164,7 @@ export default function ProfilPage() {
 
         {/* ACTIVE UNIT */}
 
-        {!isGlobalFilterActive && treeUnorId && unitName && (
+        {!scope.isOperatorScoped && !isGlobalFilterActive && treeUnorId && unitName && (
 
           <div className="mb-3 text-muted small">
 
@@ -136,6 +172,12 @@ export default function ProfilPage() {
 
           </div>
 
+        )}
+
+        {scope.isOperatorScoped && scope.unorName && (
+          <div className="mb-3 text-muted small">
+            <b>OPD Aktif :</b> {scope.unorName}
+          </div>
         )}
 
         {/* TABLE */}

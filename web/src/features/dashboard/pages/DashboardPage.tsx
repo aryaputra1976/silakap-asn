@@ -1,6 +1,7 @@
 import { useDashboardSummary } from "../hooks/useDashboardSummary"
 import { SummaryWidget } from "../components/SummaryWidget"
 import { ActivityList } from "../components/ActivityList"
+import { useOperatorOpdScope } from "@/features/auth/hooks/useOperatorOpdScope"
 
 import GolonganChart from "@/features/statistics/components/charts/GolonganChart"
 import JabatanChart from "@/features/statistics/components/charts/JabatanChart"
@@ -8,8 +9,18 @@ import UsiaChart from "@/features/statistics/components/charts/UsiaChart"
 import OpdTable from "@/features/statistics/components/tables/OpdTable"
 
 export default function DashboardPage() {
+  const scope = useOperatorOpdScope()
+  const { data, isLoading, isError } = useDashboardSummary(scope.unorId)
 
-  const { data, isLoading, isError } = useDashboardSummary()
+  if (scope.loading) {
+    return (
+      <div className="container-xxl">
+        <div className="card p-10 text-center">
+          Menyiapkan dashboard OPD...
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -38,6 +49,15 @@ export default function DashboardPage() {
       <h1 className="mb-5">
         Dashboard SILAKAP
       </h1>
+
+      {scope.isOperatorScoped && (
+        <div className="alert alert-light-primary border border-primary border-dashed mb-5">
+          Menampilkan dashboard berdasarkan OPD aktif:
+          <span className="fw-bold ms-2">
+            {scope.unorName ?? "Unit kerja operator"}
+          </span>
+        </div>
+      )}
 
       {/* SUMMARY */}
       <SummaryWidget data={data} />
@@ -78,7 +98,7 @@ export default function DashboardPage() {
           <div className="card p-5">
 
             <h4 className="mb-4">
-              ASN per OPD
+              {scope.isOperatorScoped ? "ASN pada OPD Aktif" : "ASN per OPD"}
             </h4>
 
             <OpdTable data={data.organization.opd} />

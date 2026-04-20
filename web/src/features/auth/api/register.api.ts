@@ -3,6 +3,7 @@ import type {
   RegisterPegawaiLookup,
   RegisterRequest,
   RegisterResponse,
+  RegisterUnorOption,
 } from "../types"
 
 export async function register(
@@ -22,4 +23,10 @@ export async function getRegisterPegawai(
   return getRequest<RegisterPegawaiLookup>(
     `/auth/register/pegawai?${params.toString()}`,
   )
+}
+
+export async function getRegisterUnorOptions(): Promise<
+  RegisterUnorOption[]
+> {
+  return getRequest<RegisterUnorOption[]>("/ref/unor/register-options")
 }

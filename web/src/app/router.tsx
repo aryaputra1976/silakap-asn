@@ -122,6 +122,15 @@ export const router = createBrowserRouter([
           },
 
           {
+            path: "/asn/profil/:id",
+            element: (
+              <RouteGuard>
+                <ProfilDetailPage />
+              </RouteGuard>
+            ),
+          },
+
+          {
             path: "/statistics/workforce/:unorId",
             element: (
               <RouteGuard>

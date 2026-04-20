@@ -1,9 +1,16 @@
 import { PrismaService } from "@/prisma/prisma.service"
+import { Prisma } from "@prisma/client"
 
 export async function getAsnGolonganStats(
   prisma: PrismaService,
   where: any
 ) {
+  const unorIds: bigint[] | undefined = where?.unorId?.in
+
+  const unorFilter =
+    unorIds && unorIds.length > 0
+      ? Prisma.sql`AND p.unor_id IN (${Prisma.join(unorIds)})`
+      : Prisma.empty
 
   const rows = await prisma.$queryRaw<any[]>`
     SELECT
@@ -14,6 +21,7 @@ export async function getAsnGolonganStats(
       ON g.id = p.golongan_aktif_id
     WHERE p.deleted_at IS NULL
       AND p.status_aktif = 1
+      ${unorFilter}
     GROUP BY golongan
   `
 

@@ -1,7 +1,6 @@
-import React from 'react'
+import React, {useEffect, useState} from 'react'
 import clsx from 'clsx'
-import { useLocation } from 'react-router-dom'
-import {checkIsActive, KTIcon, WithChildren} from '../../../helpers'
+import {KTIcon, WithChildren} from '../../../helpers'
 
 type Props = {
   to: string
@@ -9,6 +8,7 @@ type Props = {
   icon?: string
   fontIcon?: string
   hasBullet?: boolean
+  isActive?: boolean
 }
 
 const AsideMenuItemWithSub: React.FC<Props & WithChildren> = ({
@@ -18,17 +18,23 @@ const AsideMenuItemWithSub: React.FC<Props & WithChildren> = ({
   icon,
   fontIcon,
   hasBullet,
+  isActive = false,
 }) => {
-  const {pathname} = useLocation()
-  const isActive = checkIsActive(pathname, to)
+  const [isOpen, setIsOpen] = useState(isActive)
+
+  useEffect(() => {
+    setIsOpen(isActive)
+  }, [isActive])
 
   return (
-      <div
-        className={clsx('menu-item menu-accordion', { 'here show': isActive })}
-        data-kt-menu-trigger='click'
-        data-kt-menu-placement='bottom-start'
+    <div
+      className={clsx('menu-item menu-accordion', { 'here show': isOpen })}
+    >
+      <button
+        type='button'
+        className='menu-link w-100 border-0 bg-transparent text-start'
+        onClick={() => setIsOpen((prev) => !prev)}
       >
-      <span className='menu-link'>
         {hasBullet && (
           <span className='menu-bullet'>
             <span className='bullet bullet-dot'></span>
@@ -42,8 +48,13 @@ const AsideMenuItemWithSub: React.FC<Props & WithChildren> = ({
         {fontIcon && <i className={clsx('bi fs-3', fontIcon)}></i>}
         <span className='menu-title'>{title}</span>
         <span className='menu-arrow'></span>
-      </span>
-      <div className={clsx('menu-sub menu-sub-accordion', {'menu-active-bg': isActive})}>
+      </button>
+      <div
+        className={clsx('menu-sub menu-sub-accordion', {
+          'menu-active-bg': isOpen,
+          show: isOpen,
+        })}
+      >
         {children}
       </div>
     </div>

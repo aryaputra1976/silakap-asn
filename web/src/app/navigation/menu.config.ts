@@ -43,39 +43,9 @@ export const menuConfig: MenuItemConfig[] = [
 
   {
     title: "Data ASN",
+    path: "/asn/profil",
     icon: "profile-user",
-    children: [
-      {
-        title: "Explorer ASN",
-        path: "/asn/explorer",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Profil ASN",
-        path: "/asn/profil",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Riwayat Jabatan",
-        path: "/asn/jabatan",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Riwayat Pangkat",
-        path: "/asn/pangkat",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Pendidikan",
-        path: "/asn/pendidikan",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Keluarga",
-        path: "/asn/keluarga",
-        permission: PERMISSIONS.ASN_READ,
-      },
-    ],
+    permission: PERMISSIONS.ASN_READ,
   },
 
   /* =====================================================

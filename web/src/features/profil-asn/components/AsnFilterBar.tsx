@@ -4,6 +4,8 @@ interface Props {
   search: string
   jabatan: string
   unor?: string | number
+  hideUnorFilter?: boolean
+  fixedUnorLabel?: string
   onSearch: (v: string) => void
   onJabatan: (v: string) => void
   onUnor: (v?: string | number) => void
@@ -13,6 +15,8 @@ export function AsnFilterBar({
   search,
   jabatan,
   unor,
+  hideUnorFilter = false,
+  fixedUnorLabel,
   onSearch,
   onJabatan,
   onUnor
@@ -63,23 +67,29 @@ export function AsnFilterBar({
 
           <div className="col-lg-4">
 
-            <select
-              className="form-select"
-              value={unor ?? ""}
-              onChange={(e) => {
-                const v = e.target.value
-                onUnor(v ? Number(v) : undefined)
-              }}
-            >
-              <option value="">Semua Unit Organisasi</option>
+            {hideUnorFilter ? (
+              <div className="form-control bg-light-primary text-primary fw-semibold">
+                {fixedUnorLabel ?? "Data dibatasi pada OPD aktif"}
+              </div>
+            ) : (
+              <select
+                className="form-select"
+                value={unor ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value
+                  onUnor(v ? Number(v) : undefined)
+                }}
+              >
+                <option value="">Semua Unit Organisasi</option>
 
-              {options.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.nama}
-                </option>
-              ))}
+                {options.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.nama}
+                  </option>
+                ))}
 
-            </select>
+              </select>
+            )}
 
           </div>
 

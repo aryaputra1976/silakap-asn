@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Query, ParseIntPipe } from "@nestjs/common"
 import { ApiTags } from "@nestjs/swagger"
+import { Public } from "@/core/decorators/public.decorator"
 import { RefUnorService } from "./ref-unor.service"
 
 @ApiTags("REF UNOR")
@@ -10,9 +11,16 @@ export class RefUnorController {
 
   /* ================= DROPDOWN ================= */
 
+  @Public()
   @Get("level2")
   findLevel2() {
     return this.service.findLevel2()
+  }
+
+  @Public()
+  @Get("register-options")
+  findRegisterOptions() {
+    return this.service.findRegisterOptions()
   }
 
   /* ================= FULL TREE ================= */

@@ -5,6 +5,8 @@ import { AsnService } from "./asn.service"
 import { QueryAsnDto } from "./dto/query-asn.dto"
 import { ParseBigIntPipe } from "@/core/pipes/parse-bigint.pipe"
 import { AsnDetailDto } from "./dto/asn-detail.dto"
+import { CurrentUser } from "@/core/decorators/current-user.decorator"
+import { AuthenticatedUser } from "@/modules/auth/strategies/jwt.strategy"
 
 @ApiTags("ASN")
 @Controller("asn")
@@ -15,25 +17,32 @@ export class AsnController {
   /* ================= LIST ================= */
 
   @Get()
-  findAll(@Query() query: QueryAsnDto) {
-    return this.service.findAll(query)
+  findAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query() query: QueryAsnDto,
+  ) {
+    return this.service.findAll(user, query)
   }
 
   /* ================= STATS ================= */
 
   @Get("stats")
   getStats(
+    @CurrentUser() user: AuthenticatedUser,
     @Query("unorId") unorId?: string
   ) {
-    return this.service.getStats(unorId)
+    return this.service.getStats(user, unorId)
   }
 
   /* ================= DETAIL ================= */
 
   @Get(":id(\\d+)")
   @ApiOkResponse({ type: AsnDetailDto })
-  findOne(@Param("id", ParseBigIntPipe) id: bigint) {
-    return this.service.findOne(id)
+  findOne(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param("id", ParseBigIntPipe) id: bigint,
+  ) {
+    return this.service.findOne(user, id)
   }
 
 }

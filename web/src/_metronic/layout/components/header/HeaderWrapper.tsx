@@ -1,7 +1,7 @@
 
 import clsx from 'clsx'
 import {Link} from 'react-router-dom'
-import {KTIcon, toAbsoluteUrl} from '../../../helpers'
+import {KTIcon} from '../../../helpers'
 import {useLayout} from '../../core'
 import {HeaderToolbar} from './HeaderToolbar'
 
@@ -20,9 +20,9 @@ export function HeaderWrapper() {
         {/* begin::Logo */}
         <Link to='/'>
           <img
-            alt='Logo'
-            src={toAbsoluteUrl('media/logos/default-dark.svg')}
-            className='h-25px h-lg-25px'
+            alt='Logo BKPSDM'
+            src='/logo-bkpsdm.svg'
+            className='h-35px h-lg-40px'
           />
         </Link>
         {/* end::Logo */}

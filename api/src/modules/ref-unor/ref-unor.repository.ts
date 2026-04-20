@@ -50,6 +50,48 @@ export class RefUnorRepository {
 
   }
 
+  /* ================= REGISTER OPTIONS ================= */
+
+  findRegisterOptions() {
+
+    return this.prisma.refUnor.findMany({
+
+      where: {
+        level: {
+          in: [2, 3]
+        },
+        isActive: true,
+        deletedAt: null
+      },
+
+      orderBy: [
+        {
+          level: "asc"
+        },
+        {
+          sortOrder: "asc"
+        },
+        {
+          nama: "asc"
+        }
+      ],
+
+      select: {
+        id: true,
+        nama: true,
+        level: true,
+        parent: {
+          select: {
+            id: true,
+            nama: true
+          }
+        }
+      }
+
+    })
+
+  }
+
   /* ================= ROOT ================= */
 
   async findRoot() {
@@ -252,6 +294,9 @@ export class RefUnorRepository {
     return this.prisma.refUnor.findMany({
 
       where: {
+        level: {
+          in: [2, 3]
+        },
         nama: {
           contains: q
         },

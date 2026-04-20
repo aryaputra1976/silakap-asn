@@ -68,7 +68,8 @@ export class AsnRepository {
     const skip = (page - 1) * limit
 
     const where: any = {
-      deletedAt: null
+      deletedAt: null,
+      statusAktif: true,
     }
 
     /* STATUS */
@@ -179,11 +180,32 @@ export class AsnRepository {
      DETAIL ASN
   ====================================================== */
 
-  async findById(id: bigint) {
+  async findById(
+    id: bigint,
+    scopedUnorId?: string,
+  ) {
+    let allowedUnorIds: bigint[] | undefined
 
-    return this.prisma.silakapPegawai.findUnique({
+    if (scopedUnorId) {
+      allowedUnorIds = await this.getDescendantUnorIds(
+        BigInt(scopedUnorId),
+      )
+    }
 
-      where: { id },
+    return this.prisma.silakapPegawai.findFirst({
+
+      where: {
+        id,
+        deletedAt: null,
+        statusAktif: true,
+        ...(allowedUnorIds
+          ? {
+              unorId: {
+                in: allowedUnorIds,
+              },
+            }
+          : {}),
+      },
 
       include: {
 
@@ -206,7 +228,8 @@ export class AsnRepository {
   async getStats(unorId?: string) {
 
     const where: any = {
-      deletedAt: null
+      deletedAt: null,
+      statusAktif: true,
     }
 
     if (unorId) {

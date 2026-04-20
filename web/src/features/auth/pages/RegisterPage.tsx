@@ -1,11 +1,24 @@
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import { Link } from "react-router-dom"
 import { useFormik } from "formik"
 import * as Yup from "yup"
 import clsx from "clsx"
 
-import { getRegisterPegawai, register } from "@/features/auth/api"
-import type { RegisterPegawaiLookup } from "../types"
+import {
+  getRegisterPegawai,
+  getRegisterUnorOptions,
+  register,
+} from "@/features/auth/api"
+import type {
+  RegisterPegawaiLookup,
+  RegisterUnorOption,
+} from "../types"
 
 const schema = Yup.object({
   nip: Yup.string()
@@ -15,6 +28,7 @@ const schema = Yup.object({
     .max(18, "NIP harus 18 digit")
     .required("NIP wajib"),
   email: Yup.string().email("Format email tidak valid").required("Email wajib"),
+  unorId: Yup.string().required("Unit organisasi wajib dipilih"),
   noHp: Yup.string()
     .matches(/^[0-9+]+$/, "No. HP hanya boleh berisi angka dan tanda +")
     .min(8, "No. HP minimal 8 digit")
@@ -122,6 +136,7 @@ function InputIcon({
 type FieldName =
   | "nip"
   | "email"
+  | "unorId"
   | "noHp"
   | "password"
   | "confirmPassword"
@@ -156,15 +171,23 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
   const [lookupLoading, setLookupLoading] = useState(false)
+  const [unorLoading, setUnorLoading] = useState(true)
+  const [unorOptions, setUnorOptions] = useState<RegisterUnorOption[]>(
+    [],
+  )
+  const [unorQuery, setUnorQuery] = useState("")
+  const [unorOpen, setUnorOpen] = useState(false)
   const [pegawaiInfo, setPegawaiInfo] = useState<RegisterPegawaiLookup | null>(
     null,
   )
   const lookupTimerRef = useRef<number | null>(null)
+  const unorComboboxRef = useRef<HTMLDivElement | null>(null)
 
   const formik = useFormik({
     initialValues: {
       nip: "",
       email: "",
+      unorId: "",
       noHp: "",
       password: "",
       confirmPassword: "",
@@ -178,6 +201,7 @@ export default function RegisterPage() {
         const response = await register({
           nip: values.nip.replace(/\s+/g, "").trim(),
           email: values.email.trim(),
+          unorId: values.unorId,
           noHp: values.noHp.trim(),
           password: values.password,
           confirmPassword: values.confirmPassword,
@@ -186,6 +210,8 @@ export default function RegisterPage() {
         resetForm()
         setStatus(undefined)
         setPegawaiInfo(null)
+        setUnorQuery("")
+        setUnorOpen(false)
         setSuccessMessage(response.message)
       } catch (error) {
         const message =
@@ -198,6 +224,87 @@ export default function RegisterPage() {
       }
     },
   })
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        unorComboboxRef.current &&
+        !unorComboboxRef.current.contains(event.target as Node)
+      ) {
+        setUnorOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  useEffect(() => {
+    let mounted = true
+
+    async function loadUnorOptions() {
+      setUnorLoading(true)
+
+      try {
+        const response = await getRegisterUnorOptions()
+
+        if (mounted) {
+          setUnorOptions(response)
+        }
+      } catch (error) {
+        if (mounted) {
+          formik.setStatus(
+            error instanceof Error
+              ? error.message
+              : "Gagal memuat daftar unit organisasi",
+          )
+        }
+      } finally {
+        if (mounted) {
+          setUnorLoading(false)
+        }
+      }
+    }
+
+    void loadUnorOptions()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const selectedUnor = useMemo(
+    () =>
+      unorOptions.find(
+        (option) => option.id === formik.values.unorId,
+      ) ?? null,
+    [formik.values.unorId, unorOptions],
+  )
+
+  const filteredUnorOptions = useMemo(() => {
+    const normalizedQuery = unorQuery.trim().toLowerCase()
+
+    if (!normalizedQuery) {
+      return unorOptions.slice(0, 30)
+    }
+
+    return unorOptions
+      .filter((option) => {
+        const label = option.nama.toLowerCase()
+        const parent = option.parent?.nama?.toLowerCase() ?? ""
+        const level = option.level ? `level ${option.level}` : ""
+
+        return (
+          label.includes(normalizedQuery) ||
+          parent.includes(normalizedQuery) ||
+          level.includes(normalizedQuery)
+        )
+      })
+      .slice(0, 30)
+  }, [unorOptions, unorQuery])
 
   useEffect(() => {
     const nip = formik.values.nip.replace(/\s+/g, "").trim()
@@ -218,6 +325,16 @@ export default function RegisterPage() {
         const result = await getRegisterPegawai(nip)
         setPegawaiInfo(result)
         formik.setFieldValue("nip", result.nip, false)
+        const matchedUnor = unorOptions.find(
+          (option) => option.id === result.unorId,
+        )
+
+        formik.setFieldValue(
+          "unorId",
+          matchedUnor?.id ?? "",
+          false,
+        )
+        setUnorQuery(matchedUnor?.nama ?? "")
         formik.setStatus(undefined)
       } catch (error) {
         setPegawaiInfo(null)
@@ -234,7 +351,13 @@ export default function RegisterPage() {
         window.clearTimeout(lookupTimerRef.current)
       }
     }
-  }, [formik.values.nip, formik.errors.nip])
+  }, [formik.values.nip, formik.errors.nip, unorOptions])
+
+  useEffect(() => {
+    if (selectedUnor && !unorOpen) {
+      setUnorQuery(selectedUnor.nama)
+    }
+  }, [selectedUnor, unorOpen])
 
   const hasError = (name: FieldName) =>
     Boolean(formik.touched[name] && formik.errors[name])
@@ -444,18 +567,160 @@ export default function RegisterPage() {
 
             <div className="col-md-6">
               <label
+                htmlFor="register-unor"
                 className="form-label fw-semibold ps-2"
                 style={{ color: "#607989" }}
               >
                 Unor Pegawai
               </label>
+              <div className="position-relative" ref={unorComboboxRef}>
+                <FieldShell error={hasError("unorId")}>
+                  <span className="me-3">
+                    <InputIcon type="card" />
+                  </span>
+                  <input
+                    id="register-unor"
+                    value={unorQuery}
+                    onChange={(event) => {
+                      setUnorQuery(event.target.value)
+                      setUnorOpen(true)
+                      formik.setFieldValue("unorId", "", false)
+                    }}
+                    onFocus={() => setUnorOpen(true)}
+                    onBlur={() => {
+                      formik.setFieldTouched("unorId", true, true)
+                    }}
+                    placeholder={
+                      unorLoading
+                        ? "Memuat unit organisasi..."
+                        : "Cari unit organisasi level 2 atau 3"
+                    }
+                    className="form-control border-0 bg-transparent shadow-none p-0"
+                    style={{ color: "#496271", fontSize: "1rem" }}
+                    disabled={unorLoading}
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-icon ms-2"
+                    onClick={() => setUnorOpen((prev) => !prev)}
+                    disabled={unorLoading}
+                    aria-label="Buka pilihan unit organisasi"
+                    style={{ color: "#7b8f9d" }}
+                  >
+                    <span
+                      style={{
+                        display: "inline-block",
+                        transform: unorOpen
+                          ? "rotate(180deg)"
+                          : "rotate(0deg)",
+                        transition: "transform 0.2s ease",
+                      }}
+                    >
+                      ▼
+                    </span>
+                  </button>
+                </FieldShell>
+
+                {unorOpen && !unorLoading && (
+                  <div
+                    className="position-absolute w-100 mt-2 rounded-4 overflow-hidden"
+                    style={{
+                      zIndex: 20,
+                      background:
+                        "linear-gradient(145deg, #edf3f8 0%, #dbe5ef 100%)",
+                      boxShadow:
+                        "-8px -8px 20px rgba(255,255,255,0.75), 12px 12px 24px rgba(166,182,199,0.26)",
+                      border: "1px solid rgba(192,206,220,0.55)",
+                    }}
+                  >
+                    <div
+                      className="px-4 py-3 border-bottom"
+                      style={{
+                        borderColor: "rgba(177,193,208,0.45)",
+                        color: "#6a8291",
+                        fontSize: "0.85rem",
+                      }}
+                    >
+                      Pilih unit organisasi level 2 atau 3
+                    </div>
+                    <div style={{ maxHeight: 280, overflowY: "auto" }}>
+                      {filteredUnorOptions.length === 0 ? (
+                        <div
+                          className="px-4 py-4"
+                          style={{ color: "#7b8f9d", fontSize: "0.95rem" }}
+                        >
+                          Tidak ada unit yang cocok dengan pencarian.
+                        </div>
+                      ) : (
+                        filteredUnorOptions.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className="w-100 text-start border-0 bg-transparent px-4 py-3"
+                            onMouseDown={(event) => event.preventDefault()}
+                            onClick={() => {
+                              formik.setFieldValue(
+                                "unorId",
+                                option.id,
+                                true,
+                              )
+                              setUnorQuery(option.nama)
+                              setUnorOpen(false)
+                              formik.setFieldTouched(
+                                "unorId",
+                                true,
+                                false,
+                              )
+                            }}
+                            style={{
+                              color: "#496271",
+                              borderBottom:
+                                "1px solid rgba(177,193,208,0.25)",
+                            }}
+                          >
+                            <div className="d-flex align-items-start justify-content-between gap-3">
+                              <div>
+                                <div className="fw-semibold">
+                                  {option.nama}
+                                </div>
+                                <div
+                                  className="mt-1"
+                                  style={{
+                                    color: "#7b8f9d",
+                                    fontSize: "0.82rem",
+                                  }}
+                                >
+                                  {option.parent?.nama
+                                    ? `Induk: ${option.parent.nama}`
+                                    : "Tanpa induk"}
+                                </div>
+                              </div>
+                              <span className="badge badge-light-primary">
+                                L{option.level ?? "-"}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div
-                className="rounded-pill px-4 py-2 d-flex align-items-center"
-                style={readOnlyFieldStyle}
+                className={clsx("small ps-3 pt-2", {
+                  "text-danger": hasError("unorId"),
+                })}
+                style={{
+                  color: hasError("unorId") ? undefined : "#7691a2",
+                  minHeight: 24,
+                }}
               >
-                <span style={{ fontSize: "0.98rem" }}>
-                  {pegawaiInfo?.unorNama ?? "-"}
-                </span>
+                {hasError("unorId")
+                  ? formik.errors.unorId
+                  : pegawaiInfo?.unorNama
+                    ? `Unit asal pegawai: ${pegawaiInfo.unorNama}`
+                    : "Cari dan pilih unit organisasi level 2 atau 3."}
               </div>
             </div>
 

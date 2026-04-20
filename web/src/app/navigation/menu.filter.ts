@@ -1,5 +1,6 @@
 import { useMemo } from "react"
 import { menuConfig, MenuItemConfig } from "./menu.config"
+import { useAuthStore } from "@/stores/auth.store"
 import { PERMISSIONS } from "@/core/rbac/permissions"
 
 function filterMenu(
@@ -30,11 +31,20 @@ function filterMenu(
 }
 
 export function useFilteredMenu() {
-
-  // sementara superadmin
-  const permissions = Object.values(PERMISSIONS) as string[]
+  const permissions = useAuthStore((state) => state.permissions)
+  const roles = useAuthStore((state) => state.user?.roles ?? [])
 
   return useMemo(() => {
-    return filterMenu(menuConfig, permissions)
-  }, [])
+    if (permissions.includes("*")) {
+      return menuConfig
+    }
+
+    const effectivePermissions = new Set(permissions)
+
+    if (roles.includes("OPERATOR")) {
+      effectivePermissions.add(PERMISSIONS.ASN_READ)
+    }
+
+    return filterMenu(menuConfig, Array.from(effectivePermissions))
+  }, [permissions, roles])
 }

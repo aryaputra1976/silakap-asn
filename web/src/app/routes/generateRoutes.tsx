@@ -61,6 +61,10 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
     () => import("@/features/workflow/monitoring/pages/MonitoringPage")
   ),
 
+  "/security/users": lazy(
+    () => import("@/features/security/users/pages/UserRegistrationPage")
+  ),
+
   /* =========================
      STATISTICS
   ========================= */

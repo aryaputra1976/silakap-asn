@@ -1,11 +1,18 @@
 import { PrismaService } from "@/prisma/prisma.service"
+import { Prisma } from "@prisma/client"
 
 export async function getAsnOpdStats(
   prisma: PrismaService,
   where: any
 ) {
+  const unorIds: bigint[] | undefined = where?.unorId?.in
 
-  const result = await prisma.$queryRawUnsafe<any[]>(`
+  const unorFilter =
+    unorIds && unorIds.length > 0
+      ? Prisma.sql`AND p.unor_id IN (${Prisma.join(unorIds)})`
+      : Prisma.empty
+
+  const result = await prisma.$queryRaw<any[]>`
 
 SELECT
     opd.id AS "unorId",
@@ -34,12 +41,13 @@ JOIN ref_unor opd
 WHERE
     p.deleted_at IS NULL
     AND p.status_aktif = true
+    ${unorFilter}
 
 GROUP BY opd.id, opd.nama
 
 ORDER BY total DESC
 
-`)
+`
 
   return result
 }

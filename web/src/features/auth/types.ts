@@ -24,6 +24,7 @@ export type RegisterRequest = {
   nip: string
   email: string
   noHp: string
+  unorId: string
 }
 
 export type RegisterPegawaiLookup = {
@@ -33,7 +34,18 @@ export type RegisterPegawaiLookup = {
   nama: string
   email: string
   noHp: string
+  unorId: string
   unorNama: string
+}
+
+export type RegisterUnorOption = {
+  id: string
+  nama: string
+  level: number | null
+  parent?: {
+    id: string
+    nama: string
+  } | null
 }
 
 export type LoginResponse = {
@@ -67,6 +79,7 @@ export type RegisterResponse = {
       unor: string | null
       email: string
       noHp: string
+      unorId: string | null
     } | null
   }
 }
