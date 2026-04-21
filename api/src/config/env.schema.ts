@@ -28,12 +28,12 @@ export const envSchema = z
     REDIS_PORT: z.coerce.number().int().positive().default(6379),
     REDIS_PASSWORD: z.string().optional(),
 
-    MINIO_ENDPOINT: z.string().min(1),
-    MINIO_PORT: z.coerce.number().int().positive(),
+    MINIO_ENDPOINT: z.string().optional(),
+    MINIO_PORT: z.coerce.number().int().positive().default(9000),
     MINIO_USE_SSL: booleanish.default(false),
-    MINIO_ACCESS_KEY: z.string().min(1),
-    MINIO_SECRET_KEY: z.string().min(1),
-    MINIO_BUCKET: z.string().min(1),
+    MINIO_ACCESS_KEY: z.string().optional(),
+    MINIO_SECRET_KEY: z.string().optional(),
+    MINIO_BUCKET: z.string().min(1).default('silakap'),
 
     SINGLE_TENANT: booleanish.default(true),
     DEFAULT_TENANT: z.string().min(1).default('default'),
@@ -44,47 +44,76 @@ export const envSchema = z
     COOKIE_SAME_SITE: z.enum(['strict', 'lax', 'none']).default('strict'),
   })
   .superRefine((env, ctx) => {
-    if (env.APP_ENV !== 'production') {
-      return
+    if (env.APP_ENV === 'production') {
+      if (!env.FORCE_HTTPS) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['FORCE_HTTPS'],
+          message: 'FORCE_HTTPS harus true di production',
+        })
+      }
+
+      if (!env.REDIS_ENABLED) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['REDIS_ENABLED'],
+          message: 'REDIS_ENABLED harus true di production',
+        })
+      }
+
+      if (env.CORS_ORIGIN.includes('*')) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['CORS_ORIGIN'],
+          message: 'CORS_ORIGIN wildcard tidak diizinkan di production',
+        })
+      }
+
+      if (!env.COOKIE_SECURE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['COOKIE_SECURE'],
+          message: 'COOKIE_SECURE harus true di production',
+        })
+      }
+
+      if (env.COOKIE_SAME_SITE === 'none' && !env.COOKIE_SECURE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['COOKIE_SAME_SITE'],
+          message: 'COOKIE_SAME_SITE=none membutuhkan COOKIE_SECURE=true',
+        })
+      }
     }
 
-    if (!env.FORCE_HTTPS) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['FORCE_HTTPS'],
-        message: 'FORCE_HTTPS harus true di production',
-      })
-    }
+    const hasAnyMinioValue =
+      Boolean(env.MINIO_ENDPOINT) ||
+      Boolean(env.MINIO_ACCESS_KEY) ||
+      Boolean(env.MINIO_SECRET_KEY)
 
-    if (!env.REDIS_ENABLED) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['REDIS_ENABLED'],
-        message: 'REDIS_ENABLED harus true di production',
-      })
-    }
+    if (hasAnyMinioValue) {
+      if (!env.MINIO_ENDPOINT) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MINIO_ENDPOINT'],
+          message: 'MINIO_ENDPOINT wajib diisi jika konfigurasi MinIO digunakan',
+        })
+      }
 
-    if (env.CORS_ORIGIN.includes('*')) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['CORS_ORIGIN'],
-        message: 'CORS_ORIGIN wildcard tidak diizinkan di production',
-      })
-    }
+      if (!env.MINIO_ACCESS_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MINIO_ACCESS_KEY'],
+          message: 'MINIO_ACCESS_KEY wajib diisi jika konfigurasi MinIO digunakan',
+        })
+      }
 
-    if (!env.COOKIE_SECURE) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['COOKIE_SECURE'],
-        message: 'COOKIE_SECURE harus true di production',
-      })
-    }
-
-    if (env.COOKIE_SAME_SITE === 'none' && !env.COOKIE_SECURE) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['COOKIE_SAME_SITE'],
-        message: 'COOKIE_SAME_SITE=none membutuhkan COOKIE_SECURE=true',
-      })
+      if (!env.MINIO_SECRET_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['MINIO_SECRET_KEY'],
+          message: 'MINIO_SECRET_KEY wajib diisi jika konfigurasi MinIO digunakan',
+        })
+      }
     }
   })
