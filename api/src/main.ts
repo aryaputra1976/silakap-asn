@@ -37,6 +37,7 @@ async function bootstrap() {
 
  app.enableShutdownHooks()
  app.set('trust proxy', trustProxy)
+ app.setGlobalPrefix('api')
 
  app.use(
  helmet({
