@@ -1,9 +1,19 @@
 import { useMemo, useState } from "react"
-import { Button, Col, Container, Row, Spinner } from "react-bootstrap"
+import {
+  Button,
+  Card,
+  Col,
+  Container,
+  Pagination,
+  Row,
+  Spinner,
+} from "react-bootstrap"
+import { useAuthStore } from "@/stores/auth.store"
 
 import type {
   DmsBatchFilters,
   DmsImportResult,
+  DmsSnapshotFilters,
 } from "@/features/dms-monitoring"
 
 import {
@@ -16,21 +26,37 @@ import {
   DmsDashboardSummaryCards,
   DmsImportDialog,
   DmsImportResultPanel,
+  DmsSnapshotFilterBar,
+  DmsSnapshotTable,
   useCreateDmsBatch,
   useDmsBatches,
   useDmsDashboard,
+  useDmsSnapshots,
   useImportDmsBatch,
 } from "@/features/dms-monitoring"
 
 import {
   DMS_BATCH_LIMIT_OPTIONS,
   DMS_DEFAULT_BATCH_FILTERS,
+  DMS_DEFAULT_SNAPSHOT_FILTERS,
+  DMS_KATEGORI_OPTIONS,
+  DMS_SNAPSHOT_LIMIT_OPTIONS,
   DMS_STATUS_OPTIONS,
 } from "@/features/dms-monitoring/utils"
 
 export default function DmsMonitoringPage() {
+  const roles = useAuthStore((state) => state.user?.roles ?? [])
+  const isOperatorView =
+    roles.includes("OPERATOR") &&
+    !roles.includes("SUPER_ADMIN") &&
+    !roles.includes("ADMIN_BKPSDM")
+
   const [filters, setFilters] = useState<DmsBatchFilters>({
     ...DMS_DEFAULT_BATCH_FILTERS,
+  })
+  const [snapshotFilters, setSnapshotFilters] = useState<DmsSnapshotFilters>({
+    ...DMS_DEFAULT_SNAPSHOT_FILTERS,
+    limit: 10,
   })
 
   const [showCreateDialog, setShowCreateDialog] = useState(false)
@@ -43,6 +69,7 @@ export default function DmsMonitoringPage() {
   const dashboardQuery = useDmsDashboard(
     filters.unorId ? { unorId: filters.unorId } : {},
   )
+  const snapshotsQuery = useDmsSnapshots(snapshotFilters)
 
   const createBatchMutation = useCreateDmsBatch()
   const importBatchMutation = useImportDmsBatch()
@@ -51,6 +78,163 @@ export default function DmsMonitoringPage() {
     () => batchesQuery.data?.data ?? [],
     [batchesQuery.data?.data],
   )
+  const operatorScopeName = useMemo(() => {
+    const topUnit = dashboardQuery.data?.byUnor?.[0]?.unorNama
+    const snapshotUnit = snapshotsQuery.data?.data?.[0]?.unorNama
+
+    return topUnit ?? snapshotUnit ?? "OPD aktif"
+  }, [dashboardQuery.data?.byUnor, snapshotsQuery.data?.data])
+  const snapshotPagination = snapshotsQuery.data?.pagination
+  const operatorPageItems = useMemo(() => {
+    if (!snapshotPagination || snapshotPagination.totalPages <= 1) {
+      return []
+    }
+
+    const currentPage = snapshotPagination.page
+    const totalPages = snapshotPagination.totalPages
+    const startPage = Math.max(currentPage - 2, 1)
+    const endPage = Math.min(startPage + 4, totalPages)
+    const normalizedStart = Math.max(endPage - 4, 1)
+
+    return Array.from(
+      { length: endPage - normalizedStart + 1 },
+      (_, index) => normalizedStart + index,
+    )
+  }, [snapshotPagination])
+
+  if (isOperatorView) {
+    return (
+      <Container fluid className="py-4">
+        <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+          <div>
+            <h3 className="mb-1">DMS Monitoring OPD</h3>
+            <p className="text-muted mb-0">
+              Rekap kelengkapan dokumen ASN pada unit kerja aktif dalam format operasional.
+            </p>
+          </div>
+        </div>
+
+        <div className="border rounded-3 bg-white shadow-sm px-4 py-3 mb-4">
+          <div className="fw-semibold text-dark mb-1">
+            Unit kerja aktif: {operatorScopeName}
+          </div>
+          <div className="text-muted small">
+            Tampilan operator difokuskan pada tabel rekap ASN per OPD, bukan dashboard manajerial.
+          </div>
+        </div>
+
+        <DmsSnapshotFilterBar
+          filters={snapshotFilters}
+          limitOptions={DMS_SNAPSHOT_LIMIT_OPTIONS}
+          kategoriOptions={DMS_KATEGORI_OPTIONS}
+          operatorMode
+          onChange={(next) =>
+            setSnapshotFilters({
+              batchId: next.batchId ?? "",
+              page: next.page ?? 1,
+              limit: next.limit ?? 10,
+              unorId: next.unorId ?? "",
+              kategori: next.kategori ?? "",
+              nip: next.nip ?? "",
+            })
+          }
+          onReset={() =>
+            setSnapshotFilters({
+              ...DMS_DEFAULT_SNAPSHOT_FILTERS,
+              limit: 10,
+            })
+          }
+        />
+
+        <DmsSnapshotTable
+          items={snapshotsQuery.data?.data ?? []}
+          isLoading={snapshotsQuery.isLoading}
+          operatorMode
+        />
+
+        {!snapshotsQuery.isLoading && snapshotPagination ? (
+          <Card className="border-0 shadow-sm mt-4">
+            <Card.Body className="d-flex flex-wrap align-items-center justify-content-between gap-3">
+              <div className="text-muted small">
+                Menampilkan{" "}
+                {snapshotPagination.total === 0
+                  ? 0
+                  : (snapshotPagination.page - 1) * snapshotPagination.limit + 1}
+                {" - "}
+                {Math.min(
+                  snapshotPagination.page * snapshotPagination.limit,
+                  snapshotPagination.total,
+                )}{" "}
+                dari {snapshotPagination.total} data
+                {" · "}
+                Halaman {snapshotPagination.page} dari {snapshotPagination.totalPages}
+              </div>
+
+              <Pagination className="mb-0">
+                <Pagination.First
+                  disabled={snapshotPagination.page <= 1}
+                  onClick={() =>
+                    setSnapshotFilters((current) => ({
+                      ...current,
+                      page: 1,
+                    }))
+                  }
+                />
+                <Pagination.Prev
+                  disabled={snapshotPagination.page <= 1}
+                  onClick={() =>
+                    setSnapshotFilters((current) => ({
+                      ...current,
+                      page: Math.max((current.page ?? 1) - 1, 1),
+                    }))
+                  }
+                />
+                {operatorPageItems.map((page) => (
+                  <Pagination.Item
+                    key={page}
+                    active={page === snapshotPagination.page}
+                    onClick={() =>
+                      setSnapshotFilters((current) => ({
+                        ...current,
+                        page,
+                      }))
+                    }
+                  >
+                    {page}
+                  </Pagination.Item>
+                ))}
+                <Pagination.Next
+                  disabled={
+                    snapshotPagination.page >= snapshotPagination.totalPages
+                  }
+                  onClick={() =>
+                    setSnapshotFilters((current) => ({
+                      ...current,
+                      page: Math.min(
+                        (current.page ?? 1) + 1,
+                        snapshotPagination.totalPages,
+                      ),
+                    }))
+                  }
+                />
+                <Pagination.Last
+                  disabled={
+                    snapshotPagination.page >= snapshotPagination.totalPages
+                  }
+                  onClick={() =>
+                    setSnapshotFilters((current) => ({
+                      ...current,
+                      page: snapshotPagination.totalPages,
+                    }))
+                  }
+                />
+              </Pagination>
+            </Card.Body>
+          </Card>
+        ) : null}
+      </Container>
+    )
+  }
 
   return (
     <Container fluid className="py-4">
@@ -124,10 +308,10 @@ export default function DmsMonitoringPage() {
       </Row>
 
       {/* FILTER */}
-<DmsBatchFilterBar
-  filters={filters}
-  statusOptions={DMS_STATUS_OPTIONS}
-  limitOptions={DMS_BATCH_LIMIT_OPTIONS}
+      <DmsBatchFilterBar
+        filters={filters}
+        statusOptions={DMS_STATUS_OPTIONS}
+        limitOptions={DMS_BATCH_LIMIT_OPTIONS}
   onChange={(next) => setFilters(next)}
   onReset={() =>
     setFilters({

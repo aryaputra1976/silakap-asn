@@ -31,7 +31,7 @@ export class QueryDmsSnapshotsDto {
   @IsOptional()
   @Transform(emptyToUndefined)
   @IsString()
-  @MaxLength(30)
+  @MaxLength(100)
   nip?: string
 
   @IsOptional()

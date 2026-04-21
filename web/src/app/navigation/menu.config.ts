@@ -6,6 +6,7 @@ export interface MenuItemConfig {
   path?: string
   icon?: string
   permission?: Permission
+  roles?: string[]
   children?: MenuItemConfig[]
 }
 
@@ -147,6 +148,7 @@ export const menuConfig: MenuItemConfig[] = [
   {
     title: "Proses & Persetujuan",
     icon: "abstract-26",
+    roles: ["SUPER_ADMIN", "ADMIN_BKPSDM", "VERIFIKATOR", "PPK"],
     children: [
       {
         title: "Antrian Verifikasi",
@@ -178,37 +180,54 @@ export const menuConfig: MenuItemConfig[] = [
   },
 
   /* =====================================================
+   * DMS OPERATOR
+   * ===================================================== */
+
+  {
+    title: "DMS Monitoring",
+    path: "/dms-monitoring",
+    icon: "abstract-45",
+    roles: ["OPERATOR"],
+  },
+
+  /* =====================================================
    * INTEGRASI SIASN
    * ===================================================== */
 
   {
     title: "Integrasi SIASN",
     icon: "arrows-loop",
+    roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
     children: [
       {
         title: "Import Data ASN",
         path: "/integrasi/import-asn",
         permission: PERMISSIONS.SIASN_SYNC_VIEW,
+        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
       },
       {
         title: "Import Referensi Jabatan",
         path: "/integrasi/import-jabatan",
         permission: PERMISSIONS.SIASN_SYNC_VIEW,
+        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
       },
       {
         title: "Import Referensi UNOR",
         path: "/integrasi/import-unor",
         permission: PERMISSIONS.SIASN_SYNC_VIEW,
+        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
       },
       {
         title: "Log Import",
         path: "/integrasi/log",
         permission: PERMISSIONS.SIASN_SYNC_VIEW,
+        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
       },
       {
         title: "DMS Monitoring",
         path: "/dms-monitoring",
         permission: PERMISSIONS.SIASN_SYNC_VIEW,
+        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
       },
     ],
   },
@@ -220,6 +239,7 @@ export const menuConfig: MenuItemConfig[] = [
   {
     title: "Keamanan & Audit",
     icon: "shield-tick",
+    roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
     children: [
       {
         title: "Manajemen Pengguna",
@@ -246,6 +266,7 @@ export const menuConfig: MenuItemConfig[] = [
   {
     title: "Master Referensi",
     icon: "setting-2",
+    roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
     children: [
       {
         title: "Agama",

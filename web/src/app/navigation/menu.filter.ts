@@ -5,18 +5,28 @@ import { PERMISSIONS } from "@/core/rbac/permissions"
 
 function filterMenu(
   items: MenuItemConfig[],
-  permissions: string[]
+  permissions: string[],
+  roles: string[]
 ): MenuItemConfig[] {
-
   return items
     .map((item) => {
+      const hasRole =
+        !item.roles ||
+        item.roles.length === 0 ||
+        item.roles.some((role) => roles.includes(role))
+
+      if (!hasRole) {
+        return null
+      }
 
       const children = item.children
-        ? filterMenu(item.children, permissions)
+        ? filterMenu(item.children, permissions, roles)
         : undefined
 
       const hasPermission =
-        !item.permission || permissions.includes(item.permission)
+        !item.permission ||
+        permissions.includes("*") ||
+        permissions.includes(item.permission)
 
       if (hasPermission || (children && children.length > 0)) {
         return {
@@ -35,16 +45,20 @@ export function useFilteredMenu() {
   const roles = useAuthStore((state) => state.user?.roles ?? [])
 
   return useMemo(() => {
-    if (permissions.includes("*")) {
-      return menuConfig
-    }
-
     const effectivePermissions = new Set(permissions)
+
+    if (permissions.includes("*")) {
+      effectivePermissions.add("*")
+    }
 
     if (roles.includes("OPERATOR")) {
       effectivePermissions.add(PERMISSIONS.ASN_READ)
     }
 
-    return filterMenu(menuConfig, Array.from(effectivePermissions))
+    return filterMenu(
+      menuConfig,
+      Array.from(effectivePermissions),
+      roles
+    )
   }, [permissions, roles])
 }

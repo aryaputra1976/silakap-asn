@@ -543,7 +543,11 @@ export class DmsMonitoringRepository {
       FROM silakap_dms_snapshot s
       LEFT JOIN ref_unor u ON u.id = s.unor_id
       ${whereClause}
-      ORDER BY s.id DESC
+      ORDER BY
+        CASE WHEN s.skor_arsip IS NULL THEN 1 ELSE 0 END ASC,
+        s.skor_arsip ASC,
+        s.nama_snapshot ASC,
+        s.id ASC
       LIMIT ${limit}
       OFFSET ${offset}
     `)
@@ -716,7 +720,7 @@ export class DmsMonitoringRepository {
 
     if (params.nip) {
       conditions.push(
-        Prisma.sql`s.nip LIKE ${`%${params.nip}%`}`,
+        Prisma.sql`(s.nip LIKE ${`%${params.nip}%`} OR s.nama_snapshot LIKE ${`%${params.nip}%`})`,
       )
     }
 

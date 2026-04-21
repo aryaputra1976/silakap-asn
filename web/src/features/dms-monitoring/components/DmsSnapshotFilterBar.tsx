@@ -5,6 +5,8 @@ import type { DmsSnapshotFilters, DmsOptionItem } from "../types"
 type Props = {
   filters: DmsSnapshotFilters
   limitOptions: DmsOptionItem[]
+  kategoriOptions: DmsOptionItem[]
+  operatorMode?: boolean
   onChange: (next: DmsSnapshotFilters) => void
   onReset: () => void
 }
@@ -12,6 +14,8 @@ type Props = {
 export function DmsSnapshotFilterBar({
   filters,
   limitOptions,
+  kategoriOptions,
+  operatorMode = false,
   onChange,
   onReset,
 }: Props) {
@@ -19,12 +23,12 @@ export function DmsSnapshotFilterBar({
     <Card className="border-0 shadow-sm mb-4">
       <Card.Body>
         <Row className="g-3 align-items-end">
-          <Col md={3}>
+          <Col md={operatorMode ? 4 : 3}>
             <Form.Group>
-              <Form.Label>NIP</Form.Label>
+              <Form.Label>Pencarian ASN</Form.Label>
               <Form.Control
                 type="text"
-                placeholder="Cari NIP"
+                placeholder="Cari NIP atau Nama"
                 value={filters.nip ?? ""}
                 onChange={(event) =>
                   onChange({
@@ -37,12 +41,10 @@ export function DmsSnapshotFilterBar({
             </Form.Group>
           </Col>
 
-          <Col md={3}>
+          <Col md={operatorMode ? 4 : 3}>
             <Form.Group>
               <Form.Label>Kategori</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Kategori kelengkapan"
+              <Form.Select
                 value={filters.kategori ?? ""}
                 onChange={(event) =>
                   onChange({
@@ -51,47 +53,57 @@ export function DmsSnapshotFilterBar({
                     kategori: event.target.value,
                   })
                 }
-              />
+              >
+                {kategoriOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Form.Select>
             </Form.Group>
           </Col>
 
-          <Col md={2}>
-            <Form.Group>
-              <Form.Label>ID Batch</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="ID batch"
-                value={filters.batchId ?? ""}
-                onChange={(event) =>
-                  onChange({
-                    ...filters,
-                    page: 1,
-                    batchId: event.target.value,
-                  })
-                }
-              />
-            </Form.Group>
-          </Col>
+          {!operatorMode ? (
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label>ID Batch</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="ID batch"
+                  value={filters.batchId ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      ...filters,
+                      page: 1,
+                      batchId: event.target.value,
+                    })
+                  }
+                />
+              </Form.Group>
+            </Col>
+          ) : null}
 
-          <Col md={2}>
-            <Form.Group>
-              <Form.Label>ID Unit</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="ID unit"
-                value={filters.unorId ?? ""}
-                onChange={(event) =>
-                  onChange({
-                    ...filters,
-                    page: 1,
-                    unorId: event.target.value,
-                  })
-                }
-              />
-            </Form.Group>
-          </Col>
+          {!operatorMode ? (
+            <Col md={2}>
+              <Form.Group>
+                <Form.Label>ID Unit</Form.Label>
+                <Form.Control
+                  type="text"
+                  placeholder="ID unit"
+                  value={filters.unorId ?? ""}
+                  onChange={(event) =>
+                    onChange({
+                      ...filters,
+                      page: 1,
+                      unorId: event.target.value,
+                    })
+                  }
+                />
+              </Form.Group>
+            </Col>
+          ) : null}
 
-          <Col md={2}>
+          <Col md={operatorMode ? 2 : 2}>
             <Form.Group>
               <Form.Label>Limit</Form.Label>
               <Form.Select
@@ -113,8 +125,10 @@ export function DmsSnapshotFilterBar({
             </Form.Group>
           </Col>
 
-          <Col xs={12}>
-            <div className="d-flex justify-content-end">
+          <Col md={operatorMode ? 2 : 12}>
+            <div
+              className={`d-flex ${operatorMode ? "justify-content-md-end" : "justify-content-end"}`}
+            >
               <Button variant="outline-secondary" onClick={onReset}>
                 Reset Filter
               </Button>

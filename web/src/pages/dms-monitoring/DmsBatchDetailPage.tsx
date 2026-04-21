@@ -15,6 +15,7 @@ import {
 } from "@/features/dms-monitoring"
 import {
   DMS_DEFAULT_SNAPSHOT_FILTERS,
+  DMS_KATEGORI_OPTIONS,
   DMS_SNAPSHOT_LIMIT_OPTIONS,
   formatDmsDateTime,
 } from "@/features/dms-monitoring/utils"
@@ -129,6 +130,7 @@ export default function DmsBatchDetailPage() {
       <DmsSnapshotFilterBar
         filters={filters}
         limitOptions={DMS_SNAPSHOT_LIMIT_OPTIONS}
+        kategoriOptions={DMS_KATEGORI_OPTIONS}
         onChange={(next) =>
           setFilters({
             batchId: next.batchId ?? batchId,
