@@ -49,19 +49,30 @@ async function bootstrap() {
 
  app.use(cookieParser())
 
+ app.use((req: Request, _res: Response, next: NextFunction) => {
+ if (req.method === 'OPTIONS') {
+ return next()
+ }
+
+ next()
+ })
+
  app.enableCors({
  origin: (origin, callback) => {
+ const allowedOrigins = [
+ 'https://silakap.bkpsdm-tolis.or.id',
+ ...corsOrigins,
+ ].map((item) => item.trim())
+
  if (!origin) {
  return callback(null, true)
  }
 
- const normalizedOrigin = origin.trim()
-
- if (corsOrigins.includes(normalizedOrigin)) {
+ if (allowedOrigins.includes(origin.trim())) {
  return callback(null, true)
  }
 
- return callback(new Error(`Origin ${normalizedOrigin} not allowed by CORS`))
+ return callback(null, false)
  },
  credentials: true,
  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -89,6 +100,10 @@ async function bootstrap() {
 
  if (forceHttps) {
  app.use((req: Request, res: Response, next: NextFunction) => {
+ if (req.method === 'OPTIONS') {
+ return next()
+ }
+
  if (req.headers['x-forwarded-proto'] !== 'https') {
  return res.redirect(301, `https://${req.headers.host}${req.url}`)
  }
@@ -98,5 +113,4 @@ async function bootstrap() {
 
  await app.listen(config.get<number>('APP_PORT') ?? 3000)
 }
-
 bootstrap()
