@@ -13,9 +13,11 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
 
   const config = app.get(ConfigService)
+
   const appEnv =
     config.get<'development' | 'production' | 'test'>('APP_ENV') ??
     'development'
+
   const trustProxy = config.get<number>('APP_TRUST_PROXY') ?? 1
   const forceHttps = config.get<boolean>('FORCE_HTTPS') ?? false
   const enableSwagger =
@@ -35,14 +37,41 @@ async function bootstrap() {
           : false,
     }),
   )
+
   app.use(cookieParser())
 
   app.set('trust proxy', trustProxy)
 
+  app.setGlobalPrefix('api')
+
+  const allowedOrigins =
+    config
+      .get<string>('CORS_ORIGIN')
+      ?.split(',')
+      .map((origin) => origin.trim())
+      .filter(Boolean) ?? []
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+
   if (forceHttps) {
     app.use((req: Request, res: Response, next: NextFunction) => {
+      // ✅ Jangan blok preflight
+      if (req.method === 'OPTIONS') {
+        return next()
+      }
+
       const forwardedProto = req.headers['x-forwarded-proto']
-      const isHttps = req.secure || forwardedProto === 'https'
+
+      const isHttps =
+        req.secure ||
+        forwardedProto === 'https' ||
+        (Array.isArray(forwardedProto) &&
+          forwardedProto.includes('https'))
 
       if (!isHttps) {
         return res.status(403).json({
@@ -59,20 +88,6 @@ async function bootstrap() {
     })
   }
 
-  app.setGlobalPrefix('api')
-
-  const allowedOrigins =
-    config
-      .get<string>('CORS_ORIGIN')
-      ?.split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean) ?? []
-
-  app.enableCors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -86,7 +101,12 @@ async function bootstrap() {
     setupSwagger(app)
   }
 
-  const port = config.get<number>('APP_PORT') ?? 3000
+  // ✅ fallback ke PORT (penting untuk Hostinger / platform)
+  const port =
+    config.get<number>('APP_PORT') ||
+    Number(process.env.PORT) ||
+    3000
+
   await app.listen(port, '0.0.0.0')
 
   const serverUrl = await app.getUrl()
