@@ -35,13 +35,14 @@ if (!parsedEnv.success) {
 }
 
 const rawEnv = parsedEnv.data
+const normalizedApiUrl = rawEnv.VITE_API_URL.trim().replace(/\/+$/, "")
+const normalizedWsUrl =
+  rawEnv.VITE_WS_URL?.trim().replace(/\/+$/, "") ?? normalizedApiUrl
 
 export const env = {
-  apiUrl: rawEnv.VITE_API_URL.replace(/\/+$/, ""),
+  apiUrl: normalizedApiUrl,
   apiTimeout: rawEnv.VITE_API_TIMEOUT,
-  wsUrl:
-    rawEnv.VITE_WS_URL?.replace(/\/+$/, "") ??
-    rawEnv.VITE_API_URL.replace(/\/+$/, ""),
+  wsUrl: normalizedWsUrl,
   isDev: import.meta.env.DEV,
   isProd: import.meta.env.PROD,
 } as const

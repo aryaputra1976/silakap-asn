@@ -9,16 +9,26 @@ import { tenantStorage } from '../../core/tenant/tenant-context'
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
   use(req: Request, _res: Response, next: NextFunction) {
-    const publicPaths = [
+    const publicPaths = new Set([
       '/docs',
       '/docs-json',
       '/health',
-      '/api/auth/login',
-      '/api/auth/refresh',
-    ]
+      '/auth/login',
+      '/auth/refresh',
+      '/auth/logout',
+      '/auth/register',
+      '/auth/register/pegawai',
+      '/ref/unor/level2',
+      '/ref/unor/register-options',
+    ])
 
     const url = req.originalUrl || req.url
-    const isPublic = publicPaths.some((p) => url.startsWith(p))
+    const normalizedUrl = url.startsWith('/api/')
+      ? url.replace(/^\/api/, '')
+      : url
+    const isPublic = [...publicPaths].some((p) =>
+      normalizedUrl.startsWith(p),
+    )
 
     if (isPublic) {
       return next()

@@ -9,6 +9,17 @@ import { NextFunction, Request, Response } from 'express'
 import { AppModule } from './app.module'
 import { setupSwagger } from './config/swagger.config'
 
+function parseCorsOrigins(value?: string | null) {
+  if (!value) {
+    return ['https://silakap.bkpsdm-tolis.or.id']
+  }
+
+  return value
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0)
+}
+
 async function bootstrap() {
  const app = await NestFactory.create<NestExpressApplication>(AppModule)
  const config = app.get(ConfigService)
@@ -22,8 +33,7 @@ async function bootstrap() {
  const enableSwagger =
  config.get<boolean>('ENABLE_SWAGGER') ?? appEnv !== 'production'
 
- const corsOrigin =
- config.get<string>('CORS_ORIGIN') ?? 'https://silakap.bkpsdm-tolis.or.id'
+ const corsOrigins = parseCorsOrigins(config.get<string>('CORS_ORIGIN'))
 
  app.enableShutdownHooks()
  app.set('trust proxy', trustProxy)
@@ -40,10 +50,30 @@ async function bootstrap() {
  app.use(cookieParser())
 
  app.enableCors({
- origin: corsOrigin,
+ origin: (origin, callback) => {
+ if (!origin) {
+ return callback(null, true)
+ }
+
+ const normalizedOrigin = origin.trim()
+
+ if (corsOrigins.includes(normalizedOrigin)) {
+ return callback(null, true)
+ }
+
+ return callback(new Error(`Origin ${normalizedOrigin} not allowed by CORS`))
+ },
  credentials: true,
  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
- allowedHeaders: ['Content-Type', 'Authorization'],
+ allowedHeaders: [
+ 'Content-Type',
+ 'Authorization',
+ 'Accept',
+ 'Origin',
+ 'X-Requested-With',
+ 'x-tenant-id',
+ ],
+ optionsSuccessStatus: 204,
  })
 
  app.useGlobalPipes(
