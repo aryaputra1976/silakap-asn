@@ -2,434 +2,1119 @@
 
 ## Tujuan
 
-Dokumen ini adalah acuan kerja baku untuk pengembangan `silakap-asn`.
-Fokus utamanya:
+Dokumen ini adalah acuan kerja utama untuk pengembangan `silakap-asn`.
+Fungsi dokumen ini bukan hanya sebagai pengingat teknis, tetapi sebagai:
 
-- menjaga konsistensi alur bisnis layanan ASN
-- mencegah mismatch frontend-backend
-- memastikan perubahan fitur tidak memutus workflow utama
+- panduan arah pengembangan
+- acuan prioritas kerja tim
+- penjaga konsistensi arsitektur
+- pengikat kontrak frontend dan backend
+- pengingat dependency antar modul
 
-Dokumen ini harus dipakai sebelum mengubah endpoint, form layanan, status workflow, atau integrasi data layanan.
+Dokumen ini harus dipakai sebelum mengubah:
+
+- workflow layanan
+- endpoint layanan
+- role dan hak akses
+- struktur sidebar
+- kontrak data frontend-backend
+- schema layanan
+- dokumen layanan
+- laporan pegawai
+
+---
+
+## Prinsip Dasar
+
+Prinsip utama pengembangan `silakap-asn`:
+
+- alur bisnis lebih penting daripada kosmetik UI
+- source of truth harus jelas
+- satu perubahan workflow dianggap perubahan lintas layer
+- sidebar user-facing tidak boleh dijadikan acuan arsitektur backend
+- modul layanan harus mengikuti orkestrator baku
+- build `api` dan `web` harus tetap hijau setelah perubahan signifikan
+
+---
 
 ## Struktur Repo
 
-- `api/` adalah backend utama NestJS
-- `web/` adalah frontend utama Vite + React
-- source of truth workflow layanan aktif ada di backend `api/src/modules/services/orchestrator`
-- frontend layanan aktif harus mengikuti kontrak backend `api/src/modules/services/orchestrator/controllers/services.controller.ts`
+- `api/` adalah backend utama berbasis NestJS
+- `web/` adalah frontend utama berbasis Vite + React
+- source of truth layanan aktif ada di backend:
+  - `api/src/modules/services/orchestrator`
+- source of truth frontend layanan aktif ada di adapter:
+  - `web/src/features/services/base/api/service.api.ts`
+- source of truth sidebar aplikasi ada di:
+  - `web/src/app/navigation/menu.config.ts`
 
-## Prinsip Utama
+---
 
-- Jangan buat endpoint frontend baru yang melewati kontrak `services/*` tanpa alasan yang jelas.
-- Jangan anggap file `routes/*.ts` lama berbasis Express sebagai source of truth runtime bila controller Nest aktif sudah tersedia.
-- Setiap perubahan alur layanan harus dianggap perubahan lintas layer: backend, frontend, tipe data, dan verifikasi build.
-- Endpoint aktif lebih penting daripada asumsi nama folder.
-- Build `api` dan `web` harus tetap hijau setelah perubahan workflow.
+## Visi Arsitektur
 
-## Alur Kerja Baku Layanan
+Arsitektur sistem ini harus dianggap sebagai sistem layanan ASN enterprise yang terdiri dari tiga lapisan utama:
 
-### 1. Identitas Service
+### 1. Control Plane
 
-Setiap layanan harus diidentifikasi dengan `service code` yang konsisten.
+Lapisan pengendali sistem:
 
-Contoh:
+- Pengaturan Sistem
+- Master Referensi
+- Role
+- Workflow
+- Permission
+
+Ini adalah fondasi. Tanpa lapisan ini, transaksi layanan akan liar dan tidak konsisten.
+
+### 2. Transaction Plane
+
+Lapisan proses bisnis utama:
+
+- Data ASN
+- Layanan ASN
+- Verifikasi & Persetujuan
+- Dokumen & Arsip
+
+Ini adalah inti aplikasi yang dipakai user untuk bekerja sehari-hari.
+
+### 3. Visibility & Governance Plane
+
+Lapisan monitoring, audit, dan pengembangan lanjutan:
+
+- Dashboard
+- Laporan
+- Keamanan & Audit
+- Integrasi Eksternal
+- Analitik SDM
+
+Ini dibangun setelah proses inti stabil.
+
+---
+
+## Final Sidebar Yang Dianggap Benar
+
+Sidebar production-ready yang menjadi acuan user-facing:
+
+### 1. Dashboard
+
+- Ringkasan Layanan
+- Notifikasi
+- Aktivitas Terakhir
+- SLA Warning
+
+### 2. Layanan ASN
+
+Fokus: workspace utama user
+
+- Pensiun
+- Draft Saya
+- Status Layanan
+- Mutasi
+- KGB
+- Jabatan
+- Peremajaan Data
+
+Catatan:
+
+- `Draft Saya` dan `Status Layanan` tetap diletakkan tinggi
+- `Pensiun` adalah modul flagship dan template arsitektur untuk layanan lain
+
+### 3. Verifikasi & Persetujuan
+
+- Antrian Verifikasi
+- Monitoring Workflow
+- Disposisi
+
+### 4. Dokumen & Arsip
+
+- Dokumen Usulan
+- Kelengkapan Dokumen
+- Dokumen Pegawai
+- Arsip DMS
+
+### 5. Data ASN
+
+- Profil Pegawai
+- Daftar Pegawai
+- Riwayat ASN
+- Kelengkapan Data
+
+### 6. Laporan
+
+- Jenis Kelamin
+- Pendidikan
+- Golongan
+- Jabatan
+
+### 7. Pengaturan Sistem
+
+- Workflow
+- Pengguna
+- Role
+
+### 8. Master Referensi
+
+- Referensi ASN
+- Referensi Organisasi
+- Referensi Dokumen
+
+### 9. Keamanan & Audit
+
+- Audit Log
+- Aktivitas Pengguna
+
+### 10. Integrasi Eksternal
+
+- Sinkronisasi SIASN
+- Job Sinkronisasi
+- Riwayat Sinkronisasi
+- Import Data
+
+### 11. Analitik SDM
+
+- Dashboard SDM
+- Formasi & Kebutuhan
+- Analisis Beban Kerja
+- Talent Pool
+
+Catatan penting:
+
+- urutan menu ini adalah urutan pengalaman user
+- urutan implementasi teknis tidak harus sama dengan urutan menu
+
+---
+
+## Dependency Map
+
+Dependency map resmi sistem:
+
+`Master Referensi`
+↓
+`Pengaturan Sistem`
+↓
+`Data ASN`
+↓
+`Layanan ASN`
+↓
+`Verifikasi & Persetujuan`
+↓
+`Dokumen & Arsip`
+↓
+`Dashboard & Laporan`
+↓
+`Keamanan & Audit`
+↓
+`Integrasi Eksternal`
+↓
+`Analitik SDM`
+
+### Penjelasan Dependency
+
+#### Master Referensi
+
+Tanpa ini:
+
+- dropdown tidak stabil
+- mapping referensi rusak
+- validasi layanan jadi inkonsisten
+- laporan bisa salah klasifikasi
+
+#### Pengaturan Sistem
+
+Mengendalikan:
+
+- siapa boleh melihat apa
+- siapa boleh mengerjakan apa
+- transisi workflow
+- struktur persetujuan
+
+#### Data ASN
+
+Adalah single source of truth untuk:
+
+- identitas pegawai
+- unit kerja
+- jabatan
+- status kepegawaian
+- riwayat ASN
+
+#### Layanan ASN
+
+Adalah transaksi utama:
+
+- create usulan
+- draft
+- submit
+- status layanan
+- detail usulan
+
+#### Verifikasi & Persetujuan
+
+Menghidupkan workflow.
+Tanpa ini, layanan hanya menjadi form input.
+
+#### Dokumen & Arsip
+
+Dokumen bukan fitur tambahan.
+Dokumen adalah syarat:
+
+- submit
+- validasi
+- persetujuan
+- audit
+
+#### Dashboard, Laporan, Audit, Integrasi
+
+Modul-modul ini sebaiknya dibangun setelah transaksi utama stabil.
+
+---
+
+## Prioritas Kerja Utama
+
+Prioritas pengembangan sistem ini:
+
+### Prioritas 1
+
+Jaga alur layanan tetap jalan end-to-end:
+
+- create
+- submit
+- verify
+- approve/reject
+- detail
+- timeline
+- audit
+
+### Prioritas 2
+
+Jaga kontrak frontend-backend tetap sinkron:
+
+- endpoint
+- payload
+- response
+- status
+- role
+
+### Prioritas 3
+
+Jaga audit trail dan timeline lengkap.
+
+### Prioritas 4
+
+Baru setelah itu rapikan utang teknis non-kritis seperti:
+
+- optimasi chunk
+- warning SCSS
+- polishing minor UI
+
+---
+
+## Roadmap Implementasi
+
+Roadmap ini adalah rencana kerja teknis yang harus menjadi acuan tim.
+
+### PHASE 1 — FOUNDATION
+
+#### 1. Master Referensi
+
+Target:
+
+- jenis layanan
+- jenis dokumen
+- organisasi
+- jabatan
+- status kepegawaian
+
+Output:
+
+- sistem punya referensi yang stabil
+
+#### 2. Pengaturan Sistem
+
+Target:
+
+- role matrix
+- workflow transition
+- permission matrix
+
+Output:
+
+- sistem mengerti alur kerja dan otorisasi
+
+### PHASE 2 — CORE DATA
+
+#### 3. Data ASN
+
+Target:
+
+- daftar pegawai
+- profil pegawai
+- riwayat ASN
+- kelengkapan data
+
+Output:
+
+- data pegawai siap dipakai oleh layanan
+
+### PHASE 3 — CORE SERVICE
+
+#### 4. Layanan ASN
+
+Urutan layanan:
+
+1. Pensiun
+2. Draft Saya
+3. Status Layanan
+4. Mutasi
+5. KGB
+6. Jabatan
+7. Peremajaan Data
+
+Output:
+
+- user sudah bisa bekerja secara nyata
+
+### PHASE 4 — WORKFLOW ENGINE
+
+#### 5. Verifikasi & Persetujuan
+
+Target:
+
+- queue verifikasi
+- action workflow
+- disposisi
+- monitoring workflow
+
+Output:
+
+- layanan hidup end-to-end
+
+### PHASE 5 — DOCUMENT SYSTEM
+
+#### 6. Dokumen & Arsip
+
+Target:
+
+- upload dokumen
+- validasi kelengkapan
+- daftar dokumen usulan
+- dokumen pegawai
+- integrasi DMS
+
+Output:
+
+- layanan valid secara administratif
+
+### PHASE 6 — VISIBILITY
+
+#### 7. Dashboard
+
+Target:
+
+- ringkasan layanan
+- notifikasi
+- aktivitas terakhir
+- SLA warning
+
+#### 8. Laporan
+
+Target:
+
+- laporan berbasis data tabel
+- filter unit organisasi
+- export excel/pdf
+- klasifikasi laporan yang konsisten
+
+### PHASE 7 — GOVERNANCE
+
+#### 9. Keamanan & Audit
+
+Target:
+
+- audit log
+- user activity
+
+Output:
+
+- sistem siap diaudit
+
+### PHASE 8 — ADVANCED
+
+#### 10. Integrasi Eksternal
+
+Target:
+
+- SIASN sync
+- import data
+- job monitoring
+
+#### 11. Analitik SDM
+
+Target:
+
+- dashboard SDM
+- formasi
+- ABK
+- talent pool
+
+Output:
+
+- sistem naik level dari operasional ke strategis
+
+---
+
+## Aturan Implementasi Layanan
+
+Setiap layanan ASN harus mengikuti aturan ini.
+
+### Service Code
+
+Kode layanan wajib konsisten:
 
 - `pensiun`
 - `mutasi`
 - `kgb`
 - `jabatan`
+- `peremajaan`
 
-Frontend dan backend wajib memakai kode yang sama.
+### Endpoint Baku
 
-### 2. Endpoint Baku
-
-Semua layanan generik wajib mengikuti endpoint berikut:
+Gunakan endpoint:
 
 - `GET /api/services/:service`
-  untuk list usulan layanan
 - `GET /api/services/:service/:id`
-  untuk detail usulan layanan
 - `POST /api/services/:service`
-  untuk create usulan layanan
 - `POST /api/services/:service/submit`
-  untuk submit usulan dari `DRAFT`
 - `POST /api/services/:service/workflow`
-  untuk action workflow lanjutan seperti `VERIFY`, `APPROVE`, `REJECT`
 - `GET /api/services/:service/dashboard`
-  untuk dashboard per layanan
 
-Jangan gunakan jalur lama seperti:
+Jangan menambah endpoint baru yang duplikat tanpa alasan kuat.
 
-- `/:service/approve`
-- `/:service/reject`
-- `/:service/submit`
-
-kecuali memang sudah dipastikan route tersebut aktif dan terdaftar di runtime aplikasi.
-
-### 3. Create Usulan
-
-Urutan baku create:
-
-1. Frontend mengirim request ke `POST /api/services/:service`
-2. Backend resolve `jenisLayananId` dari `kode layanan`
-3. Backend resolve `pegawaiId`
-   prioritas:
-   - dari `pegawaiId` bila ada
-   - dari `nip` bila payload memakai pencarian NIP
-4. Backend membuat record `silakap_usul_layanan` dengan status awal `DRAFT`
-5. Backend membuat detail domain layanan melalui handler registry bila layanan punya detail
-
-Catatan:
-
-- Payload frontend boleh berupa `payload` terbungkus atau field mentah selama backend masih mendukung normalisasi.
-- Untuk layanan domain seperti `pensiun`, field referensi seperti `jenisPensiun` harus dinormalisasi ke ID sebelum disimpan.
-
-### 4. Submit Usulan
-
-Urutan baku submit:
-
-1. Frontend mengirim `POST /api/services/:service/submit`
-2. Payload minimum:
-   - `usulId`
-3. Backend mengambil konteks usul dari database:
-   - `pegawaiId`
-   - `jenisLayananId`
-4. Backend resolve actor dari JWT:
-   - user id
-   - role aktif
-5. Backend jalankan engine workflow dengan action `SUBMIT`
-6. Engine wajib memvalidasi:
-   - usul ada
-   - dependency valid
-   - workflow transition valid
-   - kelengkapan dokumen valid
-7. Status berubah dari `DRAFT` ke status berikutnya sesuai definisi workflow
-
-### 5. Workflow Action Lanjutan
-
-Action lanjutan wajib memakai endpoint:
-
-- `POST /api/services/:service/workflow`
-
-Payload minimum:
-
-- `usulId`
-- `actionCode`
-
-Payload tambahan seperti `pegawaiId` atau `jenisLayananId` boleh dikirim, tetapi backend harus bisa fallback dari database bila field itu tidak ada.
-
-Contoh action:
-
-- `VERIFY`
-- `APPROVE`
-- `REJECT`
-- `RETURN`
-
-### 6. Detail dan Timeline
-
-Detail layanan wajib diambil dari:
-
-- `GET /api/services/:service/:id`
-
-Respons detail minimal harus bisa dipakai frontend untuk:
-
-- menampilkan identitas ASN
-- menampilkan status current
-- menampilkan daftar dokumen
-- menampilkan timeline/log proses
-
-Jika backend mengembalikan `layananLog`, frontend harus memetakan data itu ke komponen timeline. Jangan mengasumsikan field `timeline` sudah selalu tersedia mentah.
-
-### 7. Audit Trail
-
-Setiap transition workflow wajib menghasilkan minimal:
-
-- perubahan status usul
-- entri `silakapLayananLog`
-- entri timeline workflow
-- entri `auditLog`
-
-Jika salah satu dari tiga jejak ini hilang, perubahan workflow dianggap belum lengkap.
-
-## Status Workflow Baku
-
-Status yang sudah dikenal sistem dan harus diperlakukan hati-hati:
-
-- `DRAFT`
-- `SUBMITTED`
-- `VERIFIED`
-- `RETURNED`
-- `APPROVED`
-- `REJECTED`
-- `SYNCED_SIASN`
-- `FAILED_SIASN`
-- `COMPLETED`
-
-Aturan:
-
-- menambah status baru harus dibarengi pembaruan frontend type, badge, config workflow, dan mapping label
-- jangan menambah status hanya di backend atau hanya di frontend
-
-## Kontrak Frontend Baku
-
-Frontend layanan generik harus memakai adapter di:
-
-- `web/src/features/services/base/api/service.api.ts`
-
-Jangan hardcode endpoint layanan di page/component bila adapter generik sudah tersedia.
-
-Semua page layanan harus mengikuti pola:
-
-- page memanggil hook
-- hook memanggil adapter API
-- adapter mengikuti endpoint `services/*`
-
-## Kontrak Backend Baku
-
-Backend orkestrator layanan aktif harus mengikuti pola:
-
-- controller menerima request
-- controller resolve context yang bisa diturunkan dari DB
-- engine memegang validasi workflow lintas concern
-- service workflow mengubah status dan menulis audit/timeline/log
-- registry service menangani aturan domain spesifik layanan
-
-## Saat Menambah Layanan Baru
+### Create Usulan
 
 Urutan baku:
 
-1. Tambahkan handler domain di backend registry layanan
-2. Pastikan `service code` didaftarkan konsisten
-3. Pastikan create detail dan submit validation domain tersedia bila dibutuhkan
-4. Tambahkan konfigurasi frontend service registry
-5. Buat schema/form frontend
-6. Uji create, submit, detail, dan minimal satu action workflow
-7. Pastikan build `api` dan `web` sukses
+1. frontend kirim create
+2. backend resolve `jenisLayananId`
+3. backend resolve `pegawaiId`
+4. backend create `silakap_usul_layanan`
+5. backend create detail domain bila diperlukan
 
-## Contoh Alur Baku Pensiun
+### Submit
 
-Bagian ini adalah contoh konkret implementasi alur kerja yang saat ini paling relevan.
+Urutan baku:
 
-### Create Pensiun
+1. frontend kirim `usulId`
+2. backend ambil context usul dari DB
+3. backend resolve actor dari JWT
+4. backend validasi dependency dan dokumen
+5. backend jalankan action `SUBMIT`
 
-Input minimum yang diharapkan frontend:
+### Workflow Action
 
-- `nip`
-- `jenisPensiun`
-- `tmtPensiun`
+Gunakan:
 
-Perilaku baku backend:
-
-1. resolve `pegawaiId` dari `nip` bila `pegawaiId` tidak dikirim
-2. resolve `jenisPensiunId` dari kode `jenisPensiun`
-3. create `silakap_usul_layanan` dengan status `DRAFT`
-4. create detail pensiun melalui handler domain
-
-### Submit Pensiun
-
-Input minimum frontend:
-
-- `usulId`
-
-Perilaku baku backend:
-
-1. ambil context usul dari database
-2. ambil actor dari JWT
-3. validasi kelengkapan
-4. jalankan action `SUBMIT`
-
-### Verify dan Approve Pensiun
-
-Frontend wajib memakai:
-
-- `POST /api/services/pensiun/workflow`
+- `POST /api/services/:service/workflow`
 
 Payload minimum:
 
 - `usulId`
 - `actionCode`
 
-Contoh:
+### Detail
 
-- `VERIFY`
-- `APPROVE`
-- `REJECT`
+Harus diambil dari:
 
-### Hal yang Tidak Boleh Dilakukan pada Pensiun
+- `GET /api/services/:service/:id`
 
-- jangan kirim ke endpoint legacy seperti `/pensiun/approve`
-- jangan hardcode `jenisPensiunId` di frontend
-- jangan asumsikan frontend sudah punya `pegawaiId` tanpa lookup atau normalisasi backend
-- jangan ubah shape form tanpa cek normalisasi backend
+Detail harus cukup untuk:
 
-## Saat Mengubah Workflow
+- identitas ASN
+- current status
+- dokumen
+- timeline/log
 
-Wajib cek seluruh titik berikut:
+### Audit Trail
 
-- transition di database / source workflow
-- controller backend
-- engine workflow
+Setiap transition workflow minimal harus menulis:
+
+- perubahan status
+- layanan log
+- workflow timeline
 - audit log
-- timeline
-- badge status frontend
-- config action frontend
-- page detail/verifikasi
-- test atau verifikasi manual
 
-Jangan anggap perubahan workflow selesai bila hanya status di database yang berubah.
+Jika salah satu hilang, workflow belum dianggap lengkap.
+
+---
+
+## Aturan Implementasi Laporan
+
+Modul laporan harus dianggap turunan dari data sumber, bukan sumber kebenaran baru.
+
+### Aturan Dasar
+
+- data laporan harus diambil dari tabel nyata
+- jangan hardcode data dummy untuk runtime
+- klasifikasi harus konsisten dengan master dan aturan bisnis
+- export tidak boleh merusak alur aplikasi utama
+
+### Aturan Rekap Pegawai
+
+Laporan pegawai harus mengikuti pola berikut:
+
+#### 1. Rekap Jenis Kelamin
+
+Sumber:
+
+- status pegawai
+- jenis kelamin
+
+#### 2. Rekap Pendidikan
+
+Sumber:
+
+- pendidikan pegawai
+- jenis kelamin
+
+#### 3. Kelompok Besar Pendidikan
+
+Harus dipetakan konsisten:
+
+- dasar & menengah
+- diploma
+- perguruan tinggi
+
+#### 4. Rekap Golongan
+
+Sumber:
+
+- golongan pegawai aktif
+
+#### 5. Rekap Golongan Ruang
+
+Harus detail dan stabil.
+
+#### 6. Rekap Jenjang Jabatan
+
+Harus memetakan:
+
+- struktural
+- fungsional
+- pelaksana
+- PPPK
+
+#### 7. Rincian Jabatan Struktural
+
+Dasar:
+
+- `jenis_jabatan_id = 1`
+- urut berdasarkan `eselon_id`
+
+#### 8. Rincian Jabatan Tenaga Kesehatan
+
+Dasar:
+
+- `jenis_jabatan_id = 2`
+- nama jabatan masuk keluarga tenaga kesehatan
+
+#### 9. Rincian Jabatan Guru
+
+Dasar:
+
+- `jenis_jabatan_id = 2`
+- nama jabatan cocok `guru` atau `kepala sekolah`
+
+#### 10. Rincian Jabatan Fungsional Lainnya
+
+Dasar:
+
+- `jenis_jabatan_id = 2`
+- bukan tenaga kesehatan
+- bukan guru
+
+### Filter dan Export
+
+Laporan harus mendukung:
+
+- filter per `unor`
+- export excel
+- export pdf per modul
+
+Catatan:
+
+- export PDF preview browser tidak boleh menghancurkan tab utama aplikasi
+- export Excel fallback harus memakai ekstensi yang sesuai format
+
+---
+
+## Aturan Role dan Sidebar
+
+Sidebar adalah representasi user-facing.
+
+### Role Dasar
+
+- `ASN`
+- `OPERATOR`
+- `VERIFIKATOR`
+- `PPK`
+- `ADMIN_BKPSDM`
+- `SUPER_ADMIN`
+
+### Aturan Penting
+
+- role harus dibaca dari auth aktif, bukan asumsi statis
+- `SUPER_ADMIN` boleh melihat struktur menu penuh yang dikonfigurasi
+- user biasa hanya melihat menu yang relevan dengan role
+- sidebar tidak boleh menampilkan menu palsu yang tidak punya route aktif, kecuali memang sengaja untuk `SUPER_ADMIN`
+
+---
 
 ## Larangan Praktis
 
-- Jangan membuat endpoint baru yang duplikat makna endpoint `services/*` tanpa migrasi jelas.
-- Jangan membaca `req.user.roleId` kecuali JWT strategy memang mengisi field itu.
-- Jangan mengubah shape respons backend tanpa menyesuaikan hook dan type frontend.
-- Jangan memakai route legacy hanya karena file-nya masih ada di repo.
+- Jangan pakai route legacy hanya karena filenya masih ada.
+- Jangan menambah endpoint baru yang duplikat terhadap `services/*`.
+- Jangan mengubah shape response backend tanpa menyesuaikan type dan hook frontend.
+- Jangan membuat laporan dengan data dummy untuk runtime.
+- Jangan menjadikan sidebar sebagai source of truth arsitektur.
 - Jangan merge perubahan workflow tanpa build `api` dan `web`.
+
+---
 
 ## Checklist Verifikasi Minimum
 
-Setelah mengubah workflow layanan, jalankan minimal:
+Setelah perubahan layanan/workflow/laporan:
 
 1. `cd api && npm run build`
 2. `cd web && npm run build`
-3. Verifikasi create usulan
-4. Verifikasi submit usulan
-5. Verifikasi detail layanan tampil
-6. Verifikasi action workflow utama berhasil
-7. Verifikasi timeline/log terisi
+3. verifikasi create usulan
+4. verifikasi submit usulan
+5. verifikasi detail tampil
+6. verifikasi action workflow utama berhasil
+7. verifikasi timeline/log terisi
+8. verifikasi laporan tampil
+9. verifikasi export laporan tidak merusak flow halaman utama
 
-## Checklist Audit Cepat
+---
 
-Saat menemukan bug alur kerja, cek berurutan:
+## Checklist Definition of Done
 
-1. Apakah frontend menembak endpoint aktif yang benar
-2. Apakah payload frontend sesuai kontrak backend
-3. Apakah backend masih mengandalkan field request yang tidak ada di JWT
-4. Apakah `pegawaiId` dan `jenisLayananId` bisa diturunkan dari `usulId`
-5. Apakah perubahan status juga menulis log, timeline, dan audit
-6. Apakah type frontend sudah sinkron dengan status backend
-7. Apakah build `api` dan `web` tetap lolos
+Suatu pekerjaan dianggap selesai jika:
 
-## Troubleshooting Workflow
+- endpoint aktif jelas
+- payload dan response sinkron
+- role sesuai
+- UI tidak crash
+- build hijau
+- audit trail tidak hilang
+- laporan tidak memakai dummy
+- tidak ada pemakaian route legacy baru
 
-Gunakan panduan ini saat alur layanan tampak gagal di runtime.
+---
 
-### Gejala: tombol aksi ada, tapi klik gagal
+## Troubleshooting Cepat
 
-Cek berurutan:
+### Gejala: tombol workflow ada tapi gagal
 
-1. apakah frontend mengirim ke `/api/services/:service/workflow`
-2. apakah payload minimal berisi `usulId` dan `actionCode`
-3. apakah JWT user masih valid
-4. apakah role user cocok dengan transition workflow
-5. apakah usul masih berada di status yang sesuai
+Cek:
 
-### Gejala: create usulan gagal
+1. endpoint aktif benar
+2. payload ada `usulId` dan `actionCode`
+3. JWT valid
+4. role cocok
+5. status usul cocok
 
-Cek berurutan:
+### Gejala: create gagal
 
-1. apakah `service code` valid
-2. apakah `pegawaiId` ada, atau `nip` bisa di-resolve backend
-3. apakah payload domain wajib sudah lengkap
-4. apakah referensi master seperti `jenisPensiun` bisa dinormalisasi
+Cek:
 
-### Gejala: submit gagal
+1. service code valid
+2. `pegawaiId` atau `nip` bisa di-resolve
+3. payload domain lengkap
+4. referensi bisa dinormalisasi
 
-Cek berurutan:
+### Gejala: timeline kosong
 
-1. apakah status usul masih `DRAFT`
-2. apakah dokumen wajib sudah lengkap
-3. apakah dependency layanan sudah valid
-4. apakah actor dari JWT berhasil di-resolve ke role internal
+Cek:
 
-### Gejala: detail layanan tampil, tapi timeline kosong
+1. backend kirim `layananLog`
+2. workflow menulis log
+3. workflow menulis timeline
+4. workflow menulis audit
 
-Cek berurutan:
+### Gejala: laporan kosong
 
-1. apakah backend mengembalikan `layananLog`
-2. apakah action workflow benar-benar menulis `silakapLayananLog`
-3. apakah action workflow juga menulis timeline dan audit log
-4. apakah frontend memetakan `layananLog` ke komponen timeline
+Cek:
 
-### Gejala: queue verifikasi tidak tampil
+1. query tabel sumber benar
+2. klasifikasi terlalu sempit atau tidak
+3. filter `unor` sedang aktif
+4. backend runtime sudah restart
 
-Anggap ini area yang perlu dicek ekstra, karena frontend queue saat ini masih memakai endpoint:
+### Gejala: export gagal
 
-- `GET /api/workflow/queue`
+Cek:
 
-Referensi frontend:
+1. endpoint export aktif
+2. fallback frontend aman
+3. popup browser tidak diblokir
+4. format file cocok dengan ekstensi
 
-- `web/src/features/workflow/queue/api/getUniversalQueue.api.ts`
+---
 
-Jika endpoint backend aktif untuk queue belum tersedia, halaman queue tidak boleh dianggap source of truth operasional.
+## Kondisi Saat Ini Yang Harus Dianggap Benar
 
-### Gejala: dokumen layanan gagal diakses
+Kondisi terakhir yang harus dianggap valid:
 
-Anggap ini area yang perlu dicek ekstra, karena frontend dokumen saat ini memakai endpoint:
+- endpoint baku layanan aktif ada di backend orkestrator
+- frontend layanan aktif memakai adapter generik
+- `pensiun` adalah blueprint layanan paling matang
+- laporan pegawai sudah berbasis data tabel, bukan dummy
+- sidebar sudah mendekati final production structure
+- warning SCSS bukan prioritas dibanding workflow bisnis
 
-- `GET /api/services/:service/:id/documents`
-- `POST /api/services/:service/:id/documents`
+---
 
-Referensi frontend:
+## Cara Menggunakan Dokumen Ini
 
-- `web/src/features/services/base/documents/api/document.api.ts`
+Gunakan dokumen ini dalam urutan berikut:
 
-Jika controller dokumen belum aktif di runtime backend, fitur dokumen belum boleh dianggap final.
+1. baca bagian `Dependency Map`
+2. cek `Prioritas Kerja Utama`
+3. cek `Roadmap Implementasi`
+4. cek aturan detail modul yang sedang disentuh
+5. jalankan `Checklist Verifikasi Minimum`
 
-## Checklist Release Workflow
+Jangan langsung coding tanpa memastikan perubahan berada di fase dan dependency yang benar.
 
-Gunakan checklist ini sebelum release yang menyentuh layanan atau workflow.
+---
 
-### Sebelum Merge
+## Prioritas Tim
 
-1. pastikan endpoint yang dipakai frontend masih endpoint aktif
-2. pastikan tidak ada pemakaian route legacy baru
-3. pastikan type status frontend sinkron dengan backend
-4. pastikan build `api` sukses
-5. pastikan build `web` sukses
+Urutan kerja tim yang disarankan:
 
-### Sebelum Deploy
+1. stabilkan fondasi referensi dan workflow
+2. kuatkan Data ASN
+3. finalkan layanan inti
+4. finalkan verifikasi dan dokumen
+5. finalkan laporan
+6. baru lanjut ke audit, integrasi, dan analitik
 
-1. pastikan migration database sudah sesuai
-2. pastikan data master untuk layanan terkait tersedia
-3. pastikan workflow transition untuk layanan terkait tersedia
-4. pastikan akun uji dengan role yang relevan tersedia
-5. pastikan environment deploy mengarah ke `api` dan `web` yang benar
+---
 
-### Setelah Deploy
+## Sprint Plan
 
-1. login berhasil
-2. create usulan berhasil
-3. submit usulan berhasil
-4. detail layanan tampil
-5. minimal satu action workflow berhasil
-6. timeline dan audit log terisi
-7. health check aplikasi tetap sehat
+Bagian ini adalah rencana kerja operasional yang bisa langsung dipakai tim dalam beberapa sprint awal.
 
-## Residual Risk Saat Ini
+### Sprint 1 — Stabilkan Fondasi
 
-Bagian ini harus dibaca sebagai pengingat area yang masih perlu kehati-hatian ekstra.
+Target utama:
 
-- frontend queue verifikasi masih mengarah ke `/api/workflow/queue`
-- frontend dokumen layanan sudah punya adapter, tetapi aktivasi runtime backend untuk jalur dokumen perlu dipastikan sebelum dianggap final
-- chunk frontend masih besar; ini bukan blocker workflow, tetapi penting untuk optimasi berikutnya
-- warning SCSS sudah diredam untuk build, tetapi belum dimigrasi penuh ke standar Sass baru
+- master referensi stabil
+- role dan workflow matrix jelas
+- kontrak sidebar dan role sinkron
 
-## Kondisi Saat Ini
+Ruang lingkup:
 
-Kondisi yang harus dianggap benar per audit terakhir:
+- audit referensi ASN, organisasi, dokumen
+- rapikan role matrix
+- rapikan workflow transition
+- validasi permission menu dan route
 
-- endpoint baku layanan aktif ada di `api/src/modules/services/orchestrator/controllers/services.controller.ts`
-- frontend adapter layanan aktif ada di `web/src/features/services/base/api/service.api.ts`
-- backend dan frontend sama-sama sudah lolos build
-- warning SCSS bukan prioritas utama dibanding workflow bisnis
-- `pensiun` adalah contoh layanan aktif yang sudah dinormalisasi ke kontrak `services/*`
+Deliverable:
 
-## Prioritas Pengembangan
+- referensi aktif dan konsisten
+- role bisa dipetakan jelas ke menu dan action
+- workflow transition baku siap dipakai modul layanan
 
-Prioritas kerja tim untuk aplikasi ini:
+Risiko yang harus dijaga:
 
-1. jaga alur layanan tetap jalan end-to-end
-2. jaga kontrak frontend-backend tetap sinkron
-3. jaga audit trail dan timeline tetap lengkap
-4. baru setelah itu rapikan utang teknis non-kritis seperti warning SCSS atau optimasi chunk
+- role di frontend tidak sinkron dengan backend
+- workflow berubah tanpa update type/action frontend
+
+### Sprint 2 — Stabilkan Data ASN
+
+Target utama:
+
+- Data ASN menjadi source of truth yang bisa dipakai seluruh layanan
+
+Ruang lingkup:
+
+- daftar pegawai
+- profil pegawai
+- riwayat ASN
+- kelengkapan data
+- lookup ASN untuk layanan
+
+Deliverable:
+
+- lookup ASN stabil
+- identitas, unit, jabatan, dan status pegawai siap dipakai workflow layanan
+
+Risiko yang harus dijaga:
+
+- layanan menyimpan copy data ASN sendiri
+- field master pegawai tidak sinkron antar modul
+
+### Sprint 3 — Finalkan Pensiun End-to-End
+
+Target utama:
+
+- `pensiun` menjadi blueprint layanan yang benar
+
+Ruang lingkup:
+
+- create
+- draft
+- submit
+- detail
+- workflow action
+- timeline
+- audit
+- dokumen layanan
+
+Deliverable:
+
+- alur `pensiun` end-to-end stabil
+- frontend-backend sinkron lewat kontrak `services/*`
+
+Risiko yang harus dijaga:
+
+- route legacy hidup kembali
+- detail tampil tetapi timeline/audit kosong
+
+### Sprint 4 — Finalkan Verifikasi dan Dokumen
+
+Target utama:
+
+- layanan tidak berhenti di form input
+
+Ruang lingkup:
+
+- antrian verifikasi
+- monitoring workflow
+- disposisi
+- kelengkapan dokumen
+- dokumen usulan
+- dokumen pegawai
+- DMS monitoring
+
+Deliverable:
+
+- verifikasi dan persetujuan benar-benar operasional
+- dokumen menjadi syarat submit dan approve
+
+Risiko yang harus dijaga:
+
+- queue memakai source yang belum final
+- dokumen dianggap final padahal endpoint runtime belum aktif
+
+### Sprint 5 — Ekspansi Layanan dan Laporan
+
+Target utama:
+
+- perluasan pola `pensiun` ke layanan lain
+- laporan stabil berbasis data nyata
+
+Ruang lingkup:
+
+- `mutasi`
+- `kgb`
+- `jabatan`
+- `peremajaan`
+- laporan pegawai
+- filter per unor
+- export excel/pdf
+
+Deliverable:
+
+- layanan tambahan ikut pola orkestrator
+- laporan tidak lagi dummy dan bisa dipakai operasional
+
+Risiko yang harus dijaga:
+
+- layanan baru hanya selesai di UI, belum selesai di workflow
+- klasifikasi laporan tidak sesuai tabel sumber
+
+### Sprint 6 — Governance dan Integrasi
+
+Target utama:
+
+- sistem siap audit dan siap berkembang
+
+Ruang lingkup:
+
+- audit log
+- user activity
+- SIASN sync
+- import data
+- dashboard SDM
+- analitik dasar
+
+Deliverable:
+
+- governance kuat
+- integrasi tidak merusak layanan inti
+
+Risiko yang harus dijaga:
+
+- integrasi dikerjakan terlalu awal
+- audit trail belum matang saat modul governance dibuka
+
+---
+
+## Issue Breakdown Per Modul
+
+Bagian ini adalah breakdown kerja yang bisa langsung diturunkan ke issue tracker.
+
+### Master Referensi
+
+Issue utama:
+
+- finalkan referensi jenis layanan
+- finalkan referensi jenis dokumen
+- finalkan referensi organisasi
+- finalkan referensi jabatan
+- pastikan seluruh dropdown layanan memakai referensi aktif
+
+Acceptance criteria:
+
+- referensi bisa dipakai lintas modul
+- tidak ada dropdown utama yang hardcode statis
+
+### Pengaturan Sistem
+
+Issue utama:
+
+- rapikan role matrix
+- rapikan permission matrix
+- finalkan workflow transition
+- sinkronkan menu-role-route
+
+Acceptance criteria:
+
+- role menentukan menu
+- role menentukan action
+- workflow bisa diverifikasi dari source yang jelas
+
+### Data ASN
+
+Issue utama:
+
+- stabilkan daftar pegawai
+- stabilkan profil pegawai
+- stabilkan riwayat ASN
+- sediakan lookup yang dipakai modul layanan
+
+Acceptance criteria:
+
+- layanan bisa resolve ASN dari data nyata
+- field penting pegawai tersedia dan konsisten
+
+### Layanan ASN
+
+Issue utama:
+
+- finalkan `pensiun`
+- migrasikan `mutasi`
+- migrasikan `kgb`
+- migrasikan `jabatan`
+- finalkan `draft saya`
+- finalkan `status layanan`
+
+Acceptance criteria:
+
+- semua layanan aktif memakai endpoint `services/*`
+- create, submit, detail, dan workflow action berjalan
+
+### Verifikasi & Persetujuan
+
+Issue utama:
+
+- finalkan queue verifikasi
+- finalkan monitoring workflow
+- finalkan disposisi
+- sinkronkan available actions dari backend ke frontend
+
+Acceptance criteria:
+
+- antrian kerja relevan dengan role
+- action workflow tidak hardcoded buta
+
+### Dokumen & Arsip
+
+Issue utama:
+
+- finalkan dokumen usulan
+- finalkan kelengkapan dokumen
+- finalkan dokumen pegawai
+- finalkan hubungan dengan DMS
+
+Acceptance criteria:
+
+- dokumen bisa diakses dan divalidasi
+- dokumen mempengaruhi submit dan approve
+
+### Laporan
+
+Issue utama:
+
+- finalkan rekap pegawai
+- finalkan filter unor
+- finalkan export excel
+- finalkan export pdf
+- finalkan klasifikasi jabatan
+
+Acceptance criteria:
+
+- laporan diambil dari tabel nyata
+- export tidak merusak flow halaman
+- hasil laporan sesuai logika bisnis
+
+### Keamanan & Audit
+
+Issue utama:
+
+- finalkan audit log
+- finalkan aktivitas pengguna
+- pastikan workflow menulis audit trail lengkap
+
+Acceptance criteria:
+
+- perubahan workflow bisa ditelusuri
+- aktivitas user penting tercatat
+
+### Integrasi Eksternal
+
+Issue utama:
+
+- finalkan sinkronisasi SIASN
+- finalkan job monitoring
+- finalkan riwayat sinkronisasi
+- finalkan import data
+
+Acceptance criteria:
+
+- integrasi tidak memutus layanan inti
+- error integrasi bisa dilacak
+
+### Analitik SDM
+
+Issue utama:
+
+- finalkan dashboard SDM
+- finalkan formasi
+- finalkan ABK
+- finalkan talent pool
+
+Acceptance criteria:
+
+- analitik memakai data yang sudah stabil
+- tidak membebani workflow inti
+
+---
+
+## Ringkasan Eksekutif
+
+Jika harus diringkas menjadi satu kalimat:
+
+`silakap-asn` harus dibangun sebagai sistem layanan ASN yang workflow-driven, data-driven, dan audit-ready; bukan sekadar kumpulan menu atau form.
