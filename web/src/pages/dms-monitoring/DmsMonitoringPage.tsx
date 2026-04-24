@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import {
   Button,
   Card,
@@ -45,6 +46,7 @@ import {
 } from "@/features/dms-monitoring/utils"
 
 export default function DmsMonitoringPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const roles = useAuthStore((state) => state.user?.roles ?? [])
   const isOperatorView =
     roles.includes("OPERATOR") &&
@@ -56,6 +58,7 @@ export default function DmsMonitoringPage() {
   })
   const [snapshotFilters, setSnapshotFilters] = useState<DmsSnapshotFilters>({
     ...DMS_DEFAULT_SNAPSHOT_FILTERS,
+    nip: searchParams.get("nip") ?? DMS_DEFAULT_SNAPSHOT_FILTERS.nip,
     limit: 10,
   })
 
@@ -85,6 +88,7 @@ export default function DmsMonitoringPage() {
     return topUnit ?? snapshotUnit ?? "OPD aktif"
   }, [dashboardQuery.data?.byUnor, snapshotsQuery.data?.data])
   const snapshotPagination = snapshotsQuery.data?.pagination
+  const searchedNip = searchParams.get("nip")?.trim() ?? ""
   const operatorPageItems = useMemo(() => {
     if (!snapshotPagination || snapshotPagination.totalPages <= 1) {
       return []
@@ -101,6 +105,48 @@ export default function DmsMonitoringPage() {
       (_, index) => normalizedStart + index,
     )
   }, [snapshotPagination])
+
+  useEffect(() => {
+    const nextNip = searchParams.get("nip")?.trim() ?? ""
+
+    setSnapshotFilters((current) => {
+      if ((current.nip ?? "") === nextNip) {
+        return current
+      }
+
+      return {
+        ...current,
+        page: 1,
+        nip: nextNip,
+      }
+    })
+  }, [searchParams])
+
+  function updateSnapshotFilters(next: DmsSnapshotFilters) {
+    setSnapshotFilters(next)
+
+    const params = new URLSearchParams(searchParams)
+    const nip = next.nip?.trim() ?? ""
+
+    if (nip) {
+      params.set("nip", nip)
+    } else {
+      params.delete("nip")
+    }
+
+    setSearchParams(params, { replace: true })
+  }
+
+  function resetSnapshotFilters() {
+    const params = new URLSearchParams(searchParams)
+    params.delete("nip")
+    setSearchParams(params, { replace: true })
+
+    setSnapshotFilters({
+      ...DMS_DEFAULT_SNAPSHOT_FILTERS,
+      limit: 10,
+    })
+  }
 
   if (isOperatorView) {
     return (
@@ -129,7 +175,7 @@ export default function DmsMonitoringPage() {
           kategoriOptions={DMS_KATEGORI_OPTIONS}
           operatorMode
           onChange={(next) =>
-            setSnapshotFilters({
+            updateSnapshotFilters({
               batchId: next.batchId ?? "",
               page: next.page ?? 1,
               limit: next.limit ?? 10,
@@ -138,12 +184,7 @@ export default function DmsMonitoringPage() {
               nip: next.nip ?? "",
             })
           }
-          onReset={() =>
-            setSnapshotFilters({
-              ...DMS_DEFAULT_SNAPSHOT_FILTERS,
-              limit: 10,
-            })
-          }
+          onReset={resetSnapshotFilters}
         />
 
         <DmsSnapshotTable
@@ -319,6 +360,30 @@ export default function DmsMonitoringPage() {
     })
   }
 />
+
+      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-4 mb-3">
+        <div>
+          <h5 className="mb-1">Snapshot ASN DMS</h5>
+          <div className="text-muted small">
+            {searchedNip
+              ? `Menampilkan hasil monitoring dokumen untuk pencarian ASN: ${searchedNip}`
+              : "Gunakan filter untuk menelusuri snapshot kelengkapan arsip ASN."}
+          </div>
+        </div>
+      </div>
+
+      <DmsSnapshotFilterBar
+        filters={snapshotFilters}
+        limitOptions={DMS_SNAPSHOT_LIMIT_OPTIONS}
+        kategoriOptions={DMS_KATEGORI_OPTIONS}
+        onChange={updateSnapshotFilters}
+        onReset={resetSnapshotFilters}
+      />
+
+      <DmsSnapshotTable
+        items={snapshotsQuery.data?.data ?? []}
+        isLoading={snapshotsQuery.isLoading}
+      />
 
       {/* TABLE */}
       <DmsBatchTable

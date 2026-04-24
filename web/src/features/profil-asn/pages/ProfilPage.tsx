@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 
 import { useAsnList } from "../hooks/useAsnList"
 import { useAsnStats } from "../hooks/useAsnStats"
@@ -13,9 +14,12 @@ import ExplorerLayout from "../components/ExplorerLayout"
 import { useOperatorOpdScope } from "@/features/auth/hooks/useOperatorOpdScope"
 
 export default function ProfilPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
   const scope = useOperatorOpdScope()
 
-  const [search, setSearch] = useState("")
+  const [search, setSearch] = useState(
+    searchParams.get("search") ?? ""
+  )
   const [status, setStatus] = useState("PNS")
   const [jenisJabatanId, setJenisJabatanId] = useState("")
 
@@ -66,6 +70,33 @@ export default function ProfilPage() {
     setSearch(v)
     setPage(1)
   }
+
+  useEffect(() => {
+    const nextSearch = searchParams.get("search") ?? ""
+
+    if (nextSearch !== search) {
+      setSearch(nextSearch)
+      setPage(1)
+    }
+  }, [searchParams])
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams)
+    const trimmedSearch = search.trim()
+    const currentSearch = searchParams.get("search") ?? ""
+
+    if (trimmedSearch === currentSearch) {
+      return
+    }
+
+    if (trimmedSearch) {
+      params.set("search", trimmedSearch)
+    } else {
+      params.delete("search")
+    }
+
+    setSearchParams(params, { replace: true })
+  }, [search, searchParams, setSearchParams])
 
   const handleJabatan = (v: string) => {
     setJenisJabatanId(v)

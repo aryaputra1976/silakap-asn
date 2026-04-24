@@ -4,6 +4,7 @@ export default function DocumentUpload({
   service,
   id,
   docKey,
+  onUploaded,
 }: any) {
 
   async function handleFile(
@@ -17,6 +18,7 @@ export default function DocumentUpload({
     await uploadDocument(service, id, docKey, file)
 
     alert("Upload berhasil")
+    onUploaded?.()
 
   }
 

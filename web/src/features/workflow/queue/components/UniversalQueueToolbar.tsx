@@ -1,71 +1,122 @@
-import { useState } from "react"
-
 interface Props {
+  value: {
+    search: string
+    status: string
+    jenis: string
+  }
+  serviceOptions: Array<{
+    kode: string
+    nama: string
+  }>
   onChange: (filters: {
-    search?: string
-    status?: string
-    jenis?: string
+    search: string
+    status: string
+    jenis: string
   }) => void
+  onApply: () => void
+  onReset: () => void
 }
 
-export function UniversalQueueToolbar({ onChange }: Props) {
+const STATUS_OPTIONS = [
+  { label: "Semua Status", value: "" },
+  { label: "Diajukan", value: "SUBMITTED" },
+  { label: "Review", value: "IN_REVIEW" },
+  { label: "Terverifikasi", value: "VERIFIED" },
+  { label: "Dikembalikan", value: "RETURNED" },
+  { label: "Disetujui", value: "APPROVED" },
+]
 
-  const [search, setSearch] = useState("")
-  const [status, setStatus] = useState("")
-  const [jenis, setJenis] = useState("")
-
-  function apply() {
-
-    onChange({
-      ...(search ? { search } : {}),
-      ...(status ? { status } : {}),
-      ...(jenis ? { jenis } : {}),
-    })
-
-  }
-
+export function UniversalQueueToolbar({
+  value,
+  serviceOptions,
+  onChange,
+  onApply,
+  onReset,
+}: Props) {
   return (
+    <div className="rounded-4 border border-gray-200 bg-light-primary bg-opacity-10 px-5 py-5 mb-6">
+      <div className="text-gray-900 fw-bold fs-5 mb-2">Filter Antrian</div>
+      <div className="text-muted fs-7 mb-4">
+        Cari usulan berdasarkan ASN atau sempitkan hasil berdasarkan status dan layanan
+        yang sedang Anda tangani.
+      </div>
 
-    <div className="d-flex gap-3 mb-5 flex-wrap">
+      <div className="row g-4 align-items-end">
+        <div className="col-12 col-xl-6">
+          <label className="form-label fw-semibold">Cari NIP / Nama</label>
+          <div className="d-flex gap-3">
+            <input
+              className="form-control"
+              placeholder="Masukkan NIP, nama ASN, atau layanan"
+              value={value.search}
+              onChange={(event) =>
+                onChange({
+                  ...value,
+                  search: event.target.value,
+                })
+              }
+            />
+            <button
+              type="button"
+              className="btn btn-primary flex-shrink-0 text-nowrap"
+              style={{ minWidth: 110 }}
+              onClick={onApply}
+            >
+              Cari
+            </button>
+            <button
+              type="button"
+              className="btn btn-light flex-shrink-0 text-nowrap"
+              style={{ minWidth: 110 }}
+              onClick={onReset}
+            >
+              Reset
+            </button>
+          </div>
+        </div>
 
-      <input
-        className="form-control w-250px"
-        placeholder="Cari NIP / Nama"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
+        <div className="col-12 col-md-6 col-xl-3">
+          <label className="form-label fw-semibold">Status</label>
+          <select
+            className="form-select"
+            value={value.status}
+            onChange={(event) =>
+              onChange({
+                ...value,
+                status: event.target.value,
+              })
+            }
+          >
+            {STATUS_OPTIONS.map((option) => (
+              <option key={option.label} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <select
-        className="form-select w-200px"
-        value={status}
-        onChange={(e) => setStatus(e.target.value)}
-      >
-        <option value="">Semua Status</option>
-        <option value="SUBMITTED">Submitted</option>
-        <option value="VERIFIED">Verified</option>
-        <option value="APPROVED">Approved</option>
-        <option value="REJECTED">Rejected</option>
-      </select>
+        <div className="col-12 col-md-6 col-xl-3">
+          <label className="form-label fw-semibold">Layanan</label>
+          <select
+            className="form-select"
+            value={value.jenis}
+            onChange={(event) =>
+              onChange({
+                ...value,
+                jenis: event.target.value,
+              })
+            }
+          >
+            <option value="">Semua Layanan</option>
+            {serviceOptions.map((item) => (
+              <option key={item.kode} value={item.kode}>
+                {item.nama}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <select
-        className="form-select w-200px"
-        value={jenis}
-        onChange={(e) => setJenis(e.target.value)}
-      >
-        <option value="">Semua Layanan</option>
-        <option value="PENSIUN">Pensiun</option>
-        <option value="BEBAS_HUKDIS">Bebas Hukdis</option>
-      </select>
-
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={apply}
-      >
-        Filter
-      </button>
-
+      </div>
     </div>
-
   )
 }

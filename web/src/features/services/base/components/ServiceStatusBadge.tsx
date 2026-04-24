@@ -13,6 +13,8 @@ export default function ServiceStatusBadge({ status }: Props) {
 
     SUBMITTED: "badge badge-primary",
 
+    IN_REVIEW: "badge badge-light-warning",
+
     VERIFIED: "badge badge-info",
 
     RETURNED: "badge badge-warning",
@@ -34,6 +36,8 @@ export default function ServiceStatusBadge({ status }: Props) {
     DRAFT: "Draft",
 
     SUBMITTED: "Diajukan",
+
+    IN_REVIEW: "Ditinjau",
 
     VERIFIED: "Diverifikasi",
 

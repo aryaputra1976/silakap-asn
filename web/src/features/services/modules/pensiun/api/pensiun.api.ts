@@ -1,4 +1,15 @@
 import http from "@/core/http/httpClient"
+import {
+  createService,
+  dispatchWorkflowAction,
+  getServiceDetail,
+  getServiceList,
+  submitService,
+} from "@/features/services/base/api/service.api"
+import type {
+  ServiceDetailResponse,
+  ServiceListResponse,
+} from "@/features/services/base/types/service.types"
 
 import {
   CreatePensiunPayload,
@@ -7,36 +18,70 @@ import {
 } from "../types/pensiun.types"
 
 export async function getPensiunList(): Promise<PensiunItem[]> {
-  const res = await http.get("/pensiun")
-  return res.data
+  const response =
+    await getServiceList<ServiceListResponse>("pensiun")
+
+  return (response.data ?? []).map((item) => ({
+    id: String(item.id),
+    nip: item.pegawai?.nip ?? "-",
+    nama: item.pegawai?.nama ?? "-",
+    unitKerja: "-",
+    jenisPensiun: item.jenis?.nama ?? "Pensiun",
+    tmtPensiun: item.createdAt ?? "",
+    status: item.status as PensiunItem["status"],
+    createdAt: item.createdAt ?? "",
+  }))
 }
 
 export async function getPensiunDetail(id: string): Promise<PensiunDetail> {
-  const res = await http.get(`/pensiun/${id}`)
-  return res.data
+  const detail =
+    await getServiceDetail<ServiceDetailResponse>("pensiun", id)
+
+  return {
+    id: String(detail.id),
+    nip: detail.pegawai?.nip ?? "-",
+    nama: detail.pegawai?.nama ?? "-",
+    unitKerja: "-",
+    jenisPensiun: detail.jenis?.nama ?? "Pensiun",
+    tmtPensiun: "",
+    status: detail.status as PensiunDetail["status"],
+    createdAt: "",
+    tanggalUsul: "",
+    dokumen: [],
+    timeline: (detail.layananLog ?? []).map((item) => ({
+      status: item.status,
+      tanggal: item.createdAt,
+      keterangan: item.keterangan ?? undefined,
+    })),
+  }
 }
 
 export async function createPensiun(payload: CreatePensiunPayload) {
-  const res = await http.post("/pensiun", payload)
-  return res.data
+  return createService("pensiun", {
+    ...payload,
+  })
 }
 
 export async function submitPensiun(id: string) {
-  const res = await http.post("/pensiun/submit", { id })
-  return res.data
+  return submitService("pensiun", id)
 }
 
 export async function approvePensiun(id: string) {
-  const res = await http.post("/pensiun/approve", { id })
-  return res.data
+  return dispatchWorkflowAction("pensiun", id, "APPROVE")
 }
 
 export async function rejectPensiun(id: string, reason?: string) {
-  const res = await http.post("/pensiun/reject", {
-    id,
+  if (!reason) {
+    return dispatchWorkflowAction("pensiun", id, "REJECT")
+  }
+
+  const response = await http.post("/services/pensiun/workflow", {
+    usulId: id,
+    actionCode: "REJECT",
     reason,
   })
-  return res.data
+
+  return response.data
 }
 
 export async function getPensiunStatistik() {

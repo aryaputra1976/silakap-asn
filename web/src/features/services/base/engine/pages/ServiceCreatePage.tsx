@@ -1,27 +1,26 @@
-import { useParams, Navigate } from "react-router-dom"
+import { useNavigate, useParams, Navigate } from "react-router-dom"
 
 import { getService } from "../../registry"
 import { useCreateService } from "../hooks/useCreateService"
+import { uploadDocument } from "../../documents/api/document.api"
 
 export default function ServiceCreatePage() {
 
   const { service } = useParams<{ service: string }>()
+  const navigate = useNavigate()
 
   if (!service) {
     return <Navigate to="/dashboard" replace />
   }
 
-  const config = getService(service)
+  const serviceCode: string = service
+
+  const config = getService(serviceCode)
+  const { create, loading } = useCreateService(serviceCode)
 
   if (!config) {
-    return (
-      <div className="alert alert-danger">
-        Service tidak terdaftar
-      </div>
-    )
+    return <Navigate to="/dashboard" replace />
   }
-
-  const { create, loading } = useCreateService(service)
 
   const FormComponent = config.form
 
@@ -34,10 +33,31 @@ export default function ServiceCreatePage() {
   }
 
   async function handleSubmit(data: any) {
+    const {
+      documents,
+      ...payload
+    } = data ?? {}
 
     try {
+      const result: any = await create(payload)
+      const usulId = result?.usulId ? String(result.usulId) : null
 
-      await create(data)
+      if (usulId && documents && typeof documents === "object") {
+        for (const [key, file] of Object.entries(documents)) {
+          if (!(file instanceof File)) {
+            continue
+          }
+
+          await uploadDocument(serviceCode, usulId, key, file)
+        }
+      }
+
+      if (usulId) {
+        navigate(`/layanan/${serviceCode}/${usulId}`)
+        return
+      }
+
+      navigate(`/layanan/${serviceCode}/list`)
 
     } catch (error) {
 

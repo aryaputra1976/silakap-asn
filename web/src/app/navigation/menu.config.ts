@@ -1,328 +1,364 @@
-import type { Permission } from "@/core/rbac/permissions"
-import { PERMISSIONS } from "@/core/rbac/permissions"
+// web/src/app/navigation/menu.config.ts
 
-export interface MenuItemConfig {
+const ALL_ROLES = [
+  "ASN",
+  "OPERATOR",
+  "VERIFIKATOR",
+  "PPK",
+  "ADMIN_BKPSDM",
+  "SUPER_ADMIN"
+]
+
+const INTERNAL_ROLES = [
+  "OPERATOR",
+  "VERIFIKATOR",
+  "PPK",
+  "ADMIN_BKPSDM",
+  "SUPER_ADMIN"
+]
+
+const SERVICE_ROLES = ALL_ROLES
+const WORKFLOW_ROLES = ["VERIFIKATOR", "PPK", "ADMIN_BKPSDM", "SUPER_ADMIN"]
+const DMS_ROLES = ["OPERATOR", "VERIFIKATOR", "PPK", "ADMIN_BKPSDM", "SUPER_ADMIN"]
+const ADMIN_ROLES = ["ADMIN_BKPSDM", "SUPER_ADMIN"]
+const SECURITY_ROLES = ["ADMIN_BKPSDM", "SUPER_ADMIN"]
+
+export type AppMenuItem = {
+  key: string
   title: string
   path?: string
   icon?: string
-  permission?: Permission
-  roles?: string[]
-  children?: MenuItemConfig[]
+  permission?: string
+  permissionAny?: string[]
+  rolesAny?: string[]
+  badgeKey?: string
+  children?: AppMenuItem[]
 }
 
-/* =====================================================
- * MENU CONFIG — SOURCE OF TRUTH NAVIGATION
- * ===================================================== *
- *
- * Aturan final:
- * - Parent container tanpa path tidak memakai permission langsung.
- * - Permission diletakkan di leaf/child agar filter menu tidak
- *   memblok parent ketika minimal satu child valid.
- * - Parent hanya tampil jika renderer/filter menemukan minimal
- *   satu child yang lolos permission.
- * ===================================================== */
+export type MenuItemConfig = AppMenuItem
 
-export const menuConfig: MenuItemConfig[] = [
-  /* =====================================================
-   * DASHBOARD
-   * ===================================================== */
-
+export const APP_MENU: AppMenuItem[] = [
   {
+    key: "dashboard",
     title: "Dashboard",
+    path: "/dashboard",
     icon: "element-11",
-    children: [
-      {
-        title: "Executive Overview",
-        path: "/dashboard",
-      },
-    ],
+    rolesAny: ALL_ROLES
   },
-
-  /* =====================================================
-   * DATA ASN
-   * ===================================================== */
-
   {
-    title: "Data ASN",
-    path: "/asn/profil",
-    icon: "profile-user",
-    permission: PERMISSIONS.ASN_READ,
-  },
-
-  /* =====================================================
-   * WORKFORCE ANALYTICS
-   * ===================================================== */
-
-  {
-    title: "Workforce Analytics",
-    icon: "chart-simple",
-    children: [
-      {
-        title: "Ringkasan ASN",
-        path: "/analytics/asn-summary",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Distribusi ASN",
-        path: "/analytics/distribution",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Statistik OPD",
-        path: "/analytics/opd",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Prediksi Pensiun",
-        path: "/analytics/retirement",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Dashboard Workforce",
-        path: "/statistics/workforce",
-        permission: PERMISSIONS.ASN_READ,
-      },
-      {
-        title: "Analisis Gap OPD",
-        path: "/statistics/workforce/opd",
-        permission: PERMISSIONS.ASN_READ,
-      },
-    ],
-  },
-
-  /* =====================================================
-   * LAYANAN KEPEGAWAIAN
-   * ===================================================== */
-
-  {
-    title: "Layanan Kepegawaian",
+    key: "layanan-asn",
+    title: "Layanan ASN",
     icon: "briefcase",
+    rolesAny: SERVICE_ROLES,
     children: [
       {
-        title: "Usul Peremajaan Data",
-        path: "/layanan/peremajaan-data",
-        permission: PERMISSIONS.SERVICE_CREATE,
-      },
-      {
-        title: "Usul Pensiun",
+        key: "layanan-pensiun",
+        title: "Pensiun",
         path: "/layanan/pensiun",
-        permission: PERMISSIONS.SERVICE_CREATE,
+        rolesAny: SERVICE_ROLES
       },
       {
-        title: "Usul KGB",
-        path: "/layanan/kgb",
-        permission: PERMISSIONS.SERVICE_CREATE,
-      },
-      {
-        title: "Usul Mutasi",
+        key: "layanan-mutasi",
+        title: "Mutasi",
         path: "/layanan/mutasi",
-        permission: PERMISSIONS.SERVICE_CREATE,
+        rolesAny: SERVICE_ROLES
       },
       {
-        title: "Usul Tugas Belajar",
-        path: "/layanan/tugas-belajar",
-        permission: PERMISSIONS.SERVICE_CREATE,
+        key: "layanan-kgb",
+        title: "KGB",
+        path: "/layanan/kgb",
+        rolesAny: SERVICE_ROLES
       },
       {
-        title: "Usul Perpindahan Jabatan",
-        path: "/layanan/perpindahan-jabatan",
-        permission: PERMISSIONS.SERVICE_CREATE,
+        key: "layanan-jabatan",
+        title: "Jabatan",
+        path: "/layanan/jabatan",
+        rolesAny: SERVICE_ROLES
       },
       {
-        title: "Usul Kenaikan Jabatan",
-        path: "/layanan/kenaikan-jabatan",
-        permission: PERMISSIONS.SERVICE_CREATE,
+        key: "layanan-peremajaan",
+        title: "Peremajaan Data",
+        path: "/layanan/peremajaan",
+        rolesAny: ["OPERATOR", "ADMIN_BKPSDM", "SUPER_ADMIN"]
       },
       {
-        title: "Usul Bebas Hukdis",
-        path: "/layanan/bebas-hukdis",
-        permission: PERMISSIONS.SERVICE_CREATE,
+        key: "layanan-draft",
+        title: "Draft Saya",
+        path: "/layanan/draft",
+        rolesAny: ["ASN", "OPERATOR", "ADMIN_BKPSDM", "SUPER_ADMIN"]
       },
-    ],
+      {
+        key: "layanan-status",
+        title: "Status Layanan",
+        path: "/layanan/status",
+        rolesAny: SERVICE_ROLES
+      }
+    ]
   },
-
-  /* =====================================================
-   * WORKFLOW
-   * ===================================================== */
-
   {
-    title: "Proses & Persetujuan",
-    icon: "abstract-26",
-    roles: ["SUPER_ADMIN", "ADMIN_BKPSDM", "VERIFIKATOR", "PPK"],
+    key: "workflow",
+    title: "Verifikasi & Persetujuan",
+    icon: "check-circle",
+    rolesAny: WORKFLOW_ROLES,
+    badgeKey: "workflow.queue",
     children: [
       {
+        key: "workflow-queue",
         title: "Antrian Verifikasi",
-        path: "/workflow/antrian",
-        permission: PERMISSIONS.SERVICE_VERIFY,
+        path: "/workflow/queue",
+        rolesAny: WORKFLOW_ROLES,
+        badgeKey: "workflow.queue"
       },
       {
+        key: "workflow-approval",
         title: "Disposisi",
         path: "/workflow/disposisi",
-        permission: PERMISSIONS.SERVICE_VERIFY,
+        rolesAny: ["PPK", "ADMIN_BKPSDM", "SUPER_ADMIN"]
       },
       {
-        title: "Monitoring Proses",
+        key: "workflow-timeline",
+        title: "Monitoring Workflow",
         path: "/workflow/monitoring",
-        permission: PERMISSIONS.SERVICE_VIEW_ALL,
-      },
-    ],
+        rolesAny: WORKFLOW_ROLES
+      }
+    ]
   },
-
-  /* =====================================================
-   * DOKUMEN
-   * ===================================================== */
-
   {
+    key: "dokumen",
     title: "Dokumen & Arsip",
-    path: "/dokumen",
     icon: "file",
-    permission: PERMISSIONS.DOC_READ,
-  },
-
-  /* =====================================================
-   * DMS OPERATOR
-   * ===================================================== */
-
-  {
-    title: "DMS Monitoring",
-    path: "/dms-monitoring",
-    icon: "abstract-45",
-    roles: ["OPERATOR"],
-  },
-
-  /* =====================================================
-   * INTEGRASI SIASN
-   * ===================================================== */
-
-  {
-    title: "Integrasi SIASN",
-    icon: "arrows-loop",
-    roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
+    rolesAny: DMS_ROLES,
     children: [
       {
-        title: "Import Data ASN",
-        path: "/integrasi/import-asn",
-        permission: PERMISSIONS.SIASN_SYNC_VIEW,
-        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
+        key: "dokumen-usulan",
+        title: "Dokumen Usulan",
+        path: "/dokumen/usulan",
+        rolesAny: DMS_ROLES
       },
       {
-        title: "Import Referensi Jabatan",
-        path: "/integrasi/import-jabatan",
-        permission: PERMISSIONS.SIASN_SYNC_VIEW,
-        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
+        key: "dokumen-kelengkapan",
+        title: "Kelengkapan Dokumen",
+        path: "/dokumen/kelengkapan",
+        rolesAny: ["VERIFIKATOR", "PPK", "ADMIN_BKPSDM", "SUPER_ADMIN"],
+        badgeKey: "dokumen.incomplete"
       },
       {
-        title: "Import Referensi UNOR",
-        path: "/integrasi/import-unor",
-        permission: PERMISSIONS.SIASN_SYNC_VIEW,
-        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
+        key: "dokumen-pegawai",
+        title: "Dokumen Pegawai",
+        path: "/dokumen/pegawai",
+        rolesAny: DMS_ROLES
       },
       {
-        title: "Log Import",
-        path: "/integrasi/log",
-        permission: PERMISSIONS.SIASN_SYNC_VIEW,
-        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
-      },
-      {
-        title: "DMS Monitoring",
+        key: "dokumen-dms",
+        title: "Arsip DMS",
         path: "/dms-monitoring",
-        permission: PERMISSIONS.SIASN_SYNC_VIEW,
-        roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
-      },
-    ],
+        rolesAny: DMS_ROLES
+      }
+    ]
   },
-
-  /* =====================================================
-   * KEAMANAN
-   * ===================================================== */
-
   {
-    title: "Keamanan & Audit",
-    icon: "shield-tick",
-    roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
+    key: "data-asn",
+    title: "Data ASN",
+    icon: "profile-user",
+    rolesAny: INTERNAL_ROLES,
     children: [
       {
-        title: "Manajemen Pengguna",
-        path: "/security/users",
-        permission: PERMISSIONS.SECURITY_USER_READ,
+        key: "pegawai-profile",
+        title: "Profil Pegawai",
+        path: "/data-asn/profil",
+        rolesAny: INTERNAL_ROLES
       },
       {
-        title: "Role & Hak Akses",
-        path: "/security/roles",
-        permission: PERMISSIONS.SECURITY_ROLE_READ,
+        key: "pegawai-list",
+        title: "Daftar Pegawai",
+        path: "/data-asn/pegawai",
+        rolesAny: INTERNAL_ROLES
       },
       {
-        title: "Audit Log",
-        path: "/security/audit",
-        permission: PERMISSIONS.SECURITY_AUDIT_READ,
+        key: "pegawai-riwayat",
+        title: "Riwayat ASN",
+        path: "/data-asn/riwayat",
+        rolesAny: INTERNAL_ROLES
       },
-    ],
+      {
+        key: "pegawai-kelengkapan",
+        title: "Kelengkapan Data",
+        path: "/data-asn/kelengkapan",
+        rolesAny: INTERNAL_ROLES
+      }
+    ]
   },
-
-  /* =====================================================
-   * MASTER REFERENSI
-   * ===================================================== */
-
   {
-    title: "Master Referensi",
-    icon: "setting-2",
-    roles: ["SUPER_ADMIN", "ADMIN_BKPSDM"],
+    key: "laporan",
+    title: "Laporan",
+    icon: "chart-simple-3",
+    rolesAny: INTERNAL_ROLES,
     children: [
       {
-        title: "Agama",
-        path: "/master/agama",
-        permission: PERMISSIONS.MASTER_AGAMA_VIEW,
-      },
-      {
-        title: "Golongan",
-        path: "/master/golongan",
-        permission: PERMISSIONS.MASTER_GOLONGAN_VIEW,
-      },
-      {
-        title: "Jenis Jabatan",
-        path: "/master/jenis-jabatan",
-        permission: PERMISSIONS.MASTER_JENIS_JABATAN_VIEW,
-      },
-      {
+        key: "laporan-pegawai-gender",
         title: "Jenis Kelamin",
-        path: "/master/jenis-kelamin",
-        permission: PERMISSIONS.MASTER_JENIS_KELAMIN_VIEW,
+        path: "/laporan/pegawai/jenis-kelamin",
+        rolesAny: INTERNAL_ROLES
       },
       {
-        title: "Jenis Pegawai",
-        path: "/master/jenis-pegawai",
-        permission: PERMISSIONS.MASTER_JENIS_PEGAWAI_VIEW,
-      },
-      {
-        title: "Status Kepegawaian",
-        path: "/master/status-kepegawaian",
-        permission: PERMISSIONS.MASTER_STATUS_KEPEGAWAIAN_VIEW,
-      },
-      {
-        title: "Status Perkawinan",
-        path: "/master/status-perkawinan",
-        permission: PERMISSIONS.MASTER_STATUS_PERKAWINAN_VIEW,
-      },
-      {
-        title: "Instansi",
-        path: "/master/instansi",
-        permission: PERMISSIONS.MASTER_INSTANSI_VIEW,
-      },
-      {
-        title: "Unit Kerja",
-        path: "/master/unor",
-        permission: PERMISSIONS.MASTER_UNOR_VIEW,
-      },
-      {
+        key: "laporan-pegawai-pendidikan",
         title: "Pendidikan",
-        path: "/master/pendidikan",
-        permission: PERMISSIONS.MASTER_PENDIDIKAN_VIEW,
+        path: "/laporan/pegawai/pendidikan",
+        rolesAny: INTERNAL_ROLES
       },
       {
-        title: "Jabatan",
-        path: "/master/jabatan",
-        permission: PERMISSIONS.MASTER_JABATAN_VIEW,
+        key: "laporan-pegawai-golongan",
+        title: "Golongan",
+        path: "/laporan/pegawai/golongan",
+        rolesAny: INTERNAL_ROLES
       },
-    ],
+      {
+        key: "laporan-pegawai-jabatan",
+        title: "Jabatan",
+        path: "/laporan/pegawai/jabatan",
+        rolesAny: INTERNAL_ROLES
+      }
+    ]
   },
+  {
+    key: "system",
+    title: "Pengaturan Sistem",
+    icon: "setting-2",
+    rolesAny: ADMIN_ROLES,
+    children: [
+      {
+        key: "system-workflow",
+        title: "Workflow",
+        path: "/pengaturan/workflow",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "system-users",
+        title: "Pengguna",
+        path: "/pengaturan/pengguna",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "system-roles",
+        title: "Role",
+        path: "/pengaturan/role",
+        rolesAny: ADMIN_ROLES
+      }
+    ]
+  },
+  {
+    key: "reference",
+    title: "Master Referensi",
+    icon: "database",
+    rolesAny: ADMIN_ROLES,
+    children: [
+      {
+        key: "reference-asn",
+        title: "Referensi ASN",
+        path: "/referensi/asn",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "reference-org",
+        title: "Referensi Organisasi",
+        path: "/referensi/organisasi",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "reference-document",
+        title: "Referensi Dokumen",
+        path: "/referensi/dokumen",
+        rolesAny: ADMIN_ROLES
+      }
+    ]
+  },
+  {
+    key: "security",
+    title: "Keamanan & Audit",
+    icon: "shield",
+    rolesAny: SECURITY_ROLES,
+    children: [
+      {
+        key: "security-audit",
+        title: "Audit Log",
+        path: "/keamanan/audit-log",
+        rolesAny: SECURITY_ROLES
+      },
+      {
+        key: "security-activity",
+        title: "Aktivitas Pengguna",
+        path: "/keamanan/activity",
+        rolesAny: SECURITY_ROLES
+      }
+    ]
+  },
+  {
+    key: "integrasi",
+    title: "Integrasi Eksternal",
+    icon: "arrows-loop",
+    rolesAny: ADMIN_ROLES,
+    badgeKey: "integrasi.failed",
+    children: [
+      {
+        key: "integrasi-siasn",
+        title: "Sinkronisasi SIASN",
+        path: "/integrasi/siasn",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "integrasi-jobs",
+        title: "Job Sinkronisasi",
+        path: "/integrasi/jobs",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "integrasi-log",
+        title: "Riwayat Sinkronisasi",
+        path: "/integrasi/log",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "integrasi-import",
+        title: "Import Data",
+        path: "/integrasi/import",
+        rolesAny: ADMIN_ROLES
+      }
+    ]
+  },
+  {
+    key: "analytics",
+    title: "Analitik SDM",
+    icon: "chart-line",
+    rolesAny: ADMIN_ROLES,
+    children: [
+      {
+        key: "analytics-overview",
+        title: "Dashboard SDM",
+        path: "/analitik",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "analytics-formasi",
+        title: "Formasi & Kebutuhan",
+        path: "/analitik/formasi",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "analytics-abk",
+        title: "Analisis Beban Kerja",
+        path: "/analitik/abk",
+        rolesAny: ADMIN_ROLES
+      },
+      {
+        key: "analytics-talent",
+        title: "Talent Pool",
+        path: "/analitik/talent",
+        rolesAny: ADMIN_ROLES
+      }
+    ]
+  }
 ]
+
+export const menuConfig = APP_MENU
+
+export default APP_MENU

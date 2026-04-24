@@ -1,12 +1,14 @@
 export type WorkflowState =
   | "DRAFT"
   | "SUBMITTED"
+  | "IN_REVIEW"
   | "VERIFIED"
   | "RETURNED"
   | "APPROVED"
   | "REJECTED"
   | "SYNCED_SIASN"
   | "FAILED_SIASN"
+  | "COMPLETED"
 
 export type WorkflowAction =
   | "SUBMIT"

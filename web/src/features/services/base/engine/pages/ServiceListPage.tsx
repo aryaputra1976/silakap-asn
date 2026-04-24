@@ -14,16 +14,14 @@ export default function ServiceListPage() {
   }
 
   const config = getService(service)
+  const { data, loading } = useServiceList(
+    service,
+    Boolean(config),
+  )
 
   if (!config) {
-    return (
-      <div className="alert alert-danger">
-        Service tidak terdaftar
-      </div>
-    )
+    return <Navigate to="/dashboard" replace />
   }
-
-  const { data, loading } = useServiceList(service)
 
   return (
 

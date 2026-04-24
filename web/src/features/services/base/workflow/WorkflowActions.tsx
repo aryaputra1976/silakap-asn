@@ -9,6 +9,8 @@ interface Props {
 
   role: UserRole
 
+  actions?: string[]
+
   onAction?: (action: string) => void
 
 }
@@ -16,16 +18,20 @@ interface Props {
 export default function WorkflowActions({
   status,
   role,
+  actions,
   onAction,
 }: Props) {
 
-  const actions = getAvailableActions(status, role)
+  const availableActions =
+    actions && actions.length > 0
+      ? actions
+      : getAvailableActions(status, role)
 
   return (
 
     <div className="d-flex gap-2">
 
-      {actions.map((action) => {
+      {availableActions.map((action) => {
 
         const config = actionConfig[action]
 

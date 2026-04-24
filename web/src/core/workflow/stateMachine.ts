@@ -5,6 +5,8 @@ export const transitions: Record<WorkflowState, WorkflowAction[]> = {
 
   SUBMITTED: ["VERIFY", "RETURN"],
 
+  IN_REVIEW: ["VERIFY", "RETURN"],
+
   VERIFIED: ["APPROVE", "REJECT"],
 
   RETURNED: ["SUBMIT"],
@@ -16,4 +18,6 @@ export const transitions: Record<WorkflowState, WorkflowAction[]> = {
   SYNCED_SIASN: [],
 
   FAILED_SIASN: ["RETRY_SIASN"],
+
+  COMPLETED: [],
 }

@@ -1,62 +1,83 @@
-import {useAuthStore} from '@/stores/auth.store'
-import {KTIcon, toAbsoluteUrl} from '../../../helpers'
-import {HeaderUserMenu, Search} from '../../../partials'
+// web/src/_metronic/layout/components/aside/AsideToolbar.tsx
 
-const AsideToolbar = () => {
-  const user = useAuthStore((s) => s.user)
+import React from "react"
+import { useNavigate } from "react-router-dom"
+import { KTIcon } from "../../../helpers"
+import { useAuthStore } from "@/stores/auth.store"
+import { NAV_SEARCH_OPEN_EVENT } from "@/components/navigation/NavigationSearch"
 
-  const currentUser = user
-    ? {
-        first_name: user.username,
-        last_name: '',
-      }
-    : null
+export function AsideToolbar(): React.ReactElement {
+  const navigate = useNavigate()
+  const user = useAuthStore((state) => state.user)
+
+  const username = user?.username ?? "User"
+  const primaryRole =
+    user?.roles && user.roles.length > 0
+      ? user.roles[0]
+      : "USER"
+
+  function openQuickSearch() {
+    window.dispatchEvent(new Event(NAV_SEARCH_OPEN_EVENT))
+  }
 
   return (
-    <>
-      <div className='aside-user d-flex align-items-sm-center justify-content-center py-5'>
-        <div className='symbol symbol-50px'>
-          <img src={toAbsoluteUrl('media/avatars/300-1.jpg')} alt='' />
-        </div>
+    <div id="kt_aside_toolbar" className="px-6 pt-6 pb-5">
+      <div className="aside-user-card rounded-4 p-4 mb-5">
+        <div className="d-flex align-items-start justify-content-between gap-3">
+          <div className="d-flex align-items-center gap-3 min-w-0">
+            <div className="aside-user-avatar flex-shrink-0">
+              <img
+                src="/media/avatars/300-1.jpg"
+                alt="User avatar"
+                className="w-50px h-50px rounded-3 object-fit-cover"
+              />
+            </div>
 
-        <div className='aside-user-info flex-row-fluid flex-wrap ms-5'>
-          <div className='d-flex'>
-            <div className='flex-grow-1 me-2'>
-              <a href='#' className='text-white text-hover-primary fs-6 fw-bold'>
-                {currentUser?.first_name} {currentUser?.last_name}
-              </a>
-
-              <span className='text-gray-600 fw-bold d-block fs-8 mb-1'>
-                {user?.roles?.[0] ?? 'User'}
-              </span>
-
-              <div className='d-flex align-items-center text-success fs-9'>
-                <span className='bullet bullet-dot bg-success me-1'></span>online
+            <div className="min-w-0">
+              <div className="text-white fw-bold fs-4 text-truncate">
+                {username}
+              </div>
+              <div className="text-primary-subtle fw-semibold fs-7 text-uppercase mt-1">
+                {primaryRole}
+              </div>
+              <div className="d-flex align-items-center mt-2">
+                <span
+                  className="d-inline-block rounded-circle me-2"
+                  style={{ width: 7, height: 7, backgroundColor: "#00C853" }}
+                />
+                <span className="text-success fw-medium fs-8">online</span>
               </div>
             </div>
-
-            <div className='me-n2'>
-              <a
-                href='#'
-                className='btn btn-icon btn-sm btn-active-color-primary mt-n2'
-                data-kt-menu-trigger='click'
-                data-kt-menu-placement='bottom-start'
-                data-kt-menu-overflow='false'
-              >
-                <KTIcon iconName='setting-2' className='text-muted fs-1' />
-              </a>
-
-              <HeaderUserMenu />
-            </div>
           </div>
+
+          <button
+            type="button"
+            className="btn btn-icon btn-sm aside-user-action"
+            aria-label="Account settings"
+            title="Account settings"
+            onClick={() => navigate("/account/settings")}
+          >
+            <KTIcon iconName="setting-2" className="fs-3" />
+          </button>
         </div>
       </div>
 
-      <div className='aside-search py-5'>
-        <Search />
-      </div>
-    </>
+      <button
+        type="button"
+        className="aside-search-card rounded-4 px-4 py-3 w-100 border-0 text-start"
+        onClick={openQuickSearch}
+        aria-label="Quick search"
+      >
+        <div className="d-flex align-items-center gap-3">
+          <KTIcon iconName="magnifier" className="fs-2 text-gray-500" />
+          <div className="d-flex flex-column">
+            <span className="text-gray-500 fw-medium fs-6">Quick Search</span>
+            <span className="text-muted fs-8">Menu atau ASN</span>
+          </div>
+        </div>
+      </button>
+    </div>
   )
 }
 
-export {AsideToolbar}
+export default AsideToolbar

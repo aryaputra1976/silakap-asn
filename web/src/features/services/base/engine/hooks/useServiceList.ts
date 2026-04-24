@@ -5,7 +5,10 @@ import {
   ServiceListResponse,
 } from "../../types/service.types"
 
-export function useServiceList(service: string) {
+export function useServiceList(
+  service: string,
+  enabled = true,
+) {
 
   const [data, setData] = useState<ServiceItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -44,8 +47,10 @@ export function useServiceList(service: string) {
   }
 
   useEffect(() => {
-    fetchData()
-  }, [service])
+    if (enabled && service) {
+      fetchData()
+    }
+  }, [enabled, service])
 
   return {
     data,

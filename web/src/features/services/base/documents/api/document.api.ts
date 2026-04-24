@@ -1,4 +1,5 @@
 import http from "@/core/http/httpClient"
+import { env } from "@/core/utils/env"
 
 export async function getDocuments(
   service: string,
@@ -32,4 +33,16 @@ export async function uploadDocument(
 
   return res.data
 
+}
+
+export function resolveDocumentUrl(url?: string | null) {
+  if (!url) {
+    return ""
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url
+  }
+
+  return new URL(url, env.apiUrl).toString()
 }

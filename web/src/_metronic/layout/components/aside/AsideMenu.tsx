@@ -1,52 +1,59 @@
-import React, {useRef, useEffect} from 'react'
-import { useLocation } from 'react-router-dom'
-import clsx from 'clsx'
-import {AsideMenuMain} from './AsideMenuMain'
-import {DrawerComponent, ScrollComponent, ToggleComponent} from '../../../assets/ts/components'
+// web/src/_metronic/layout/components/aside/AsideMenu.tsx
 
-type Props = {
-  asideMenuCSSClasses: string[]
+import React, { useMemo } from "react"
+import { AsideMenuMain } from "./AsideMenuMain"
+import { useAuthStore } from "@/stores/auth.store"
+
+type AuthLikeUser = {
+  role?: string
+  roles?: string[]
 }
 
-const AsideMenu: React.FC<Props> = ({asideMenuCSSClasses}) => {
-  const scrollRef = useRef<HTMLDivElement | null>(null)
-  const {pathname} = useLocation()
-/*
-  useEffect(() => {
-    setTimeout(() => {
-      DrawerComponent.reinitialization()
-      ToggleComponent.reinitialization()
-      ScrollComponent.reinitialization()
-      if (scrollRef.current) {
-        scrollRef.current.scrollTop = 0
-      }
-    }, 50)
-     
-  }, [pathname])
-*/
+function normalizeRoles(user: AuthLikeUser | null): string[] {
+  if (!user) {
+    return []
+  }
+
+  if (Array.isArray(user.roles)) {
+    return user.roles.filter(Boolean)
+  }
+
+  if (typeof user.role === "string" && user.role.trim().length > 0) {
+    return [user.role]
+  }
+
+  return []
+}
+
+export function AsideMenu(): React.ReactElement {
+  const currentUser = useAuthStore((state) => state.user)
+  const authPermissions = useAuthStore((state) => state.permissions)
+
+  const roles = useMemo(() => normalizeRoles(currentUser), [currentUser])
+  const permissions = useMemo(() => {
+    if (Array.isArray(authPermissions)) {
+      return authPermissions.filter(Boolean)
+    }
+
+    return []
+  }, [authPermissions])
+
   return (
-    <div
-      id='kt_aside_menu_wrapper'
-      ref={scrollRef}
-      className='hover-scroll-overlay-y px-2 my-5 my-lg-5'
-      data-kt-scroll='true'
-      data-kt-scroll-height='auto'
-      data-kt-scroll-dependencies="{default: '#kt_aside_toolbar, #kt_aside_footer', lg: '#kt_header, #kt_aside_toolbar, #kt_aside_footer'}"
-      data-kt-scroll-wrappers='#kt_aside_menu'
-      data-kt-scroll-offset='5px'
-    >
+    <div className="aside-menu flex-column-fluid h-100 min-h-100 d-flex flex-column">
       <div
-        id='kt_aside_menu'
-        data-kt-menu='true'
-        className={clsx(
-          'menu menu-column menu-title-gray-800 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-500',
-          asideMenuCSSClasses.join(' ')
-        )}
+        id="kt_aside_menu_wrapper"
+        className="aside-menu-scroll hover-scroll-overlay-y h-100 my-2 my-lg-4 pe-2 flex-grow-1"
+        data-kt-scroll="true"
+        data-kt-scroll-activate="{default: false, lg: true}"
+        data-kt-scroll-height="auto"
+        data-kt-scroll-dependencies="#kt_aside_logo, #kt_aside_toolbar, #kt_aside_footer"
+        data-kt-scroll-wrappers="#kt_aside, #kt_aside_menu"
+        data-kt-scroll-offset="8px"
       >
-        <AsideMenuMain />
+        <AsideMenuMain roles={roles} permissions={permissions} />
       </div>
     </div>
   )
 }
 
-export {AsideMenu}
+export default AsideMenu

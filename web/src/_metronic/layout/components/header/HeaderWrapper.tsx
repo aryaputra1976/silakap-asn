@@ -18,12 +18,16 @@ export function HeaderWrapper() {
       {/* begin::Brand */}
       <div className='header-brand'>
         {/* begin::Logo */}
-        <Link to='/'>
+        <Link to='/' className='header-brand-logo text-decoration-none'>
           <img
             alt='Logo BKPSDM'
             src='/logo-bkpsdm.svg'
-            className='h-35px h-lg-40px'
+            className='header-brand-logo-image'
           />
+          <div className='header-brand-copy'>
+            <div className='header-brand-title'>SILAKAP</div>
+            <div className='header-brand-subtitle'>Sistem Layanan ASN</div>
+          </div>
         </Link>
         {/* end::Logo */}
 

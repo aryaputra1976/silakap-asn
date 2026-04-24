@@ -1,10 +1,13 @@
 import type { DashboardRecent } from "../api/dashboard.api"
+import { useNavigate, useParams } from "react-router-dom"
 
 interface Props {
   data: DashboardRecent[]
 }
 
 export default function DashboardRecentTable({ data }: Props) {
+  const navigate = useNavigate()
+  const { service } = useParams<{ service: string }>()
 
   if (!data || data.length === 0) {
     return (
@@ -34,7 +37,18 @@ export default function DashboardRecentTable({ data }: Props) {
           <tbody>
 
             {data.map((row) => (
-              <tr key={row.id}>
+              <tr
+                key={row.id}
+                role="button"
+                className="cursor-pointer"
+                onClick={() => {
+                  if (!service) {
+                    return
+                  }
+
+                  navigate(`/layanan/${service}/${row.id}`)
+                }}
+              >
                 <td>{row.nomor}</td>
                 <td>{row.pemohon}</td>
                 <td className="text-capitalize">{row.status}</td>

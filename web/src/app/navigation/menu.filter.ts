@@ -1,64 +1,102 @@
-import { useMemo } from "react"
-import { menuConfig, MenuItemConfig } from "./menu.config"
-import { useAuthStore } from "@/stores/auth.store"
-import { PERMISSIONS } from "@/core/rbac/permissions"
+// web/src/app/navigation/menu.filter.ts
 
-function filterMenu(
-  items: MenuItemConfig[],
-  permissions: string[],
-  roles: string[]
-): MenuItemConfig[] {
-  return items
-    .map((item) => {
-      const hasRole =
-        !item.roles ||
-        item.roles.length === 0 ||
-        item.roles.some((role) => roles.includes(role))
+import type { AppMenuItem } from "./menu.config"
+import { hasService } from "@/features/services/base/registry"
+import { hasAccess, type AccessContext } from "@/core/rbac/access"
+import { hasRegisteredStaticRoute } from "@/app/routes/generateRoutes"
 
-      if (!hasRole) {
-        return null
-      }
+export type MenuAccessContext = AccessContext
 
-      const children = item.children
-        ? filterMenu(item.children, permissions, roles)
-        : undefined
-
-      const hasPermission =
-        !item.permission ||
-        permissions.includes("*") ||
-        permissions.includes(item.permission)
-
-      if (hasPermission || (children && children.length > 0)) {
-        return {
-          ...item,
-          children,
-        }
-      }
-
-      return null
-    })
-    .filter(Boolean) as MenuItemConfig[]
+function isSuperAdmin(context: MenuAccessContext): boolean {
+  return (context.roles ?? []).some((role) => {
+    const normalized = role.trim().toUpperCase()
+    return normalized === "SUPER_ADMIN" || normalized === "SUPERADMIN"
+  })
 }
 
-export function useFilteredMenu() {
-  const permissions = useAuthStore((state) => state.permissions)
-  const roles = useAuthStore((state) => state.user?.roles ?? [])
+function canAccessMenuItem(
+  item: AppMenuItem,
+  context: MenuAccessContext
+): boolean {
+  if (isSuperAdmin(context)) {
+    return true
+  }
 
-  return useMemo(() => {
-    const effectivePermissions = new Set(permissions)
-
-    if (permissions.includes("*")) {
-      effectivePermissions.add("*")
-    }
-
-    if (roles.includes("OPERATOR")) {
-      effectivePermissions.add(PERMISSIONS.ASN_READ)
-    }
-
-    return filterMenu(
-      menuConfig,
-      Array.from(effectivePermissions),
-      roles
-    )
-  }, [permissions, roles])
+  return (
+    hasAccess(
+      {
+        rolesAny: item.rolesAny,
+        permissionAny: item.permissionAny
+      },
+      context
+    ) && hasActiveMenuPath(item)
+  )
 }
+
+function hasActiveMenuPath(item: AppMenuItem): boolean {
+  if (!item.path) {
+    return true
+  }
+
+  const match = item.path.match(/^\/layanan\/([^/]+)$/)
+
+  if (!match) {
+    return hasRegisteredStaticRoute(item.path)
+  }
+
+  return hasService(match[1])
+}
+
+function filterMenuTree(
+  items: AppMenuItem[],
+  context: MenuAccessContext
+): AppMenuItem[] {
+  const result: AppMenuItem[] = []
+
+  for (const item of items) {
+    const filteredChildren = item.children
+      ? filterMenuTree(item.children, context)
+      : undefined
+
+    const selfVisible = canAccessMenuItem(item, context)
+    const hasVisibleChildren = Boolean(filteredChildren && filteredChildren.length > 0)
+
+    if (!selfVisible && !hasVisibleChildren) {
+      continue
+    }
+
+    const nextItem: AppMenuItem = {
+      key: item.key,
+      title: item.title,
+      path: item.path,
+      icon: item.icon,
+      permissionAny: item.permissionAny,
+      rolesAny: item.rolesAny,
+      badgeKey: item.badgeKey
+    }
+
+    if (hasVisibleChildren) {
+      nextItem.children = filteredChildren
+    }
+
+    result.push(nextItem)
+  }
+
+  return result
+}
+
+export function filterMenuByAccess(
+  items: AppMenuItem[],
+  context: MenuAccessContext
+): AppMenuItem[] {
+  return filterMenuTree(items, context)
+}
+
+export function hasMenuAccess(
+  item: AppMenuItem,
+  context: MenuAccessContext
+): boolean {
+  return canAccessMenuItem(item, context)
+}
+
+export const filterMenu = filterMenuByAccess

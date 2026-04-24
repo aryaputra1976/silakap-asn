@@ -25,8 +25,8 @@ const AsideDefault: FC = () => {
       </div>
       {/* end::Aside Toolbarl */}
       {/* begin::Aside menu */}
-      <div className='aside-menu flex-column-fluid'>
-        <AsideMenu asideMenuCSSClasses={classes.asideMenu} />
+      <div className='aside-menu flex-column-fluid d-flex flex-column min-h-0' id='kt_aside_menu'>
+        <AsideMenu />
       </div>
       {/* end::Aside menu */}
 

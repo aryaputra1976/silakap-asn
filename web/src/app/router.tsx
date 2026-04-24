@@ -4,7 +4,10 @@ import { createBrowserRouter, Navigate, useParams } from "react-router-dom"
 import "@/features/services"
 
 import { menuConfig } from "@/app/navigation/menu.config"
-import { generateRoutes } from "./routes/generateRoutes"
+import {
+  generateMasterRoutes,
+  generateRoutes,
+} from "./routes/generateRoutes"
 
 import App from "./App"
 
@@ -16,6 +19,7 @@ import { MasterLayout } from "@/_metronic/layout/MasterLayout"
 import RouteGuard from "./routes/RouteGuard"
 
 import AccountSettingsPage from "@/features/account/pages/AccountSettingsPage"
+import { hasService } from "@/features/services/base/registry"
 
 /* ================= DETAIL PAGE ================= */
 
@@ -56,7 +60,7 @@ function ServiceDashboardRoute() {
 
   const { service } = useParams<{ service: string }>()
 
-  if (!service) {
+  if (!service || !hasService(service)) {
     return <Navigate to="/dashboard" replace />
   }
 
@@ -68,6 +72,7 @@ function ServiceDashboardRoute() {
 /* ================= AUTO ROUTES ================= */
 
 const protectedRoutes = generateRoutes(menuConfig)
+const masterRoutes = generateMasterRoutes()
 
 /* ======================================================
  * ROUTER
@@ -189,6 +194,7 @@ export const router = createBrowserRouter([
           /* ================= AUTO MENU ROUTES ================= */
 
           ...protectedRoutes,
+          ...masterRoutes,
 
           {
             path: "/403",

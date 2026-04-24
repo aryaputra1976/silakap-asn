@@ -1,0 +1,401 @@
+// web/src/_metronic/assets/sass/layout/_aside.scss
+
+.aside {
+  .aside-menu {
+    .hover-scroll-overlay-y {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(122, 126, 245, 0.65) transparent;
+    }
+
+    .hover-scroll-overlay-y::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .hover-scroll-overlay-y::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .hover-scroll-overlay-y::-webkit-scrollbar-thumb {
+      background: rgba(122, 126, 245, 0.55);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+
+    .hover-scroll-overlay-y::-webkit-scrollbar-thumb:hover {
+      background: rgba(122, 126, 245, 0.8);
+      background-clip: content-box;
+    }
+
+    .menu {
+      .menu-item-root + .menu-item-root {
+        margin-top: 0.125rem;
+      }
+
+      .menu-link {
+        transition:
+          background-color 0.2s ease,
+          color 0.2s ease,
+          box-shadow 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .menu-item-root {
+        > .menu-link {
+          min-height: 3rem;
+          border: 1px solid transparent;
+
+          .menu-title {
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .menu-icon {
+            margin-right: 0.75rem;
+          }
+
+          .menu-arrow {
+            color: #8f93b2;
+            transition:
+              transform 0.2s ease,
+              color 0.2s ease;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.045);
+
+            .menu-title {
+              color: #ffffff;
+            }
+
+            .menu-arrow {
+              color: #c7caf6;
+            }
+          }
+
+          &.active {
+            background: linear-gradient(135deg, #2f80ed 0%, #318bff 100%);
+            box-shadow: 0 10px 24px rgba(49, 139, 255, 0.22);
+
+            .menu-title,
+            .menu-arrow,
+            .menu-icon i {
+              color: #ffffff !important;
+            }
+          }
+        }
+
+        &.here > .menu-link,
+        &.show > .menu-link {
+          background: rgba(255, 255, 255, 0.035);
+
+          .menu-title {
+            color: #ffffff;
+          }
+
+          .menu-arrow {
+            color: #d9dbff;
+            transform: rotate(90deg);
+          }
+        }
+
+        > .menu-sub {
+          position: relative;
+          margin-left: 1rem;
+          padding-left: 0.5rem;
+
+          &::before {
+            content: "";
+            position: absolute;
+            top: 0.25rem;
+            bottom: 0.5rem;
+            left: 0.125rem;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.08);
+          }
+        }
+      }
+
+      .menu-item-child {
+        > .menu-link {
+          min-height: 2.5rem;
+          border-radius: 0.75rem;
+          border: 1px solid transparent;
+
+          .menu-title {
+            color: #d2d5f2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .menu-arrow {
+            color: #7f84ad;
+            transition:
+              transform 0.2s ease,
+              color 0.2s ease;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.04);
+
+            .menu-title {
+              color: #ffffff;
+            }
+
+            .menu-arrow {
+              color: #c7caf6;
+            }
+          }
+
+          &.active {
+            background: rgba(49, 139, 255, 0.14);
+            border-color: rgba(49, 139, 255, 0.25);
+
+            .menu-title,
+            .menu-arrow {
+              color: #ffffff !important;
+            }
+          }
+        }
+
+        &.here > .menu-link,
+        &.show > .menu-link {
+          .menu-arrow {
+            transform: rotate(90deg);
+            color: #d9dbff;
+          }
+        }
+
+        > .menu-sub {
+          position: relative;
+          margin-left: 0.75rem;
+          padding-left: 0.75rem;
+
+          &::before {
+            content: "";
+            position: absolute;
+            top: 0.25rem;
+            bottom: 0.25rem;
+            left: 0.125rem;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.06);
+          }
+        }
+      }
+
+      .menu-badge {
+        .badge {
+          border-radius: 999px;
+          font-size: 0.675rem;
+          line-height: 1;
+          padding: 0.4rem 0.5rem;
+          box-shadow: none;
+        }
+      }
+    }
+  }
+}
+
+// ===== FINAL PREMIUM POLISH =====
+
+.aside {
+  .aside-menu {
+    .hover-scroll-overlay-y {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(122, 126, 245, 0.65) transparent;
+    }
+
+    .hover-scroll-overlay-y::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .hover-scroll-overlay-y::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .hover-scroll-overlay-y::-webkit-scrollbar-thumb {
+      background: rgba(122, 126, 245, 0.55);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+
+    .hover-scroll-overlay-y::-webkit-scrollbar-thumb:hover {
+      background: rgba(122, 126, 245, 0.8);
+      background-clip: content-box;
+    }
+
+    .menu {
+      .menu-link {
+        transition:
+          background-color 0.2s ease,
+          color 0.2s ease,
+          box-shadow 0.2s ease,
+          border-color 0.2s ease;
+      }
+
+      .menu-item-root + .menu-item-root {
+        margin-top: 0.125rem;
+      }
+
+      .menu-item-root {
+        > .menu-link {
+          min-height: 3rem;
+          border: 1px solid transparent;
+
+          .menu-title {
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .menu-icon {
+            margin-right: 0.75rem;
+          }
+
+          .menu-arrow {
+            color: #8f93b2;
+            transition:
+              transform 0.2s ease,
+              color 0.2s ease;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.045);
+
+            .menu-title {
+              color: #ffffff;
+            }
+
+            .menu-arrow {
+              color: #c7caf6;
+            }
+          }
+
+          &.active {
+            background: linear-gradient(135deg, #2f80ed 0%, #318bff 100%);
+            box-shadow: 0 10px 24px rgba(49, 139, 255, 0.22);
+
+            .menu-title,
+            .menu-arrow,
+            .menu-icon i {
+              color: #ffffff !important;
+            }
+          }
+        }
+
+        &.here > .menu-link,
+        &.show > .menu-link {
+          background: rgba(255, 255, 255, 0.035);
+
+          .menu-title {
+            color: #ffffff;
+          }
+
+          .menu-arrow {
+            color: #d9dbff;
+            transform: rotate(90deg);
+          }
+        }
+
+        > .menu-sub {
+          position: relative;
+          margin-left: 0.5rem !important;
+          padding-left: 0.75rem !important;
+
+          &::before {
+            content: "";
+            position: absolute;
+            top: 0.35rem;
+            bottom: 0.5rem;
+            left: 0.2rem;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.08);
+          }
+        }
+      }
+
+      .menu-item-child {
+        > .menu-link {
+          min-height: 2.25rem;
+          border-radius: 0.75rem;
+          border: 1px solid transparent;
+
+          .menu-title {
+            color: #d2d5f2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .menu-arrow {
+            color: #7f84ad;
+            transition:
+              transform 0.2s ease,
+              color 0.2s ease;
+          }
+
+          &:hover {
+            background: rgba(255, 255, 255, 0.04);
+
+            .menu-title {
+              color: #ffffff;
+            }
+
+            .menu-arrow {
+              color: #c7caf6;
+            }
+          }
+
+          &.active {
+            background: rgba(49, 139, 255, 0.12) !important;
+            border-color: rgba(49, 139, 255, 0.22) !important;
+            box-shadow: none !important;
+
+            .menu-title,
+            .menu-arrow {
+              color: #ffffff !important;
+            }
+          }
+        }
+
+        &.here > .menu-link,
+        &.show > .menu-link {
+          .menu-arrow {
+            transform: rotate(90deg);
+            color: #d9dbff;
+          }
+        }
+
+        > .menu-sub {
+          position: relative;
+          margin-left: 0.35rem !important;
+          padding-left: 0.65rem !important;
+
+          &::before {
+            content: "";
+            position: absolute;
+            top: 0.25rem;
+            bottom: 0.25rem;
+            left: 0.15rem;
+            width: 1px;
+            background: rgba(255, 255, 255, 0.06);
+          }
+        }
+      }
+
+      .menu-badge {
+        .badge {
+          border-radius: 999px;
+          font-size: 0.675rem;
+          line-height: 1;
+          padding: 0.4rem 0.5rem;
+        }
+      }
+    }
+  }
+}

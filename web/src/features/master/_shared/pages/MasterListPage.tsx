@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react"
+import { Link } from "react-router-dom"
 import { useConfirm } from "@/components/common/confirm/ConfirmProvider"
 import { usePermission } from "@/core/rbac/usePermission"
+import { PageTitle, type PageLink } from "@/_metronic/layout/core"
 
 import { MasterToolbar } from "../components/MasterToolbar"
 import { MasterTable } from "../components/MasterTable"
@@ -32,6 +34,104 @@ type Config<T extends MasterEntity> = {
   permissionCreate?: Permission
   permissionUpdate?: Permission
   permissionDelete?: Permission
+}
+
+type ReferenceContext = {
+  hubTitle: string
+  hubPath: string
+  scopeLabel: string
+  description: string
+}
+
+const ASN_REFERENCE_ENDPOINTS = new Set([
+  "/master/jenis-kelamin",
+  "/master/status-kepegawaian",
+  "/master/jenis-pegawai",
+  "/master/status-perkawinan",
+  "/master/agama",
+  "/master/tempat-lahir",
+  "/master/pendidikan",
+  "/master/pendidikan-tingkat",
+  "/master/jabatan",
+  "/master/jenis-jabatan",
+  "/master/golongan",
+  "/master/kedudukan-hukum",
+])
+
+const ORGANIZATION_REFERENCE_ENDPOINTS = new Set([
+  "/master/unor",
+  "/master/satker",
+  "/master/instansi",
+  "/master/lokasi-kerja",
+  "/master/kpkn",
+])
+
+const DOCUMENT_REFERENCE_ENDPOINTS = new Set([
+  "/master/jenis-layanan",
+  "/master/jenis-pensiun",
+  "/master/alasan-pensiun",
+])
+
+function resolveReferenceHub(endpoint: string): PageLink | null {
+  if (ASN_REFERENCE_ENDPOINTS.has(endpoint)) {
+    return {
+      title: "Referensi ASN",
+      path: "/referensi/asn",
+      isActive: false,
+    }
+  }
+
+  if (ORGANIZATION_REFERENCE_ENDPOINTS.has(endpoint)) {
+    return {
+      title: "Referensi Organisasi",
+      path: "/referensi/organisasi",
+      isActive: false,
+    }
+  }
+
+  if (DOCUMENT_REFERENCE_ENDPOINTS.has(endpoint)) {
+    return {
+      title: "Referensi Dokumen",
+      path: "/referensi/dokumen",
+      isActive: false,
+    }
+  }
+
+  return null
+}
+
+function resolveReferenceContext(endpoint: string): ReferenceContext | null {
+  if (ASN_REFERENCE_ENDPOINTS.has(endpoint)) {
+    return {
+      hubTitle: "Referensi ASN",
+      hubPath: "/referensi/asn",
+      scopeLabel: "Identitas dan Karier ASN",
+      description:
+        "Master ini dipakai lintas profil ASN, layanan, validasi data, dan laporan pegawai.",
+    }
+  }
+
+  if (ORGANIZATION_REFERENCE_ENDPOINTS.has(endpoint)) {
+    return {
+      hubTitle: "Referensi Organisasi",
+      hubPath: "/referensi/organisasi",
+      scopeLabel: "Struktur Organisasi",
+      description:
+        "Master ini menopang unit organisasi, instansi, lokasi kerja, dan pembatasan scope data.",
+    }
+  }
+
+  if (DOCUMENT_REFERENCE_ENDPOINTS.has(endpoint)) {
+    return {
+      hubTitle: "Referensi Dokumen",
+      hubPath: "/referensi/dokumen",
+      scopeLabel: "Layanan dan Dokumen",
+      description:
+        "Master ini menjadi fondasi klasifikasi layanan, normalisasi domain, dan validasi dokumen usulan.",
+    }
+  }
+
+  return null
 }
 
 export function MasterListPage<T extends MasterEntity>({
@@ -152,6 +252,13 @@ const defaultColumns: MasterColumn<T>[] = [
   const total = query.data?.meta.total ?? 0
   const start = total === 0 ? 0 : (params.page - 1) * params.limit + 1
   const end = Math.min(params.page * params.limit, total)
+  const referenceHub = resolveReferenceHub(config.endpoint)
+  const referenceContext = resolveReferenceContext(config.endpoint)
+  const breadcrumbs: Array<PageLink> = [
+    { title: "Dashboard", path: "/dashboard", isActive: false },
+    { title: "Master Referensi", path: "#", isActive: false },
+    ...(referenceHub ? [referenceHub] : []),
+  ]
 
   if (!canView) {
     return <div className="card-body">Tidak memiliki akses.</div>
@@ -159,6 +266,51 @@ const defaultColumns: MasterColumn<T>[] = [
 
   return (
     <>
+      <PageTitle breadcrumbs={breadcrumbs}>{config.title}</PageTitle>
+
+      {referenceContext ? (
+        <div className="card border-0 shadow-sm mb-7 overflow-hidden">
+          <div
+            className="card-body p-6 p-lg-8"
+            style={{
+              background:
+                "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
+            }}
+          >
+            <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-5">
+              <div>
+                <div className="d-inline-flex align-items-center rounded-pill bg-light-primary text-primary fw-bold fs-8 px-4 py-2 mb-4">
+                  {referenceContext.scopeLabel}
+                </div>
+                <div className="fw-bolder fs-2 text-gray-900 mb-3">
+                  {config.title}
+                </div>
+                <div className="text-gray-600 fs-6 lh-lg">
+                  {referenceContext.description}
+                </div>
+              </div>
+
+              <div className="d-flex align-items-center gap-3 flex-shrink-0">
+                <div className="text-end">
+                  <div className="text-gray-500 fs-8 fw-semibold text-uppercase">
+                    Kelompok
+                  </div>
+                  <div className="fw-bold text-gray-900 fs-6">
+                    {referenceContext.hubTitle}
+                  </div>
+                </div>
+                <Link
+                  to={referenceContext.hubPath}
+                  className="btn btn-light-primary"
+                >
+                  Kembali ke Hub
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <div className="card card-flush">
 
         <MasterToolbar

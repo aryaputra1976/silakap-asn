@@ -4,7 +4,10 @@ import {
   ServiceDashboardResponse
 } from "../api/dashboard.api"
 
-export function useServiceDashboard(service: string) {
+export function useServiceDashboard(
+  service: string,
+  enabled = true,
+) {
 
   const [data, setData] = useState<ServiceDashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
@@ -39,15 +42,17 @@ export function useServiceDashboard(service: string) {
       }
     }
 
-    if (service) {
+    if (enabled && service) {
       load()
+    } else {
+      setLoading(false)
     }
 
     return () => {
       active = false
     }
 
-  }, [service])
+  }, [enabled, service])
 
   return { data, loading, error }
 }

@@ -6,6 +6,8 @@ export const workflowActions: Record<ServiceStatus, string[]> = {
 
   SUBMITTED: ["verify", "reject"],
 
+  IN_REVIEW: ["verify", "reject"],
+
   VERIFIED: ["approve", "reject"],
 
   RETURNED: ["submit"],

@@ -1,11 +1,11 @@
 import { useAuthStore } from "@/stores/auth.store"
-import { PERMISSIONS, type Permission } from "./permissions"
+import { PERMISSIONS } from "./permissions"
 
 export function usePermission() {
   const permissions = useAuthStore((s) => s.permissions)
   const roles = useAuthStore((s) => s.user?.roles ?? [])
 
-  return (perm?: Permission) => {
+  return (perm?: string) => {
     if (!perm) return true
 
     const effectivePermissions = new Set(permissions ?? [])

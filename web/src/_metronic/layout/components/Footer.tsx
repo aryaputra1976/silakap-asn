@@ -1,34 +1,21 @@
-import { FC } from 'react'
-import { useLayout } from '../core'
+// web/src/_metronic/layout/components/Footer.tsx
 
-const Footer: FC = () => {
-  const { classes } = useLayout()
+import React from "react"
+
+export function Footer(): React.ReactElement {
+  const currentYear = new Date().getFullYear()
 
   return (
-    <div className='footer py-4 d-flex flex-lg-column' id='kt_footer'>
-      <div
-        className={`${classes.footerContainer} d-flex flex-column flex-md-row align-items-center justify-content-between`}
-      >
-        {/* LEFT SIDE */}
-        <div className='text-gray-600 order-2 order-md-1'>
-          <span className='fw-semibold'>
-            © {new Date().getFullYear()} SILAKAP
-          </span>
-          <span className='mx-2'>|</span>
-          <span className='text-muted'>
-            Sistem Informasi Layanan Kepegawaian
-          </span>
-        </div>
-
-        {/* RIGHT SIDE */}
-        <div className='text-gray-500 fs-7 order-1 order-md-2'>
-          BKPSDM Kabupaten Tolitoli
-          <span className='mx-2'>|</span>
-          Versi 1.0.0
-        </div>
+    <footer className="footer py-4 d-flex flex-column flex-md-row align-items-center justify-content-between">
+      <div className="text-gray-600 fw-semibold fs-7 order-2 order-md-1">
+        © {currentYear} SILAKAP ASN · BKPSDM
       </div>
-    </div>
+
+      <div className="text-gray-500 fw-medium fs-8 order-1 order-md-2 mb-2 mb-md-0">
+        Sistem Layanan Kepegawaian ASN
+      </div>
+    </footer>
   )
 }
 
-export { Footer }
+export default Footer

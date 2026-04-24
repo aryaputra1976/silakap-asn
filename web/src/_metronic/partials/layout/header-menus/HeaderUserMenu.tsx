@@ -1,19 +1,20 @@
 import {FC} from 'react'
 import {Link} from 'react-router-dom'
-import {useAuthStore} from '@/stores/auth.store' // ⭐ PATCH
-import {Languages} from './Languages'
+import {useAuthStore} from '@/stores/auth.store'
 import {toAbsoluteUrl} from '../../../helpers'
 
-const HeaderUserMenu: FC = () => {
-  // ⭐ ambil dari zustand
+type Props = {
+  onClose?: () => void
+}
+
+const HeaderUserMenu: FC<Props> = ({onClose}) => {
   const user = useAuthStore((s) => s.user)
   const logout = useAuthStore((s) => s.logout)
 
   return (
     <div
-      className='menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-primary fw-bold py-4 fs-6 w-275px'
-      data-kt-menu='true'
-      data-popper-placement='bottom-start'
+      className='menu menu-sub menu-sub-dropdown show menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-primary fw-bold py-4 fs-6 w-275px'
+      role='menu'
     >
       <div className='menu-item px-3'>
         <div className='menu-content d-flex align-items-center px-3'>
@@ -25,9 +26,9 @@ const HeaderUserMenu: FC = () => {
             <div className='fw-bolder d-flex align-items-center fs-5'>
               {user?.username}
             </div>
-            <a href='#' className='fw-bold text-muted text-hover-primary fs-7'>
+            <div className='fw-bold text-muted fs-7'>
               {user?.roles?.join(', ')}
-            </a>
+            </div>
           </div>
         </div>
       </div>
@@ -35,7 +36,11 @@ const HeaderUserMenu: FC = () => {
       <div className='separator my-2'></div>
 
       <div className='menu-item px-5 my-1'>
-        <Link to='/account/settings' className='menu-link px-5'>
+        <Link
+          to='/account/settings'
+          className='menu-link px-5'
+          onClick={onClose}
+        >
           Account Settings
         </Link>
       </div>
@@ -45,6 +50,7 @@ const HeaderUserMenu: FC = () => {
           type='button'
           data-testid='logout-action'
           onClick={() => {
+            onClose?.()
             void logout()
           }}
           className='menu-link px-5 btn btn-link w-100 text-start'

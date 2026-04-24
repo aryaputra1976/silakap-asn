@@ -1,4 +1,5 @@
 import { Card, Table } from "react-bootstrap"
+import { Link } from "react-router-dom"
 
 import type { DmsSnapshotItem } from "../types"
 import { formatDmsDateTime, formatDmsDecimal } from "../utils"
@@ -14,6 +15,21 @@ export function DmsSnapshotTable({
   isLoading = false,
   operatorMode = false,
 }: Props) {
+  const renderAsnLink = (
+    pegawaiId: string | null,
+    content: React.ReactNode,
+  ) => {
+    if (!pegawaiId) {
+      return content
+    }
+
+    return (
+      <Link to={`/asn/${pegawaiId}`} className="text-decoration-none">
+        {content}
+      </Link>
+    )
+  }
+
   const renderBooleanCell = (value: boolean) => (
     <span
       className={value ? "text-success fw-semibold" : "text-danger fw-semibold"}
@@ -65,16 +81,30 @@ export function DmsSnapshotTable({
                 <tr key={item.id}>
                   {operatorMode ? <td>{index + 1}</td> : null}
                   {operatorMode ? (
-                    <td className="fw-semibold">{item.nip}</td>
+                    <td className="fw-semibold">
+                      {renderAsnLink(item.pegawaiId, item.nip)}
+                    </td>
                   ) : (
                     <td>
                       <div className="fw-semibold">
-                        {item.namaSnapshot}
+                        {renderAsnLink(
+                          item.pegawaiId,
+                          item.namaSnapshot,
+                        )}
                       </div>
-                      <div className="text-muted small">{item.nip}</div>
+                      <div className="text-muted small">
+                        {renderAsnLink(item.pegawaiId, item.nip)}
+                      </div>
                     </td>
                   )}
-                  {operatorMode ? <td>{item.namaSnapshot}</td> : null}
+                  {operatorMode ? (
+                    <td>
+                      {renderAsnLink(
+                        item.pegawaiId,
+                        item.namaSnapshot,
+                      )}
+                    </td>
+                  ) : null}
                   <td>
                     <div>{item.unorNama ?? item.unitKerjaRaw ?? "-"}</div>
                     {!operatorMode ? (
