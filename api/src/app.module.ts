@@ -41,7 +41,7 @@ import { DmsMonitoringModule } from './modules/dms-monitoring/dms-monitoring.mod
 import { WorkforceModule } from "./modules/statistics/workforce/workforce.module"
 import { StatisticsModule } from "./modules/statistics/statistics.module"
 import { ServicesModule } from './modules/services/orchestrator/services.module'
-
+import { IntegrasiModule } from './modules/integrasi/integrasi.module'
 
 @Module({
   imports: [
@@ -90,7 +90,7 @@ import { ServicesModule } from './modules/services/orchestrator/services.module'
 
     /* ================= PENSIUN ================= */
     ServicesModule,
-
+    IntegrasiModule,
   ],
 
   providers: [

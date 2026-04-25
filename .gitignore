@@ -38,3 +38,10 @@ web/.env.*
 ## OS / editor
 .DS_Store
 Thumbs.db
+
+## Archives / backup
+*.zip
+*.rar
+*.7z
+*.tar
+*.tar.gz

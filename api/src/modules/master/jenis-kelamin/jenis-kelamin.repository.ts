@@ -42,7 +42,7 @@ export class JenisKelaminRepository extends BaseMasterRepository<
 
     return model.findFirst({
       where: {
-        kode: { equals: kode, mode: 'insensitive' },
+        kode: { equals: kode },
         deletedAt: null,
       },
     })
@@ -56,7 +56,7 @@ export class JenisKelaminRepository extends BaseMasterRepository<
 
     return model.findFirst({
       where: {
-        nama: { equals: nama, mode: 'insensitive' },
+        nama: { equals: nama },
         deletedAt: null,
       },
     })

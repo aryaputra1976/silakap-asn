@@ -5,6 +5,29 @@ export type EmployeeReportRow = {
   total: number
 }
 
+export type EmployeeReportMatrixCell = {
+  pria: number
+  wanita: number
+  total: number
+}
+
+export type EmployeeEducationStatusMatrixRow = {
+  statusKey: "pns" | "pppk" | "pppkParuhWaktu"
+  statusLabel: string
+  pns: EmployeeReportMatrixCell
+  pppk: EmployeeReportMatrixCell
+  pppkParuhWaktu: EmployeeReportMatrixCell
+  total: EmployeeReportMatrixCell
+}
+
+export type EmployeeEducationStatusMatrixGroup = {
+  groupKey: string
+  groupLabel: string
+  pegawaiCount: number
+  rows: EmployeeEducationStatusMatrixRow[]
+  subtotal: EmployeeEducationStatusMatrixRow
+}
+
 export type EmployeeReportSectionKey =
   | "jenis-kelamin"
   | "pendidikan"
@@ -20,6 +43,10 @@ export type EmployeeReportsMeta = {
 
 export type EmployeeReportsResponse = {
   meta: EmployeeReportsMeta
+  educationStatusMatrix: {
+    groups: EmployeeEducationStatusMatrixGroup[]
+    grandTotal: EmployeeEducationStatusMatrixRow
+  }
   genderByEmploymentStatus: EmployeeReportRow[]
   educationByGender: EmployeeReportRow[]
   educationGroupByGender: EmployeeReportRow[]

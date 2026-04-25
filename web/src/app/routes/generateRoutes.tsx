@@ -221,6 +221,21 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
       )
   ),
 
+  "/integrasi/import": lazy(
+    () => import("@/features/integrasi/pages/IntegrasiImportPage")
+  ),
+
+  "/integrasi/log": lazy(
+    () => import("@/features/integrasi/pages/IntegrasiLogsPage")
+  ),
+
+  "/integrasi/jobs": lazy(
+    () => import("@/features/integrasi/pages/IntegrasiJobsPage")
+  ),
+
+  "/integrasi/siasn": lazy(
+    () => import("@/features/integrasi/pages/IntegrasiSiasnPage")
+  ),  
 }
 
 /* =========================================================
@@ -266,6 +281,11 @@ const MASTER_REFERENCE_ROLES = ["ADMIN_BKPSDM", "SUPER_ADMIN"]
 export function hasRegisteredStaticRoute(path: string): boolean {
   return Boolean(combinedRouteMap[path])
 }
+
+/* =========================================================
+ * ROUTE INTEGRASI
+ * ========================================================= */
+
 
 /* =========================================================
  * ROUTE GENERATOR

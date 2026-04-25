@@ -87,13 +87,13 @@ model SilakapUser {
 
   pegawai SilakapPegawai? @relation(fields: [pegawaiId], references: [id])
 
-  roles         SilakapUserRole[]
-  notifications SilakapNotification[]
-  activities    SilakapActivity[]
-  auditLogs     AuditLog[]
-  authSession   AuthSession[]
+  roles                 SilakapUserRole[]
+  notifications         SilakapNotification[]
+  activities            SilakapActivity[]
+  auditLogs             AuditLog[]
+  authSession           AuthSession[]
   reviewedRegistrations SilakapRegistrasiUser[] @relation("RegistrationReviewer")
-  dmsImportedBatches     SilakapDmsBatch[]      @relation("DmsImportedByUser")
+  dmsImportedBatches    SilakapDmsBatch[]       @relation("DmsImportedByUser")
 
   @@map("silakap_user")
 }
@@ -102,10 +102,10 @@ model SilakapRole {
   id   BigInt @id @default(autoincrement()) @map("id")
   name String @unique @map("name")
 
-  users       SilakapUserRole[]
-  permissions SilakapRolePermission[]
-  bidang      SilakapBidang[]
-  layananLog  SilakapLayananLog[]
+  users         SilakapUserRole[]
+  permissions   SilakapRolePermission[]
+  bidang        SilakapBidang[]
+  layananLog    SilakapLayananLog[]
   registrations SilakapRegistrasiUser[] @relation("RequestedRegistrationRole")
 
   @@map("silakap_role")
@@ -774,9 +774,11 @@ model SilakapPegawai {
   kpknId          BigInt? @map("kpkn_id")
 
   // SIASN
-  siasnId  String? @unique @map("siasn_id")
-  sapkId   String? @map("sapk_id")
-  refSiasn String? @map("ref_siasn")
+  siasnId      String?   @unique @map("siasn_id")
+  sapkId       String?   @map("sapk_id")
+  refSiasn     String?   @map("ref_siasn")
+  lastSyncedAt DateTime? @map("last_synced_at")
+  syncSource   String?   @map("sync_source") @db.VarChar(50)
 
   // FLAG
   isValidNik Boolean @default(false) @map("is_valid_nik")
@@ -1071,10 +1073,10 @@ model SilakapJenisLayanan {
 
   // RELASI
   usul         SilakapUsulLayanan[]
-  bidangRelasi SilakapLayananBidang[]    @relation("LayananToBidang")
+  bidangRelasi SilakapLayananBidang[] @relation("LayananToBidang")
 
-  workflowParent SilakapWorkflowDependency[] @relation("WorkflowParent")
-  workflowChild  SilakapWorkflowDependency[] @relation("WorkflowChild")
+  workflowParent    SilakapWorkflowDependency[] @relation("WorkflowParent")
+  workflowChild     SilakapWorkflowDependency[] @relation("WorkflowChild")
   workflowTemplates SilakapWorkflowTemplate[]
 
   syaratLayanan             SilakapSyaratLayanan[]
@@ -1246,7 +1248,6 @@ model SilakapDisposisi {
 // ======================================================
 
 model SilakapSiasnJob {
-
   id BigInt @id @default(autoincrement())
 
   usulId BigInt
@@ -1357,24 +1358,24 @@ model SilakapWorkflowDependency {
 model SilakapWorkflowTemplate {
   id BigInt @id @default(autoincrement()) @map("id")
 
-  jenisLayananId BigInt @map("jenis_layanan_id")
-  fromStatus     LayananStatus @map("from_status")
-  toStatus       LayananStatus @map("to_status")
-  actionCode     String @map("action_code")
-  roleRequired   String @map("role_required")
-  requiresDisposisi Boolean @default(false) @map("requires_disposisi")
-  requiresDependency Boolean @default(false) @map("requires_dependency")
-  requiresSiasn  Boolean @default(false) @map("requires_siasn")
-  requiresCompleteness Boolean @default(false) @map("requires_completeness")
-  approvalStage  Int? @map("approval_stage")
-  orderNo        Int @map("order_no")
-  createdAt      DateTime @default(now()) @map("created_at")
+  jenisLayananId       BigInt        @map("jenis_layanan_id")
+  fromStatus           LayananStatus @map("from_status")
+  toStatus             LayananStatus @map("to_status")
+  actionCode           String        @map("action_code")
+  roleRequired         String        @map("role_required")
+  requiresDisposisi    Boolean       @default(false) @map("requires_disposisi")
+  requiresDependency   Boolean       @default(false) @map("requires_dependency")
+  requiresSiasn        Boolean       @default(false) @map("requires_siasn")
+  requiresCompleteness Boolean       @default(false) @map("requires_completeness")
+  approvalStage        Int?          @map("approval_stage")
+  orderNo              Int           @map("order_no")
+  createdAt            DateTime      @default(now()) @map("created_at")
 
   jenisLayanan SilakapJenisLayanan @relation(fields: [jenisLayananId], references: [id])
 
+  @@unique([jenisLayananId, fromStatus, toStatus])
   @@index([jenisLayananId])
   @@index([fromStatus])
-  @@unique([jenisLayananId, fromStatus, toStatus])
   @@map("silakap_workflow_template")
 }
 
@@ -1726,19 +1727,19 @@ model SilakapImportLog {
 }
 
 model SilakapDmsBatch {
-  id          BigInt          @id @default(autoincrement()) @map("id")
-  namaFile    String          @map("nama_file") @db.VarChar(255)
-  unorId      BigInt?         @map("unor_id")
-  periodeLabel String?        @map("periode_label") @db.VarChar(100)
-  status      DmsImportStatus @default(DRAFT) @map("status")
-  totalRows   Int             @default(0) @map("total_rows")
-  successRows Int             @default(0) @map("success_rows")
-  failedRows  Int             @default(0) @map("failed_rows")
-  catatan     String?         @map("catatan") @db.Text
-  importedBy  BigInt?         @map("imported_by")
-  importedAt  DateTime?       @map("imported_at")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  id           BigInt          @id @default(autoincrement()) @map("id")
+  namaFile     String          @map("nama_file") @db.VarChar(255)
+  unorId       BigInt?         @map("unor_id")
+  periodeLabel String?         @map("periode_label") @db.VarChar(100)
+  status       DmsImportStatus @default(DRAFT) @map("status")
+  totalRows    Int             @default(0) @map("total_rows")
+  successRows  Int             @default(0) @map("success_rows")
+  failedRows   Int             @default(0) @map("failed_rows")
+  catatan      String?         @map("catatan") @db.Text
+  importedBy   BigInt?         @map("imported_by")
+  importedAt   DateTime?       @map("imported_at")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
 
   unor           RefUnor?             @relation(fields: [unorId], references: [id])
   importedByUser SilakapUser?         @relation("DmsImportedByUser", fields: [importedBy], references: [id])
@@ -1751,25 +1752,25 @@ model SilakapDmsBatch {
 }
 
 model SilakapDmsSnapshot {
-  id                   BigInt    @id @default(autoincrement()) @map("id")
-  batchId              BigInt    @map("batch_id")
-  pegawaiId            BigInt?   @map("pegawai_id")
-  nip                  String    @map("nip") @db.VarChar(30)
-  namaSnapshot         String    @map("nama_snapshot") @db.VarChar(200)
-  unorId               BigInt?   @map("unor_id")
-  unitKerjaRaw         String?   @map("unit_kerja_raw") @db.VarChar(250)
-  drh                  Boolean   @default(false) @map("drh")
-  cpns                 Boolean   @default(false) @map("cpns")
-  d2np                 Boolean   @default(false) @map("d2np")
-  spmt                 Boolean   @default(false) @map("spmt")
-  pns                  Boolean   @default(false) @map("pns")
-  skorArsip            Decimal?  @map("skor_arsip") @db.Decimal(8, 2)
-  kategoriKelengkapan  String?   @map("kategori_kelengkapan") @db.VarChar(100)
-  lastSync             DateTime? @map("last_sync")
-  isMatchedPegawai     Boolean   @default(false) @map("is_matched_pegawai")
-  isMatchedUnor        Boolean   @default(false) @map("is_matched_unor")
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
+  id                  BigInt    @id @default(autoincrement()) @map("id")
+  batchId             BigInt    @map("batch_id")
+  pegawaiId           BigInt?   @map("pegawai_id")
+  nip                 String    @map("nip") @db.VarChar(30)
+  namaSnapshot        String    @map("nama_snapshot") @db.VarChar(200)
+  unorId              BigInt?   @map("unor_id")
+  unitKerjaRaw        String?   @map("unit_kerja_raw") @db.VarChar(250)
+  drh                 Boolean   @default(false) @map("drh")
+  cpns                Boolean   @default(false) @map("cpns")
+  d2np                Boolean   @default(false) @map("d2np")
+  spmt                Boolean   @default(false) @map("spmt")
+  pns                 Boolean   @default(false) @map("pns")
+  skorArsip           Decimal?  @map("skor_arsip") @db.Decimal(8, 2)
+  kategoriKelengkapan String?   @map("kategori_kelengkapan") @db.VarChar(100)
+  lastSync            DateTime? @map("last_sync")
+  isMatchedPegawai    Boolean   @default(false) @map("is_matched_pegawai")
+  isMatchedUnor       Boolean   @default(false) @map("is_matched_unor")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
   batch   SilakapDmsBatch @relation(fields: [batchId], references: [id])
   pegawai SilakapPegawai? @relation(fields: [pegawaiId], references: [id])
@@ -1931,4 +1932,56 @@ model TalentPool {
 
   @@index([pegawaiId])
   @@map("talent_pool")
+}
+
+model SilakapPegawaiImportBatch {
+  id           BigInt   @id @default(autoincrement()) @map("id")
+  batchCode    String   @unique @map("batch_code") @db.VarChar(100)
+  fileName     String   @map("file_name") @db.VarChar(255)
+  totalRows    Int      @default(0) @map("total_rows")
+  validRows    Int      @default(0) @map("valid_rows")
+  invalidRows  Int      @default(0) @map("invalid_rows")
+  importedRows Int      @default(0) @map("imported_rows")
+  status       String   @default("DRAFT") @map("status") @db.VarChar(30)
+  errors       Json?    @map("errors")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  rows SilakapPegawaiImportStaging[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("silakap_pegawai_import_batch")
+}
+
+model SilakapPegawaiImportStaging {
+  id        BigInt @id @default(autoincrement()) @map("id")
+  batchId   BigInt @map("batch_id")
+  rowNumber Int    @map("row_number")
+
+  nip     String? @map("nip") @db.VarChar(30)
+  nik     String? @map("nik") @db.VarChar(30)
+  nama    String? @map("nama") @db.VarChar(200)
+  siasnId String? @map("siasn_id") @db.VarChar(100)
+
+  rawData    Json  @map("raw_data")
+  mappedData Json? @map("mapped_data")
+  errors     Json? @map("errors")
+
+  isValid    Boolean @default(false) @map("is_valid")
+  isImported Boolean @default(false) @map("is_imported")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  batch SilakapPegawaiImportBatch @relation(fields: [batchId], references: [id])
+
+  @@unique([batchId, rowNumber])
+  @@index([batchId])
+  @@index([nip])
+  @@index([nik])
+  @@index([siasnId])
+  @@index([isValid])
+  @@index([isImported])
+  @@map("silakap_pegawai_import_staging")
 }

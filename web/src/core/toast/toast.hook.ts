@@ -3,7 +3,6 @@ import type { ToastType } from "./toast.types"
 
 /* ========= dipakai di NON-React code (httpClient, service) ========= */
 export function showToast(message: string, type: ToastType = "info") {
-  console.log("SHOW TOAST DIPANGGIL:", message, type) // ← debug
   useToastStore.getState().push({ message, type })
 }
 

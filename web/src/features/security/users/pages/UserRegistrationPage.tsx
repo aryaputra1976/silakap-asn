@@ -412,23 +412,26 @@ export default function UserRegistrationPage() {
     void loadUsers(userPage, userSearch)
   }, [userPage, userSearch, activeFilter, roleFilter])
 
+  const safeUserMeta = userMeta ?? DEFAULT_META
+  const safeRegistrationMeta = registrationMeta ?? DEFAULT_META
+
   const summary = useMemo(() => {
     return {
-      registrations: registrationMeta.total,
+      registrations: safeRegistrationMeta.total,
       pending: items.filter((item) => item.status === "PENDING").length,
       approved: items.filter((item) => item.status === "APPROVED").length,
       rejected: items.filter((item) => item.status === "REJECTED").length,
-      users: userMeta.total,
+      users: safeUserMeta.total,
       activeUsers: users.filter((item) => item.isActive).length,
     }
-  }, [items, registrationMeta.total, userMeta.total, users])
+  }, [items, safeRegistrationMeta.total, safeUserMeta.total, users])
 
   const initialFormValue: UserFormState = selectedUser
     ? {
         username: selectedUser.username,
         password: "",
         pegawaiId: selectedUser.pegawaiId ?? "",
-        roleIds: selectedUser.roleIds,
+        roleIds: (selectedUser.roleIds ?? []).map((item) => String(item)),
         isActive: selectedUser.isActive,
       }
     : {
@@ -497,6 +500,14 @@ export default function UserRegistrationPage() {
   }
 
   async function handleDeleteUser(user: UserListItem) {
+    if (user.canDelete === false) {
+      setError(
+        user.deleteBlockedReason ||
+          "Pengguna ini tidak dapat dihapus. Nonaktifkan akun jika tidak lagi dipakai.",
+      )
+      return
+    }
+
     const confirmed = window.confirm(
       `Hapus pengguna ${user.username}? Aksi ini tidak bisa dibatalkan.`,
     )
@@ -521,7 +532,7 @@ export default function UserRegistrationPage() {
         username: value.username.trim(),
         password: value.password,
         pegawaiId: value.pegawaiId || undefined,
-        roleIds: value.roleIds,
+        roleIds: value.roleIds.map((item) => String(item).trim()).filter(Boolean),
         isActive: value.isActive,
       })
       setFlash(response.message)
@@ -529,7 +540,7 @@ export default function UserRegistrationPage() {
       const response = await updateUser(selectedUser.id, {
         username: value.username.trim(),
         pegawaiId: value.pegawaiId || undefined,
-        roleIds: value.roleIds,
+        roleIds: value.roleIds.map((item) => String(item).trim()).filter(Boolean),
         isActive: value.isActive,
       })
       setFlash(response.message)
@@ -579,9 +590,9 @@ export default function UserRegistrationPage() {
               yang bisa masuk ke sistem.
             </div>
             <div className="d-flex flex-wrap gap-2">
-              <span className="badge badge-light-primary">Total User {userMeta.total}</span>
+              <span className="badge badge-light-primary">Total User {safeUserMeta.total}</span>
               <span className="badge badge-light-success">Aktif {summary.activeUsers}</span>
-              <span className="badge badge-light-warning">Pending {registrationMeta.total}</span>
+              <span className="badge badge-light-warning">Pending {safeRegistrationMeta.total}</span>
             </div>
           </div>
         </div>
@@ -747,6 +758,13 @@ export default function UserRegistrationPage() {
                           <button
                             type="button"
                             className="btn btn-sm btn-light-danger"
+                            disabled={user.canDelete === false}
+                            title={
+                              user.canDelete === false
+                                ? user.deleteBlockedReason ||
+                                  "Pengguna ini tidak dapat dihapus karena sudah memiliki jejak aktivitas."
+                                : "Hapus pengguna"
+                            }
                             onClick={() => void handleDeleteUser(user)}
                           >
                             Hapus
@@ -760,7 +778,7 @@ export default function UserRegistrationPage() {
             </table>
           </div>
 
-          <PaginationControls meta={userMeta} onChange={setUserPage} />
+          <PaginationControls meta={safeUserMeta} onChange={setUserPage} />
         </div>
       </div>
 
@@ -848,7 +866,7 @@ export default function UserRegistrationPage() {
                   <div className="text-gray-500 fs-8 fw-semibold text-uppercase mb-2">
                     Total Queue
                   </div>
-                  <div className="fw-bolder fs-2 text-primary mb-1">{registrationMeta.total}</div>
+                  <div className="fw-bolder fs-2 text-primary mb-1">{safeRegistrationMeta.total}</div>
                   <div className="text-gray-600 fs-8">Jumlah data sesuai filter yang aktif.</div>
                 </div>
               </div>
@@ -936,7 +954,7 @@ export default function UserRegistrationPage() {
             </table>
           </div>
 
-          <PaginationControls meta={registrationMeta} onChange={setRegistrationPage} />
+          <PaginationControls meta={safeRegistrationMeta} onChange={setRegistrationPage} />
         </div>
       </div>
 

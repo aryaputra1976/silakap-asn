@@ -1,9 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
+  Post,
   Patch,
   Query,
 } from '@nestjs/common'
@@ -16,6 +18,11 @@ import { SwaggerAuth } from '@/core/decorators/swagger-auth.decorator'
 import { BusinessException } from '@/core/exceptions'
 import { RegistrationStatusQueryDto } from './dto/registration-status-query.dto'
 import { ReviewRegistrationDto } from './dto/review-registration.dto'
+import { QueryUserListDto } from './dto/query-user-list.dto'
+import { QueryUserOptionsDto } from './dto/query-user-options.dto'
+import { CreateUserDto } from './dto/create-user.dto'
+import { UpdateUserDto } from './dto/update-user.dto'
+import { ToggleUserStatusDto } from './dto/toggle-user-status.dto'
 
 @Controller('users')
 @SwaggerAuth()
@@ -31,15 +38,51 @@ export class UserController {
   }
 
   @Get()
-  async getUserList() {
-    return this.userService.getUserList()
+  async getUserList(@Query() query: QueryUserListDto) {
+    return this.userService.getUserList(query)
+  }
+
+  @Get('options/roles')
+  async getRoleOptions() {
+    return this.userService.getRoleOptions()
+  }
+
+  @Get('options/pegawai')
+  async getPegawaiOptions(@Query() query: QueryUserOptionsDto) {
+    return this.userService.getPegawaiOptions(query)
   }
 
   @Get('registrations')
   async getRegistrationQueue(
     @Query() query: RegistrationStatusQueryDto,
   ) {
-    return this.userService.getRegistrationQueue(query.status)
+    return this.userService.getRegistrationQueue(query)
+  }
+
+  @Post()
+  async createUser(@Body() dto: CreateUserDto) {
+    return this.userService.createUser(dto)
+  }
+
+  @Patch(':id')
+  async updateUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+  ) {
+    return this.userService.updateUser(BigInt(id), dto)
+  }
+
+  @Patch(':id/status')
+  async toggleUserStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ToggleUserStatusDto,
+  ) {
+    return this.userService.toggleUserStatus(BigInt(id), dto.isActive)
+  }
+
+  @Delete(':id')
+  async deleteUser(@Param('id', ParseIntPipe) id: number) {
+    return this.userService.deleteUser(BigInt(id))
   }
 
   @Patch('registrations/:id/approve')

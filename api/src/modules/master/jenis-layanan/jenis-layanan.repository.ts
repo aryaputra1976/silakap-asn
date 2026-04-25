@@ -39,7 +39,7 @@ export class JenisLayananRepository extends BaseMasterRepository<
     const model = this.getModel(this.getClient(tx))
     return model.findFirst({
       where: {
-        kode: { equals: kode, mode: 'insensitive' },
+        kode: { equals: kode },
         deletedAt: null,
       },
     })
@@ -49,7 +49,7 @@ export class JenisLayananRepository extends BaseMasterRepository<
     const model = this.getModel(this.getClient(tx))
     return model.findFirst({
       where: {
-        nama: { equals: nama, mode: 'insensitive' },
+        nama: { equals: nama },
         deletedAt: null,
       },
     })

@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@prisma/client'
 import { PrismaService } from '@/prisma/prisma.service'
 
 export type TxClient =
@@ -41,6 +41,8 @@ export abstract class BaseMasterRepository<
     status?: 'active' | 'inactive'
   }
 > {
+  private fieldNameCache?: Set<string>
+
   constructor(protected readonly prisma: PrismaService) {}
 
   protected abstract getModelName(): keyof PrismaClient
@@ -54,6 +56,53 @@ export abstract class BaseMasterRepository<
     return (client as any)[this.getModelName()]
   }
 
+  protected getModelPascalName(): string {
+    const modelName = String(this.getModelName())
+    return modelName.charAt(0).toUpperCase() + modelName.slice(1)
+  }
+
+  protected getModelFieldNames(): Set<string> {
+    if (this.fieldNameCache) return this.fieldNameCache
+
+    const model = Prisma.dmmf.datamodel.models.find(
+      (entry) => entry.name === this.getModelPascalName()
+    )
+
+    this.fieldNameCache = new Set(
+      (model?.fields ?? []).map((field) => field.name)
+    )
+
+    return this.fieldNameCache
+  }
+
+  protected hasField(fieldName: string): boolean {
+    return this.getModelFieldNames().has(fieldName)
+  }
+
+  protected sanitizeData<T extends Record<string, unknown>>(data: T) {
+    return Object.fromEntries(
+      Object.entries(data).filter(
+        ([key, value]) => this.hasField(key) && value !== undefined
+      )
+    )
+  }
+
+  protected buildLocalIdSiasn(seed?: string): string {
+    const modelPart = this.getModelPascalName()
+      .replace(/[^A-Za-z0-9]/g, '')
+      .toUpperCase()
+
+    const seedPart = (seed ?? Date.now().toString())
+      .replace(/[^A-Za-z0-9]/g, '')
+      .toUpperCase()
+      .slice(0, 32)
+
+    return `LOCAL-${modelPart}-${seedPart}-${Date.now()}`.slice(
+      0,
+      100
+    )
+  }
+
   // ================= LIST =================
   async findMany(query?: QueryDto): Promise<PaginatedResult<Entity>> {
     const page = Math.max(query?.page ?? 1, 1)
@@ -64,10 +113,12 @@ export abstract class BaseMasterRepository<
 
     const where: any = { deletedAt: null }
 
-    if (query?.search) {
+    const trimmedSearch = query?.search?.trim()
+
+    if (trimmedSearch) {
       where.OR = [
-        { kode: { contains: query.search, mode: 'insensitive' } },
-        { nama: { contains: query.search, mode: 'insensitive' } },
+        { kode: { contains: trimmedSearch } },
+        { nama: { contains: trimmedSearch } },
       ]
     }
 
@@ -115,7 +166,17 @@ export abstract class BaseMasterRepository<
   // ================= CREATE =================
   async create(dto: any, tx: TxClient): Promise<Entity> {
     const model = this.getModel(this.getClient(tx))
-    return model.create({ data: dto })
+    const createData: Record<string, unknown> = {
+      ...this.sanitizeData(dto),
+    }
+
+    if (this.hasField('idSiasn') && !createData.idSiasn) {
+      createData.idSiasn = this.buildLocalIdSiasn(
+        String(dto?.kode ?? dto?.nama ?? '')
+      )
+    }
+
+    return model.create({ data: createData })
   }
 
   // ================= UPDATE =================
@@ -128,9 +189,11 @@ export abstract class BaseMasterRepository<
 
     if (!existing) throw new Error('Record not found')
 
+    const updateData = this.sanitizeData(dto)
+
     return model.update({
       where: { id },
-      data: dto,
+      data: updateData,
     })
   }
 
@@ -148,12 +211,14 @@ export abstract class BaseMasterRepository<
 
     if (!existing) throw new Error('Record not found')
 
+    const deleteData = this.sanitizeData({
+      deletedAt: new Date(),
+      updatedBy: userId ?? undefined,
+    })
+
     await model.update({
       where: { id },
-      data: {
-        deletedAt: new Date(),
-        updatedBy: userId ?? undefined,
-      },
+      data: deleteData,
     })
   }
 
@@ -167,9 +232,13 @@ export abstract class BaseMasterRepository<
 
     if (!existing) return null
 
+    const restoreData = this.sanitizeData({
+      deletedAt: null,
+    })
+
     return model.update({
       where: { id },
-      data: { deletedAt: null },
+      data: restoreData,
     })
   }
 
@@ -187,12 +256,14 @@ export abstract class BaseMasterRepository<
 
     if (!existing) throw new Error('Record not found')
 
+    const toggleData = this.sanitizeData({
+      isActive: !existing.isActive,
+      updatedBy: userId ?? undefined,
+    })
+
     return model.update({
       where: { id },
-      data: {
-        isActive: !existing.isActive,
-        updatedBy: userId ?? undefined,
-      },
+      data: toggleData,
     })
   }
 }

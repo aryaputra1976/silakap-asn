@@ -51,6 +51,8 @@ export type UserListItem = {
   } | null
   roles: string[]
   roleIds: string[]
+  canDelete?: boolean
+  deleteBlockedReason?: string | null
 }
 
 export type RoleOption = {
@@ -128,6 +130,55 @@ function appendIfPresent(
   params.set(key, String(value))
 }
 
+const DEFAULT_META: PaginationMeta = {
+  page: 1,
+  limit: 10,
+  total: 0,
+  totalPages: 1,
+}
+
+function normalizePaginatedResponse<T>(
+  response: unknown,
+): PaginatedResponse<T> {
+  if (Array.isArray(response)) {
+    return {
+      data: response as T[],
+      meta: {
+        ...DEFAULT_META,
+        total: response.length,
+        totalPages: 1,
+      },
+    }
+  }
+
+  if (response && typeof response === "object") {
+    const record = response as Record<string, unknown>
+    const data = Array.isArray(record.data) ? (record.data as T[]) : []
+    const rawMeta =
+      record.meta && typeof record.meta === "object"
+        ? (record.meta as Record<string, unknown>)
+        : {}
+
+    return {
+      data,
+      meta: {
+        page:
+          typeof rawMeta.page === "number" ? rawMeta.page : DEFAULT_META.page,
+        limit:
+          typeof rawMeta.limit === "number" ? rawMeta.limit : DEFAULT_META.limit,
+        total:
+          typeof rawMeta.total === "number" ? rawMeta.total : data.length,
+        totalPages:
+          typeof rawMeta.totalPages === "number"
+            ? rawMeta.totalPages
+            : Math.max(1, Math.ceil((data.length || 0) / DEFAULT_META.limit)),
+      },
+    }
+  }
+
+  return { data: [], meta: DEFAULT_META }
+}
+
 export async function getRegistrationQueue(
   filters: GetRegistrationParams = {},
 ): Promise<PaginatedResponse<RegistrationQueueItem>> {
@@ -140,9 +191,11 @@ export async function getRegistrationQueue(
 
   const query = params.toString()
 
-  return getRequest<PaginatedResponse<RegistrationQueueItem>>(
+  const response = await getRequest<unknown>(
     query ? `/users/registrations?${query}` : "/users/registrations",
   )
+
+  return normalizePaginatedResponse<RegistrationQueueItem>(response)
 }
 
 export async function getUserList(
@@ -160,9 +213,11 @@ export async function getUserList(
 
   const query = params.toString()
 
-  return getRequest<PaginatedResponse<UserListItem>>(
+  const response = await getRequest<unknown>(
     query ? `/users?${query}` : "/users",
   )
+
+  return normalizePaginatedResponse<UserListItem>(response)
 }
 
 export async function getRoleOptions(): Promise<RoleOption[]> {

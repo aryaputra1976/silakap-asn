@@ -1,6 +1,8 @@
-import { Controller, Get, Query } from "@nestjs/common"
+import { Controller, Get, Query, Res } from "@nestjs/common"
 import { StatisticsService } from "./statistics.service"
 import { QueryStatisticsDto } from "./dto/query-statistics.dto"
+import { QueryEmployeeReportExportDto } from "./dto/query-employee-report-export.dto"
+import type { Response } from "express"
 
 @Controller("statistics")
 export class StatisticsController {
@@ -42,5 +44,26 @@ export class StatisticsController {
   @Get("dashboard")
   async getDashboard(@Query() query: QueryStatisticsDto) {
     return this.statisticsService.getAsnStatistics(query)
-  }  
+  }
+
+  @Get("reports/employee")
+  async getEmployeeReports(@Query() query: QueryStatisticsDto) {
+    return this.statisticsService.getEmployeeReports(query)
+  }
+
+  @Get("reports/employee/export")
+  async exportEmployeeReports(
+    @Query() query: QueryEmployeeReportExportDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const exported = await this.statisticsService.exportEmployeeReports(query)
+
+    res.setHeader("Content-Type", exported.contentType)
+
+    if (exported.disposition) {
+      res.setHeader("Content-Disposition", exported.disposition)
+    }
+
+    return exported.content
+  }
 }
