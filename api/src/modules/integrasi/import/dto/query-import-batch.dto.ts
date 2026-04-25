@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -9,10 +10,12 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { INTEGRASI_IMPORT_STATUS_VALUES } from '../integrasi-import-status.constant';
 
 export class QueryImportBatchDto {
   @IsOptional()
   @IsString()
+  @IsIn(INTEGRASI_IMPORT_STATUS_VALUES)
   status?: string;
 
   @IsOptional()

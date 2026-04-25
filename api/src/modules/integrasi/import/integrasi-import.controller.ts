@@ -47,6 +47,16 @@ export class IntegrasiImportController {
     return this.service.validateBatch(BigInt(batchId));
   }
 
+  @Post('batches/:batchId/commit')
+  commitBatch(@Param('batchId', ParseIntPipe) batchId: number) {
+    return this.service.commitBatch(BigInt(batchId));
+  }
+
+  @Post('batches/:batchId/cancel')
+  cancelBatch(@Param('batchId', ParseIntPipe) batchId: number) {
+    return this.service.cancelBatch(BigInt(batchId));
+  }
+
   @Post('batches/:batchId/references/jabatan')
   createMissingJabatanReferences(
     @Param('batchId', ParseIntPipe) batchId: number,
@@ -67,9 +77,4 @@ export class IntegrasiImportController {
   ) {
     return this.service.createMissingReferences(BigInt(batchId), 'pendidikan');
   }
-
-    @Post('batches/:batchId/commit')
-    commitBatch(@Param('batchId', ParseIntPipe) batchId: number) {
-    return this.service.commitBatch(BigInt(batchId));
-    }  
 }

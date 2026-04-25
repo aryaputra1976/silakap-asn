@@ -402,4 +402,13 @@ async findExistingPegawaiBySiasnIds(siasnIds: string[]) {
   });
 }
 
+async cancelBatch(batchId: bigint, audit: Prisma.InputJsonValue) {
+  return this.prisma.silakapPegawaiImportBatch.update({
+    where: { id: batchId },
+    data: {
+      status: 'CANCELLED',
+      errors: audit,
+    },
+  });
+}
 }

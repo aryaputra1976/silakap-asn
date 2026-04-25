@@ -882,4 +882,40 @@ export class IntegrasiImportService {
 
     return map;
   }
+
+async cancelBatch(batchId: bigint) {
+  const batch = await this.repository.findBatchById(batchId);
+
+  if (!batch) {
+    throw new NotFoundException('Batch import tidak ditemukan');
+  }
+
+  if (batch.status === 'IMPORTED') {
+    throw new ConflictException('Batch yang sudah diimport tidak dapat dibatalkan');
+  }
+
+  if (batch.status === 'COMMITTING') {
+    throw new ConflictException('Batch sedang proses commit dan tidak dapat dibatalkan');
+  }
+
+  if (batch.status === 'CANCELLED') {
+    return {
+      batchId: batchId.toString(),
+      status: 'CANCELLED',
+      message: 'Batch sudah dibatalkan sebelumnya',
+    };
+  }
+
+  await this.repository.cancelBatch(batchId, {
+    event: 'IMPORT_BATCH_CANCELLED',
+    previousStatus: batch.status,
+    cancelledAt: new Date().toISOString(),
+  });
+
+  return {
+    batchId: batchId.toString(),
+    status: 'CANCELLED',
+    message: 'Batch import berhasil dibatalkan',
+  };
+}  
 }
