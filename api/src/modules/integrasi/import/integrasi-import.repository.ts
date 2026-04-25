@@ -411,4 +411,39 @@ async cancelBatch(batchId: bigint, audit: Prisma.InputJsonValue) {
     },
   });
 }
+
+async transitionBatchStatus(
+  batchId: bigint,
+  fromStatuses: readonly string[],
+  toStatus: string,
+  audit: Prisma.InputJsonValue,
+) {
+  const result = await this.prisma.silakapPegawaiImportBatch.updateMany({
+    where: {
+      id: batchId,
+      status: { in: [...fromStatuses] },
+    },
+    data: {
+      status: toStatus,
+      errors: audit,
+    },
+  });
+
+  return result.count === 1;
+}
+
+async updateBatchStatus(
+  batchId: bigint,
+  status: string,
+  audit: Prisma.InputJsonValue,
+) {
+  return this.prisma.silakapPegawaiImportBatch.update({
+    where: { id: batchId },
+    data: {
+      status,
+      errors: audit,
+    },
+  });
+}
+
 }

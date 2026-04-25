@@ -11,6 +11,14 @@ import type {
   QueryImportBatchDto,
   QueryImportErrorsDto,
 } from './dto/query-import-batch.dto';
+import {
+  CANCEL_ALLOWED_STATUSES,
+  COMMIT_ALLOWED_STATUSES,
+  INTEGRASI_IMPORT_EVENT,
+  INTEGRASI_IMPORT_STATUS,
+  VALIDATE_ALLOWED_STATUSES,
+  type IntegrasiImportStatus,
+} from './integrasi-import-status.constant';
 
 type MissingReferenceItem = {
   value: string;
@@ -171,9 +179,35 @@ export class IntegrasiImportService {
     };
   }
 
-  async validateBatch(batchId: bigint) {
-    await this.ensureBatchExists(batchId);
+async validateBatch(batchId: bigint) {
+  const batch = await this.repository.findBatchById(batchId);
 
+  if (!batch) {
+    throw new NotFoundException('Batch import tidak ditemukan');
+  }
+
+  this.assertStatusAllowed(
+    batch.status,
+    VALIDATE_ALLOWED_STATUSES,
+    'VALIDATE',
+  );
+
+  const locked = await this.repository.transitionBatchStatus(
+    batchId,
+    VALIDATE_ALLOWED_STATUSES,
+    INTEGRASI_IMPORT_STATUS.VALIDATING,
+    this.buildAuditEvent(INTEGRASI_IMPORT_EVENT.VALIDATE_STARTED, {
+      previousStatus: batch.status,
+    }),
+  );
+
+  if (!locked) {
+    throw new ConflictException(
+      'Batch sedang diproses oleh proses lain. Silakan muat ulang data',
+    );
+  }
+
+  try {
     const rows = await this.repository.findRowsForValidation(batchId);
 
     const jabatanCandidates = new Set<string>();
@@ -301,20 +335,20 @@ export class IntegrasiImportService {
       };
     });
 
-    const status = invalidRows > 0 ? 'VALIDATED_WITH_ERROR' : 'VALIDATED';
+    const status =
+      invalidRows > 0
+        ? INTEGRASI_IMPORT_STATUS.VALIDATED_WITH_ERROR
+        : INTEGRASI_IMPORT_STATUS.VALIDATED;
 
     await this.repository.updateValidationResult(batchId, validationRows, {
       validRows,
       invalidRows,
       status,
-      errors:
-        invalidRows > 0
-          ? {
-              totalRows: rows.length,
-              validRows,
-              invalidRows,
-            }
-          : Prisma.JsonNull,
+      errors: this.buildAuditEvent(INTEGRASI_IMPORT_EVENT.VALIDATE_SUCCESS, {
+        totalRows: rows.length,
+        validRows,
+        invalidRows,
+      }),
     });
 
     return {
@@ -324,7 +358,18 @@ export class IntegrasiImportService {
       invalidRows,
       status,
     };
+  } catch (error) {
+    await this.repository.updateBatchStatus(
+      batchId,
+      INTEGRASI_IMPORT_STATUS.FAILED,
+      this.buildAuditEvent(INTEGRASI_IMPORT_EVENT.VALIDATE_FAILED, {
+        message: error instanceof Error ? error.message : 'Unknown error',
+      }),
+    );
+
+    throw error;
   }
+}
 
   async commitBatch(batchId: bigint) {
     const batch = await this.repository.findBatchById(batchId);
@@ -548,6 +593,46 @@ export class IntegrasiImportService {
       status: 'IMPORTED',
     };
   }
+
+
+async cancelBatch(batchId: bigint) {
+  const batch = await this.repository.findBatchById(batchId);
+
+  if (!batch) {
+    throw new NotFoundException('Batch import tidak ditemukan');
+  }
+
+  if (batch.status === INTEGRASI_IMPORT_STATUS.CANCELLED) {
+    return {
+      batchId: batchId.toString(),
+      status: INTEGRASI_IMPORT_STATUS.CANCELLED,
+      message: 'Batch sudah dibatalkan sebelumnya',
+    };
+  }
+
+  this.assertStatusAllowed(batch.status, CANCEL_ALLOWED_STATUSES, 'CANCEL');
+
+  const cancelled = await this.repository.transitionBatchStatus(
+    batchId,
+    CANCEL_ALLOWED_STATUSES,
+    INTEGRASI_IMPORT_STATUS.CANCELLED,
+    this.buildAuditEvent(INTEGRASI_IMPORT_EVENT.CANCELLED, {
+      previousStatus: batch.status,
+    }),
+  );
+
+  if (!cancelled) {
+    throw new ConflictException(
+      'Batch tidak dapat dibatalkan karena status sudah berubah',
+    );
+  }
+
+  return {
+    batchId: batchId.toString(),
+    status: INTEGRASI_IMPORT_STATUS.CANCELLED,
+    message: 'Batch import berhasil dibatalkan',
+  };
+}
 
   private async buildMissingReferences(batchId: bigint) {
     const rows = await this.repository.findRowsForReferenceScan(batchId);
@@ -883,39 +968,27 @@ export class IntegrasiImportService {
     return map;
   }
 
-async cancelBatch(batchId: bigint) {
-  const batch = await this.repository.findBatchById(batchId);
-
-  if (!batch) {
-    throw new NotFoundException('Batch import tidak ditemukan');
+  private assertStatusAllowed(
+    currentStatus: string,
+    allowedStatuses: readonly IntegrasiImportStatus[],
+    actionLabel: string,
+  ) {
+    if (!allowedStatuses.includes(currentStatus as IntegrasiImportStatus)) {
+      throw new BadRequestException(
+        `Batch dengan status ${currentStatus} tidak dapat diproses untuk aksi ${actionLabel}`,
+      );
+    }
   }
 
-  if (batch.status === 'IMPORTED') {
-    throw new ConflictException('Batch yang sudah diimport tidak dapat dibatalkan');
-  }
-
-  if (batch.status === 'COMMITTING') {
-    throw new ConflictException('Batch sedang proses commit dan tidak dapat dibatalkan');
-  }
-
-  if (batch.status === 'CANCELLED') {
+  private buildAuditEvent(
+    event: string,
+    payload: Record<string, unknown> = {},
+  ): Prisma.InputJsonValue {
     return {
-      batchId: batchId.toString(),
-      status: 'CANCELLED',
-      message: 'Batch sudah dibatalkan sebelumnya',
+      event,
+      ...payload,
+      at: new Date().toISOString(),
     };
-  }
+  }  
 
-  await this.repository.cancelBatch(batchId, {
-    event: 'IMPORT_BATCH_CANCELLED',
-    previousStatus: batch.status,
-    cancelledAt: new Date().toISOString(),
-  });
-
-  return {
-    batchId: batchId.toString(),
-    status: 'CANCELLED',
-    message: 'Batch import berhasil dibatalkan',
-  };
-}  
 }
