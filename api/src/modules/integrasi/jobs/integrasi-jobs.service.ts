@@ -79,6 +79,19 @@ export class IntegrasiJobsService {
     };
   }
 
+  async runCancelJob(batchId: bigint) {
+    await this.ensureJobExists(batchId);
+
+    const result = await this.importService.cancelBatch(batchId);
+
+    return {
+      jobId: batchId.toString(),
+      type: 'IMPORT_PEGAWAI_CANCEL',
+      status: result.status,
+      result,
+    };
+  }
+
   private async ensureJobExists(batchId: bigint) {
     const job = await this.repository.findJobByBatchId(batchId);
 
@@ -138,16 +151,16 @@ export class IntegrasiJobsService {
   }
 
   private getAvailableActions(status: string) {
-    if (status === 'DRAFT') {
-      return ['VALIDATE'];
+    if (
+      status === 'DRAFT' ||
+      status === 'VALIDATED_WITH_ERROR' ||
+      status === 'FAILED'
+    ) {
+      return ['VALIDATE', 'CANCEL'];
     }
 
     if (status === 'VALIDATED') {
-      return ['COMMIT'];
-    }
-
-    if (status === 'VALIDATED_WITH_ERROR') {
-      return ['VALIDATE'];
+      return ['COMMIT', 'CANCEL'];
     }
 
     return [];

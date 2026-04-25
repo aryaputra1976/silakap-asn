@@ -318,39 +318,59 @@ async commitPegawaiRows(
   }
 
   await this.prisma.$transaction(
-    rows.flatMap((row) => [
-      this.prisma.silakapPegawai.upsert({
-        where: { nip: row.create.nip },
-        create: row.create,
-        update: row.update,
-      }),
-      this.prisma.silakapPegawaiImportStaging.update({
-        where: { id: row.stagingId },
-        data: { isImported: true },
-      }),
-    ]),
-  );
+    async (tx) => {
+      const batch = await tx.silakapPegawaiImportBatch.findUnique({
+        where: { id: batchId },
+        select: { id: true, status: true },
+      });
 
-  const importedRows = await this.prisma.silakapPegawaiImportStaging.count({
-    where: {
-      batchId,
-      isImported: true,
+      if (!batch || batch.status !== 'COMMITTING') {
+        throw new Error(
+          'Batch tidak berada pada status COMMITTING. Commit dibatalkan',
+        );
+      }
+
+      for (const row of rows) {
+        await tx.silakapPegawai.upsert({
+          where: { nip: row.create.nip },
+          create: row.create,
+          update: row.update,
+        });
+
+        await tx.silakapPegawaiImportStaging.update({
+          where: {
+            id: row.stagingId,
+          },
+          data: {
+            isImported: true,
+          },
+        });
+      }
+
+      const importedRows = await tx.silakapPegawaiImportStaging.count({
+        where: {
+          batchId,
+          isImported: true,
+        },
+      });
+
+      await tx.silakapPegawaiImportBatch.update({
+        where: { id: batchId },
+        data: {
+          importedRows,
+        },
+      });
     },
-  });
-
-  await this.updateBatchAfterCommit(batchId, importedRows, {
-    event: 'COMMIT_IMPORT_PEGAWAI',
-    status: 'IMPORTED',
-    importedRows,
-    committedRows: rows.length,
-    committedAt: new Date().toISOString(),
-    source: 'IMPORT_STAGING',
-  });
+    {
+      timeout: 60_000,
+      maxWait: 10_000,
+    },
+  );
 
   return {
     importedRows: rows.length,
   };
-}  
+}
 
 async countInvalidRows(batchId: bigint) {
   return this.prisma.silakapPegawaiImportStaging.count({
@@ -367,21 +387,6 @@ async countPendingValidRows(batchId: bigint) {
       batchId,
       isValid: true,
       isImported: false,
-    },
-  });
-}
-
-async updateBatchAfterCommit(
-  batchId: bigint,
-  importedRows: number,
-  audit: Prisma.InputJsonValue,
-) {
-  return this.prisma.silakapPegawaiImportBatch.update({
-    where: { id: batchId },
-    data: {
-      importedRows,
-      status: 'IMPORTED',
-      errors: audit,
     },
   });
 }

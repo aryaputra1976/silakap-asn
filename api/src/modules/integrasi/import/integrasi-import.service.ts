@@ -371,44 +371,56 @@ async validateBatch(batchId: bigint) {
   }
 }
 
-  async commitBatch(batchId: bigint) {
-    const batch = await this.repository.findBatchById(batchId);
+async commitBatch(batchId: bigint) {
+  const batch = await this.repository.findBatchById(batchId);
 
-    if (!batch) {
-      throw new NotFoundException('Batch import tidak ditemukan');
-    }
+  if (!batch) {
+    throw new NotFoundException('Batch import tidak ditemukan');
+  }
 
-    if (batch.status === 'IMPORTED') {
-      throw new ConflictException('Batch ini sudah pernah diimport');
-    }
+  if (batch.status === INTEGRASI_IMPORT_STATUS.IMPORTED) {
+    throw new ConflictException('Batch ini sudah pernah diimport');
+  }
 
-    if (batch.status !== 'VALIDATED') {
-      throw new BadRequestException(
-        'Batch hanya boleh di-commit jika status VALIDATED tanpa error',
-      );
-    }
+  this.assertStatusAllowed(batch.status, COMMIT_ALLOWED_STATUSES, 'COMMIT');
 
-    if (batch.invalidRows > 0) {
-      throw new BadRequestException(
-        'Batch masih memiliki data invalid. Lengkapi referensi dan validasi ulang sebelum commit',
-      );
-    }
+  if (batch.invalidRows > 0) {
+    throw new BadRequestException(
+      'Batch masih memiliki data invalid. Lengkapi referensi dan validasi ulang sebelum commit',
+    );
+  }
 
-    const invalidRows = await this.repository.countInvalidRows(batchId);
+  const invalidRows = await this.repository.countInvalidRows(batchId);
 
-    if (invalidRows > 0) {
-      throw new BadRequestException(
-        'Masih terdapat row invalid di staging. Commit dibatalkan',
-      );
-    }
+  if (invalidRows > 0) {
+    throw new BadRequestException(
+      'Masih terdapat row invalid di staging. Commit dibatalkan',
+    );
+  }
 
-    const pendingValidRows =
-      await this.repository.countPendingValidRows(batchId);
+  const pendingValidRows = await this.repository.countPendingValidRows(batchId);
 
-    if (pendingValidRows === 0) {
-      throw new BadRequestException('Tidak ada data valid yang perlu diimport');
-    }
+  if (pendingValidRows === 0) {
+    throw new BadRequestException('Tidak ada data valid yang perlu diimport');
+  }
 
+  const locked = await this.repository.transitionBatchStatus(
+    batchId,
+    COMMIT_ALLOWED_STATUSES,
+    INTEGRASI_IMPORT_STATUS.COMMITTING,
+    this.buildAuditEvent(INTEGRASI_IMPORT_EVENT.COMMIT_STARTED, {
+      previousStatus: batch.status,
+      pendingValidRows,
+    }),
+  );
+
+  if (!locked) {
+    throw new ConflictException(
+      'Batch sedang diproses oleh proses lain. Silakan muat ulang data',
+    );
+  }
+
+  try {
     const rows = await this.repository.findValidRowsForCommit(batchId);
 
     const jabatanKeys = new Set<string>();
@@ -586,13 +598,33 @@ async validateBatch(batchId: bigint) {
 
     const result = await this.repository.commitPegawaiRows(batchId, commitRows);
 
+    await this.repository.updateBatchStatus(
+      batchId,
+      INTEGRASI_IMPORT_STATUS.IMPORTED,
+      this.buildAuditEvent(INTEGRASI_IMPORT_EVENT.COMMIT_SUCCESS, {
+        importedRows: result.importedRows,
+        skippedRows: rows.length - commitRows.length,
+      }),
+    );
+
     return {
       batchId: batchId.toString(),
       importedRows: result.importedRows,
       skippedRows: rows.length - commitRows.length,
-      status: 'IMPORTED',
+      status: INTEGRASI_IMPORT_STATUS.IMPORTED,
     };
+  } catch (error) {
+    await this.repository.updateBatchStatus(
+      batchId,
+      INTEGRASI_IMPORT_STATUS.FAILED,
+      this.buildAuditEvent(INTEGRASI_IMPORT_EVENT.COMMIT_FAILED, {
+        message: error instanceof Error ? error.message : 'Unknown error',
+      }),
+    );
+
+    throw error;
   }
+}
 
 
 async cancelBatch(batchId: bigint) {

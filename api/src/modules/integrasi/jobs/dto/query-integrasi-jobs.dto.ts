@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { INTEGRASI_IMPORT_STATUS_VALUES } from '../../import/integrasi-import-status.constant';
 
 export class QueryIntegrasiJobsDto {
   @IsOptional()
@@ -8,6 +9,7 @@ export class QueryIntegrasiJobsDto {
 
   @IsOptional()
   @IsString()
+  @IsIn(INTEGRASI_IMPORT_STATUS_VALUES)
   status?: string;
 
   @IsOptional()
