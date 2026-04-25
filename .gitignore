@@ -27,6 +27,9 @@ api/tmp/
 api/uploads/
 api/data/import/
 
+!api/src/modules/integrasi/logs/
+!api/src/modules/integrasi/logs/**
+
 ## Environment files
 .env
 .env.*
