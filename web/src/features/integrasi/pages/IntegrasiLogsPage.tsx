@@ -2,10 +2,11 @@ import { useMemo, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 import {
   getIntegrasiLogDetail,
+  getIntegrasiLogRows,
   getIntegrasiLogs,
   getIntegrasiLogsSummary,
 } from "../api/integrasi.api"
-import type { IntegrasiLogItem } from "../types"
+import type { ImportErrorRow, IntegrasiLogItem } from "../types"
 
 const statusClass: Record<string, string> = {
   DRAFT: "bg-gray-100 text-gray-700",
@@ -87,6 +88,17 @@ export default function IntegrasiLogsPage() {
   const detail = useQuery({
     queryKey: ["integrasi", "logs-detail", selectedLog?.id],
     queryFn: () => getIntegrasiLogDetail(selectedLog?.id ?? ""),
+    enabled: Boolean(selectedLog),
+  })
+
+  const rows = useQuery({
+    queryKey: ["integrasi", "logs-detail-rows", selectedLog?.id],
+    queryFn: () =>
+      getIntegrasiLogRows(selectedLog?.id ?? "", {
+        page: 1,
+        limit: 25,
+        rowStatus: "ALL",
+      }),
     enabled: Boolean(selectedLog),
   })
 
@@ -287,22 +299,34 @@ export default function IntegrasiLogsPage() {
                 </h3>
 
                 <div className="mt-2 max-h-96 space-y-3 overflow-auto">
-                  {detail.data.rows.map((row) => (
-                    <div key={row.id} className="rounded-xl bg-slate-50 p-3">
-                      <div className="text-sm font-semibold text-slate-900">
-                        Row {row.rowNumber} — {row.nama ?? "-"}
-                      </div>
-                      <div className="mt-1 text-xs text-slate-500">
-                        NIP: {row.nip ?? "-"} · Imported:{" "}
-                        {row.isImported ? "Ya" : "Tidak"}
-                      </div>
-                      {row.errors ? (
-                        <pre className="mt-2 whitespace-pre-wrap text-xs text-amber-800">
-                          {JSON.stringify(row.errors, null, 2)}
-                        </pre>
-                      ) : null}
+                  {rows.isLoading ? (
+                    <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">
+                      Memuat rows...
                     </div>
-                  ))}
+                  ) : (rows.data?.data ?? []).length === 0 ? (
+                    <div className="rounded-xl bg-slate-50 p-3 text-sm text-slate-500">
+                      Tidak ada rows.
+                    </div>
+                  ) : (
+                    (rows.data?.data ?? []).map((row: ImportErrorRow) => (
+                      <div key={row.id} className="rounded-xl bg-slate-50 p-3">
+                        <div className="text-sm font-semibold text-slate-900">
+                          Row {row.rowNumber} — {row.nama ?? "-"}
+                        </div>
+
+                        <div className="mt-1 text-xs text-slate-500">
+                          NIP: {row.nip ?? "-"} · Imported:{" "}
+                          {row.isImported ? "Ya" : "Tidak"}
+                        </div>
+
+                        {row.errors ? (
+                          <pre className="mt-2 whitespace-pre-wrap text-xs text-amber-800">
+                            {JSON.stringify(row.errors, null, 2)}
+                          </pre>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>
