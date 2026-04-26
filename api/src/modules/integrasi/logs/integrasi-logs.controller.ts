@@ -7,7 +7,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { QueryIntegrasiLogsDto } from './dto/query-integrasi-logs.dto';
+import {
+  QueryIntegrasiLogRowsDto,
+  QueryIntegrasiLogsDto,
+} from './dto/query-integrasi-logs.dto';
 import { IntegrasiLogsService } from './integrasi-logs.service';
 
 @Controller('integrasi/logs')
@@ -28,5 +31,13 @@ export class IntegrasiLogsController {
   @Get(':id')
   findLogDetail(@Param('id', ParseIntPipe) id: number) {
     return this.service.findLogDetail(BigInt(id));
+  }
+
+  @Get(':id/rows')
+  findLogRows(
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: QueryIntegrasiLogRowsDto,
+  ) {
+    return this.service.findLogRows(BigInt(id), query);
   }
 }

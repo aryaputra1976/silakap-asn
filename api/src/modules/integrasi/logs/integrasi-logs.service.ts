@@ -1,6 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
-import type { QueryIntegrasiLogsDto } from './dto/query-integrasi-logs.dto';
+import {
+  INTEGRASI_IMPORT_STATUS,
+  type IntegrasiImportStatus,
+} from '../import/integrasi-import-status.constant';
+import {
+  INTEGRASI_LOG_TYPE,
+  type QueryIntegrasiLogRowsDto,
+  type QueryIntegrasiLogsDto,
+} from './dto/query-integrasi-logs.dto';
 import { IntegrasiLogsRepository } from './integrasi-logs.repository';
 
 type ImportBatchLog = {
@@ -43,12 +51,7 @@ export class IntegrasiLogsService {
 
     return {
       data: result.items.map((item) => this.toLogListItem(item)),
-      meta: {
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
-        totalPages: Math.ceil(result.total / result.limit),
-      },
+      meta: this.toPaginationMeta(result.total, result.page, result.limit),
     };
   }
 
@@ -59,32 +62,64 @@ export class IntegrasiLogsService {
       throw new NotFoundException('Riwayat sinkronisasi tidak ditemukan');
     }
 
+    return this.toLogDetail(log);
+  }
+
+  async findLogRows(id: bigint, query: QueryIntegrasiLogRowsDto) {
+    const exists = await this.repository.existsLogById(id);
+
+    if (!exists) {
+      throw new NotFoundException('Riwayat sinkronisasi tidak ditemukan');
+    }
+
+    const result = await this.repository.findLogRows(id, query);
+
     return {
-      id: log.id.toString(),
-      type: 'IMPORT_PEGAWAI',
-      title: `Import Pegawai - ${log.fileName}`,
-      batchCode: log.batchCode,
-      fileName: log.fileName,
-      status: log.status,
-      totalRows: log.totalRows,
-      validRows: log.validRows,
-      invalidRows: log.invalidRows,
-      importedRows: log.importedRows,
-      errors: log.errors,
-      createdAt: log.createdAt,
-      updatedAt: log.updatedAt,
-      rows: log.rows.map((row) => this.toRowItem(row)),
+      data: result.items.map((row) => this.toRowItem(row)),
+      meta: this.toPaginationMeta(result.total, result.page, result.limit),
     };
   }
 
   async getSummary() {
-    return this.repository.getSummary();
+    const summary = await this.repository.getSummary();
+
+    const totalBatches = summary.totalBatches;
+    const failedBatches = summary.failedBatches;
+    const errorBatches = summary.errorBatches + failedBatches;
+    const runningBatches = summary.validatingBatches + summary.committingBatches;
+
+    return {
+      totalBatches,
+      draftBatches: summary.draftBatches,
+      validatingBatches: summary.validatingBatches,
+      validatedBatches: summary.validatedBatches,
+      committingBatches: summary.committingBatches,
+      importedBatches: summary.importedBatches,
+      cancelledBatches: summary.cancelledBatches,
+      failedBatches,
+      errorBatches,
+      runningBatches,
+      totalRows: summary.totalRows,
+      validRows: summary.validRows,
+      invalidRows: summary.invalidRows,
+      importedRows: summary.importedRows,
+      successRatePercent: this.calculatePercent(
+        summary.importedBatches,
+        totalBatches,
+      ),
+      importedRowsPercent: this.calculatePercent(
+        summary.importedRows,
+        summary.totalRows,
+      ),
+    };
   }
 
   private toLogListItem(item: ImportBatchLog) {
+    const status = item.status as IntegrasiImportStatus;
+
     return {
       id: item.id.toString(),
-      type: 'IMPORT_PEGAWAI',
+      type: INTEGRASI_LOG_TYPE.IMPORT_PEGAWAI,
       title: `Import Pegawai - ${item.fileName}`,
       batchCode: item.batchCode,
       fileName: item.fileName,
@@ -93,9 +128,19 @@ export class IntegrasiLogsService {
       validRows: item.validRows,
       invalidRows: item.invalidRows,
       importedRows: item.importedRows,
-      hasError: item.invalidRows > 0 || item.status === 'VALIDATED_WITH_ERROR',
+      hasError: this.hasError(status, item.invalidRows),
+      isRunning: this.isRunning(status),
+      isFinal: this.isFinal(status),
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
+    };
+  }
+
+  private toLogDetail(item: ImportBatchLog) {
+    return {
+      ...this.toLogListItem(item),
+      errors: item.errors,
+      availableRowEndpoint: `/integrasi/logs/${item.id.toString()}/rows`,
     };
   }
 
@@ -110,9 +155,50 @@ export class IntegrasiLogsService {
       siasnId: row.siasnId,
       isValid: row.isValid,
       isImported: row.isImported,
+      hasError: !row.isValid || row.errors !== null,
       errors: row.errors,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
+  }
+
+  private toPaginationMeta(total: number, page: number, limit: number) {
+    return {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  private hasError(status: IntegrasiImportStatus, invalidRows: number) {
+    return (
+      invalidRows > 0 ||
+      status === INTEGRASI_IMPORT_STATUS.VALIDATED_WITH_ERROR ||
+      status === INTEGRASI_IMPORT_STATUS.FAILED
+    );
+  }
+
+  private isRunning(status: IntegrasiImportStatus) {
+    return (
+      status === INTEGRASI_IMPORT_STATUS.VALIDATING ||
+      status === INTEGRASI_IMPORT_STATUS.COMMITTING
+    );
+  }
+
+  private isFinal(status: IntegrasiImportStatus) {
+    return (
+      status === INTEGRASI_IMPORT_STATUS.IMPORTED ||
+      status === INTEGRASI_IMPORT_STATUS.CANCELLED ||
+      status === INTEGRASI_IMPORT_STATUS.FAILED
+    );
+  }
+
+  private calculatePercent(value: number, total: number) {
+    if (total <= 0) {
+      return 0;
+    }
+
+    return Number(((value / total) * 100).toFixed(2));
   }
 }

@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { INTEGRASI_IMPORT_STATUS } from '../import/integrasi-import-status.constant';
 import { PrismaService } from '../../../prisma/prisma.service';
-import type { QueryIntegrasiLogsDto } from './dto/query-integrasi-logs.dto';
+import type {
+  QueryIntegrasiLogRowsDto,
+  QueryIntegrasiLogsDto,
+} from './dto/query-integrasi-logs.dto';
 
 @Injectable()
 export class IntegrasiLogsRepository {
@@ -40,25 +44,69 @@ export class IntegrasiLogsRepository {
   async findLogById(id: bigint) {
     return this.prisma.silakapPegawaiImportBatch.findUnique({
       where: { id },
-      include: {
-        rows: {
-          where: {
-            OR: [{ isValid: false }, { isImported: true }],
-          },
-          orderBy: { rowNumber: 'asc' },
-          take: 100,
-        },
-      },
     });
+  }
+
+  async existsLogById(id: bigint) {
+    const count = await this.prisma.silakapPegawaiImportBatch.count({
+      where: { id },
+    });
+
+    return count > 0;
+  }
+
+  async findLogRows(batchId: bigint, query: QueryIntegrasiLogRowsDto) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 50;
+    const skip = (page - 1) * limit;
+
+    const rowStatus = query.rowStatus ?? 'ALL';
+
+    const where: Prisma.SilakapPegawaiImportStagingWhereInput = {
+      batchId,
+      ...(query.q
+        ? {
+            OR: [
+              { nip: { contains: query.q } },
+              { nik: { contains: query.q } },
+              { nama: { contains: query.q } },
+              { siasnId: { contains: query.q } },
+            ],
+          }
+        : {}),
+      ...(rowStatus === 'ERROR'
+        ? {
+            OR: [{ isValid: false }, { errors: { not: Prisma.JsonNull } }],
+          }
+        : {}),
+      ...(rowStatus === 'IMPORTED' ? { isImported: true } : {}),
+      ...(rowStatus === 'VALID' ? { isValid: true } : {}),
+    };
+
+    const [items, total] = await this.prisma.$transaction([
+      this.prisma.silakapPegawaiImportStaging.findMany({
+        where,
+        orderBy: { rowNumber: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.silakapPegawaiImportStaging.count({ where }),
+    ]);
+
+    return { items, total, page, limit };
   }
 
   async getSummary() {
     const [
       totalBatches,
       draftBatches,
+      validatingBatches,
       validatedBatches,
       errorBatches,
+      committingBatches,
       importedBatches,
+      failedBatches,
+      cancelledBatches,
       totalRows,
       validRows,
       invalidRows,
@@ -66,16 +114,28 @@ export class IntegrasiLogsRepository {
     ] = await this.prisma.$transaction([
       this.prisma.silakapPegawaiImportBatch.count(),
       this.prisma.silakapPegawaiImportBatch.count({
-        where: { status: 'DRAFT' },
+        where: { status: INTEGRASI_IMPORT_STATUS.DRAFT },
       }),
       this.prisma.silakapPegawaiImportBatch.count({
-        where: { status: 'VALIDATED' },
+        where: { status: INTEGRASI_IMPORT_STATUS.VALIDATING },
       }),
       this.prisma.silakapPegawaiImportBatch.count({
-        where: { status: 'VALIDATED_WITH_ERROR' },
+        where: { status: INTEGRASI_IMPORT_STATUS.VALIDATED },
       }),
       this.prisma.silakapPegawaiImportBatch.count({
-        where: { status: 'IMPORTED' },
+        where: { status: INTEGRASI_IMPORT_STATUS.VALIDATED_WITH_ERROR },
+      }),
+      this.prisma.silakapPegawaiImportBatch.count({
+        where: { status: INTEGRASI_IMPORT_STATUS.COMMITTING },
+      }),
+      this.prisma.silakapPegawaiImportBatch.count({
+        where: { status: INTEGRASI_IMPORT_STATUS.IMPORTED },
+      }),
+      this.prisma.silakapPegawaiImportBatch.count({
+        where: { status: INTEGRASI_IMPORT_STATUS.FAILED },
+      }),
+      this.prisma.silakapPegawaiImportBatch.count({
+        where: { status: INTEGRASI_IMPORT_STATUS.CANCELLED },
       }),
       this.prisma.silakapPegawaiImportBatch.aggregate({
         _sum: { totalRows: true },
@@ -94,9 +154,13 @@ export class IntegrasiLogsRepository {
     return {
       totalBatches,
       draftBatches,
+      validatingBatches,
       validatedBatches,
       errorBatches,
+      committingBatches,
       importedBatches,
+      failedBatches,
+      cancelledBatches,
       totalRows: totalRows._sum.totalRows ?? 0,
       validRows: validRows._sum.validRows ?? 0,
       invalidRows: invalidRows._sum.invalidRows ?? 0,
