@@ -1,7 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
+import {
+  INTEGRASI_IMPORT_STATUS,
+  type IntegrasiImportStatus,
+} from '../import/integrasi-import-status.constant';
 import { IntegrasiImportService } from '../import/integrasi-import.service';
-import type { QueryIntegrasiJobsDto } from './dto/query-integrasi-jobs.dto';
+import {
+  INTEGRASI_JOB_TYPE,
+  type QueryIntegrasiJobsDto,
+} from './dto/query-integrasi-jobs.dto';
 import { IntegrasiJobsRepository } from './integrasi-jobs.repository';
 
 type ImportBatchJob = {
@@ -30,12 +37,7 @@ export class IntegrasiJobsService {
 
     return {
       data: result.items.map((item) => this.toJobListItem(item)),
-      meta: {
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
-        totalPages: Math.ceil(result.total / result.limit),
-      },
+      meta: this.toPaginationMeta(result.total, result.page, result.limit),
     };
   }
 
@@ -50,7 +52,35 @@ export class IntegrasiJobsService {
   }
 
   async getSummary() {
-    return this.repository.getSummary();
+    const summary = await this.repository.getSummary();
+
+    const runningJobs = summary.validatingJobs + summary.committingJobs;
+    const errorJobs = summary.errorJobs + summary.failedJobs;
+
+    return {
+      totalJobs: summary.totalJobs,
+      draftJobs: summary.draftJobs,
+      validatingJobs: summary.validatingJobs,
+      validatedJobs: summary.validatedJobs,
+      committingJobs: summary.committingJobs,
+      importedJobs: summary.importedJobs,
+      failedJobs: summary.failedJobs,
+      cancelledJobs: summary.cancelledJobs,
+      errorJobs,
+      runningJobs,
+      totalRows: summary.totalRows,
+      validRows: summary.validRows,
+      invalidRows: summary.invalidRows,
+      importedRows: summary.importedRows,
+      successRatePercent: this.calculatePercent(
+        summary.importedJobs,
+        summary.totalJobs,
+      ),
+      importedRowsPercent: this.calculatePercent(
+        summary.importedRows,
+        summary.totalRows,
+      ),
+    };
   }
 
   async runValidateJob(batchId: bigint) {
@@ -74,7 +104,7 @@ export class IntegrasiJobsService {
     return {
       jobId: batchId.toString(),
       type: 'IMPORT_PEGAWAI_COMMIT',
-      status: result.status ?? 'IMPORTED',
+      status: result.status,
       result,
     };
   }
@@ -101,9 +131,11 @@ export class IntegrasiJobsService {
   }
 
   private toJobListItem(item: ImportBatchJob) {
+    const status = item.status as IntegrasiImportStatus;
+
     return {
       id: item.id.toString(),
-      type: 'IMPORT_PEGAWAI',
+      type: INTEGRASI_JOB_TYPE.IMPORT_PEGAWAI,
       name: `Import Pegawai - ${item.fileName}`,
       batchCode: item.batchCode,
       fileName: item.fileName,
@@ -113,7 +145,9 @@ export class IntegrasiJobsService {
       validRows: item.validRows,
       invalidRows: item.invalidRows,
       importedRows: item.importedRows,
-      hasError: item.invalidRows > 0 || item.status === 'VALIDATED_WITH_ERROR',
+      hasError: this.hasError(status, item.invalidRows),
+      isRunning: this.isRunning(status),
+      isFinal: this.isFinal(status),
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     };
@@ -128,16 +162,41 @@ export class IntegrasiJobsService {
   }
 
   private calculateProgress(item: ImportBatchJob) {
-    if (item.status === 'IMPORTED') {
+    const status = item.status as IntegrasiImportStatus;
+
+    if (status === INTEGRASI_IMPORT_STATUS.IMPORTED) {
       return 100;
     }
 
+    if (status === INTEGRASI_IMPORT_STATUS.CANCELLED) {
+      return 0;
+    }
+
+    if (status === INTEGRASI_IMPORT_STATUS.FAILED) {
+      return Math.min(99, this.calculateDataProgress(item));
+    }
+
+    if (status === INTEGRASI_IMPORT_STATUS.COMMITTING) {
+      return Math.max(95, this.calculateDataProgress(item));
+    }
+
+    if (status === INTEGRASI_IMPORT_STATUS.VALIDATING) {
+      return Math.max(25, this.calculateDataProgress(item));
+    }
+
+    return this.calculateDataProgress(item);
+  }
+
+  private calculateDataProgress(item: ImportBatchJob) {
     if (item.totalRows <= 0) {
       return 0;
     }
 
     if (item.importedRows > 0) {
-      return Math.min(100, Math.round((item.importedRows / item.totalRows) * 100));
+      return Math.min(
+        100,
+        Math.round((item.importedRows / item.totalRows) * 100),
+      );
     }
 
     if (item.validRows + item.invalidRows > 0) {
@@ -152,17 +211,57 @@ export class IntegrasiJobsService {
 
   private getAvailableActions(status: string) {
     if (
-      status === 'DRAFT' ||
-      status === 'VALIDATED_WITH_ERROR' ||
-      status === 'FAILED'
+      status === INTEGRASI_IMPORT_STATUS.DRAFT ||
+      status === INTEGRASI_IMPORT_STATUS.VALIDATED_WITH_ERROR ||
+      status === INTEGRASI_IMPORT_STATUS.FAILED
     ) {
       return ['VALIDATE', 'CANCEL'];
     }
 
-    if (status === 'VALIDATED') {
+    if (status === INTEGRASI_IMPORT_STATUS.VALIDATED) {
       return ['COMMIT', 'CANCEL'];
     }
 
     return [];
+  }
+
+  private hasError(status: IntegrasiImportStatus, invalidRows: number) {
+    return (
+      invalidRows > 0 ||
+      status === INTEGRASI_IMPORT_STATUS.VALIDATED_WITH_ERROR ||
+      status === INTEGRASI_IMPORT_STATUS.FAILED
+    );
+  }
+
+  private isRunning(status: IntegrasiImportStatus) {
+    return (
+      status === INTEGRASI_IMPORT_STATUS.VALIDATING ||
+      status === INTEGRASI_IMPORT_STATUS.COMMITTING
+    );
+  }
+
+  private isFinal(status: IntegrasiImportStatus) {
+    return (
+      status === INTEGRASI_IMPORT_STATUS.IMPORTED ||
+      status === INTEGRASI_IMPORT_STATUS.CANCELLED ||
+      status === INTEGRASI_IMPORT_STATUS.FAILED
+    );
+  }
+
+  private toPaginationMeta(total: number, page: number, limit: number) {
+    return {
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  private calculatePercent(value: number, total: number) {
+    if (total <= 0) {
+      return 0;
+    }
+
+    return Number(((value / total) * 100).toFixed(2));
   }
 }

@@ -41,8 +41,8 @@ export class IntegrasiJobsController {
     return this.service.runCommitJob(BigInt(batchId));
   }
 
-@Post('import-batches/:batchId/cancel')
-runCancelJob(@Param('batchId', ParseIntPipe) batchId: number) {
-  return this.service.runCancelJob(BigInt(batchId));
-}  
+  @Post('import-batches/:batchId/cancel')
+  runCancelJob(@Param('batchId', ParseIntPipe) batchId: number) {
+    return this.service.runCancelJob(BigInt(batchId));
+  }
 }
