@@ -17,11 +17,6 @@ import {
 import type { ImportBatchItem, ImportBatchQuery, ImportErrorRow } from "../types"
 import type { ImportEditRowPayload } from "../components/import/ImportEditRowModal"
 
-
-const [selectedErrorRow, setSelectedErrorRow] = useState<ImportErrorRow | null>(null)
-const [updateRowLoading, setUpdateRowLoading] = useState(false)
-const [updateRowError, setUpdateRowError] = useState<string | null>(null)
-
 const ACCEPTED_FILE_EXTENSIONS = [".xlsx", ".xls", ".csv"]
 
 type Notice = {
@@ -81,6 +76,10 @@ export function useIntegrasiImportWorkspace() {
   const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null)
   const [notice, setNotice] = useState<Notice | null>(null)
   const [localAction, setLocalAction] = useState<LocalAction>("idle")
+
+  const [selectedErrorRow, setSelectedErrorRow] = useState<ImportErrorRow | null>(null)
+  const [updateRowLoading, setUpdateRowLoading] = useState(false)
+  const [updateRowError, setUpdateRowError] = useState<string | null>(null)
 
   const query: ImportBatchQuery = useMemo(
     () => ({
