@@ -21,6 +21,7 @@ import {
 } from './integrasi-import-status.constant';
 import type { Express } from 'express';
 import * as XLSX from 'xlsx';
+import { UpdateImportRowDto } from './dto/update-import-row.dto';
 
 type MissingReferenceItem = {
   value: string;
@@ -115,6 +116,98 @@ export class IntegrasiImportService {
         limit: result.limit,
         totalPages: Math.ceil(result.total / result.limit),
       },
+    };
+  }
+
+  async updateImportRow(rowId: bigint, dto: UpdateImportRowDto) {
+    const row = await this.repository.findStagingRowById(rowId);
+
+    if (!row) {
+      throw new NotFoundException('Row import tidak ditemukan');
+    }
+
+    if (row.isImported) {
+      throw new ConflictException(
+        'Row sudah diimport dan tidak dapat diperbaiki lagi',
+      );
+    }
+
+    const editableStatuses: readonly IntegrasiImportStatus[] = [
+      INTEGRASI_IMPORT_STATUS.DRAFT,
+      INTEGRASI_IMPORT_STATUS.VALIDATED_WITH_ERROR,
+      INTEGRASI_IMPORT_STATUS.FAILED,
+    ];
+
+    if (!editableStatuses.includes(row.batch.status as IntegrasiImportStatus)) {
+      throw new ConflictException(
+        'Row hanya dapat diperbaiki pada batch berstatus DRAFT, VALIDATED_WITH_ERROR, atau FAILED',
+      );
+    }
+
+    const hasPayload =
+      dto.nip !== undefined ||
+      dto.nik !== undefined ||
+      dto.nama !== undefined ||
+      dto.siasnId !== undefined ||
+      dto.rawData !== undefined ||
+      dto.mappedData !== undefined;
+
+    if (!hasPayload) {
+      throw new BadRequestException('Minimal satu field wajib dikirim');
+    }
+
+    const currentRawData = this.toSafeJsonObject(row.rawData);
+    const currentMappedData = this.toSafeJsonObject(row.mappedData);
+
+    const nextNip =
+      dto.nip !== undefined ? this.cleanOptionalString(dto.nip) : row.nip;
+    const nextNik =
+      dto.nik !== undefined ? this.cleanOptionalString(dto.nik) : row.nik;
+    const nextNama =
+      dto.nama !== undefined ? this.cleanOptionalString(dto.nama) : row.nama;
+    const nextSiasnId =
+      dto.siasnId !== undefined
+        ? this.cleanOptionalString(dto.siasnId)
+        : row.siasnId;
+
+    const nextRawData: Prisma.JsonObject = {
+      ...currentRawData,
+      ...this.toSafeJsonObject(dto.rawData),
+    };
+
+    const nextMappedData: Prisma.JsonObject = {
+      ...currentMappedData,
+      ...this.toSafeJsonObject(dto.mappedData),
+      ...(dto.nip !== undefined ? { nip: nextNip } : {}),
+      ...(dto.nik !== undefined ? { nik: nextNik } : {}),
+      ...(dto.nama !== undefined ? { nama: nextNama } : {}),
+      ...(dto.siasnId !== undefined ? { siasnId: nextSiasnId } : {}),
+    };
+
+    const updated = await this.repository.updateImportRowAndResetBatch(
+      rowId,
+      row.batchId,
+      {
+        nip: nextNip,
+        nik: nextNik,
+        nama: nextNama,
+        siasnId: nextSiasnId,
+        rawData: nextRawData,
+        mappedData: nextMappedData,
+      },
+      this.buildAuditEvent('IMPORT_ROW_UPDATED', {
+        rowId: rowId.toString(),
+        batchId: row.batchId.toString(),
+        previousStatus: row.batch.status,
+        nextStatus: INTEGRASI_IMPORT_STATUS.DRAFT,
+        message: 'Row staging diperbaiki manual dan batch wajib divalidasi ulang',
+      }),
+    );
+
+    return {
+      row: IntegrasiImportMapper.toErrorRow(updated),
+      message:
+        'Row berhasil diperbaiki. Silakan jalankan validasi ulang sebelum commit.',
     };
   }
 
@@ -1293,5 +1386,60 @@ private generateBatchCode() {
       at: new Date().toISOString(),
     };
   }  
+
+private toSafeJsonObject(value: unknown): Prisma.JsonObject {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  const result: Prisma.JsonObject = {};
+
+  for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+    if (
+      item === undefined ||
+      item === Prisma.DbNull ||
+      item === Prisma.JsonNull ||
+      item === Prisma.AnyNull
+    ) {
+      continue;
+    }
+
+    if (
+      item === null ||
+      typeof item === 'string' ||
+      typeof item === 'number' ||
+      typeof item === 'boolean'
+    ) {
+      result[key] = item;
+      continue;
+    }
+
+    if (item instanceof Date) {
+      result[key] = item.toISOString();
+      continue;
+    }
+
+    if (Array.isArray(item)) {
+      result[key] = item
+        .filter(
+          (entry) =>
+            entry !== undefined &&
+            entry !== Prisma.DbNull &&
+            entry !== Prisma.JsonNull &&
+            entry !== Prisma.AnyNull,
+        )
+        .map((entry) =>
+          entry instanceof Date ? entry.toISOString() : String(entry),
+        );
+      continue;
+    }
+
+    if (typeof item === 'object') {
+      result[key] = this.toSafeJsonObject(item);
+    }
+  }
+
+  return result;
+}
 
 }

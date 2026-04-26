@@ -1,9 +1,11 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
   UploadedFile,
@@ -19,6 +21,7 @@ import {
   QueryImportErrorsDto,
 } from './dto/query-import-batch.dto';
 import { IntegrasiImportService } from './integrasi-import.service';
+import { UpdateImportRowDto } from './dto/update-import-row.dto';
 
 const MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024;
 
@@ -93,6 +96,14 @@ export class IntegrasiImportController {
     return this.service.findErrorRows(BigInt(batchId), query);
   }
 
+  @Patch('rows/:rowId')
+  updateImportRow(
+    @Param('rowId', ParseIntPipe) rowId: number,
+    @Body() dto: UpdateImportRowDto,
+  ) {
+    return this.service.updateImportRow(BigInt(rowId), dto);
+  }
+    
   @Get('batches/:batchId/missing-references')
   findMissingReferences(@Param('batchId', ParseIntPipe) batchId: number) {
     return this.service.findMissingReferences(BigInt(batchId));
