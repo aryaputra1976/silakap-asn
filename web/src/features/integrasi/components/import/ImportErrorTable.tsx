@@ -1,70 +1,123 @@
-import { formatNumber } from "./import-ui"
 import type { ImportBatchItem, ImportErrorRow } from "../../types"
+import { formatNumber } from "./import-ui"
+import { ImportStatusBadge } from "./ImportStatusBadge"
+
+type ImportErrorTableProps = {
+  batch: ImportBatchItem
+  rows: ImportErrorRow[]
+  loading: boolean
+}
+
+function formatError(errors: unknown): string {
+  if (!errors) {
+    return "-"
+  }
+
+  if (typeof errors === "string") {
+    return errors
+  }
+
+  try {
+    return JSON.stringify(errors, null, 2)
+  } catch {
+    return "Format error tidak dapat ditampilkan."
+  }
+}
 
 export function ImportErrorTable({
   batch,
   rows,
   loading,
-}: {
-  batch: ImportBatchItem
-  rows: ImportErrorRow[]
-  loading: boolean
-}) {
+}: ImportErrorTableProps) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-3">
-        <h2 className="text-lg font-semibold text-slate-900">
-          Error Import
-        </h2>
-        <p className="text-sm text-slate-500">
-          Batch: {batch.batchCode}
-        </p>
+    <div className="card shadow-sm h-100">
+      <div className="card-header border-0 pt-6">
+        <div className="card-title flex-column align-items-start">
+          <h3 className="fw-bold text-gray-900 mb-1">Error Import</h3>
+          <div className="text-gray-600 fs-7">
+            Batch: <span className="fw-bold">{batch.batchCode}</span>
+          </div>
+        </div>
+
+        <div className="card-toolbar">
+          <ImportStatusBadge status={batch.status} />
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-sm">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-            <tr>
-              <th className="px-3 py-2">Row</th>
-              <th className="px-3 py-2">NIP</th>
-              <th className="px-3 py-2">Nama</th>
-              <th className="px-3 py-2">SIASN ID</th>
-              <th className="px-3 py-2">Error</th>
-            </tr>
-          </thead>
+      <div className="card-body pt-2">
+        <div className="rounded border border-gray-300 border-dashed bg-light-warning bg-opacity-10 px-5 py-4 mb-5">
+          <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+            <div>
+              <div className="fw-bold text-gray-900 fs-6">
+                Pemeriksaan Error Row
+              </div>
+              <div className="text-gray-600 fs-7">
+                Tampilkan sample row invalid untuk membantu perbaikan data dan referensi.
+              </div>
+            </div>
 
-          <tbody className="divide-y divide-slate-100">
-            {loading ? (
-              <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-slate-500">
-                  Memuat error...
-                </td>
+            <span className="badge badge-light-warning">
+              {formatNumber(rows.length)} sample row
+            </span>
+          </div>
+        </div>
+
+        <div className="table-responsive">
+          <table className="table align-middle table-row-dashed fs-6 gy-4">
+            <thead>
+              <tr className="text-start text-gray-500 fw-bold fs-7 text-uppercase">
+                <th className="w-80px">Row</th>
+                <th>NIP</th>
+                <th>Nama</th>
+                <th>SIASN ID</th>
+                <th>Error</th>
               </tr>
-            ) : rows.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-slate-500">
-                  Tidak ada error.
-                </td>
-              </tr>
-            ) : (
-              rows.map((row) => (
-                <tr key={row.id}>
-                  <td className="px-3 py-2">
-                    {formatNumber(row.rowNumber)}
-                  </td>
-                  <td className="px-3 py-2">{row.nip ?? "-"}</td>
-                  <td className="px-3 py-2">{row.nama ?? "-"}</td>
-                  <td className="px-3 py-2">{row.siasnId ?? "-"}</td>
-                  <td className="px-3 py-2">
-                    <pre className="max-h-24 overflow-auto rounded-xl bg-rose-50 p-2 text-xs text-rose-700">
-                      {JSON.stringify(row.errors, null, 2)}
-                    </pre>
+            </thead>
+
+            <tbody className="fw-semibold text-gray-700">
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-gray-500">
+                    Memuat error import...
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="text-center py-10 text-gray-500">
+                    Tidak ada error pada batch ini.
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>
+                      <span className="badge badge-light-dark">
+                        {formatNumber(row.rowNumber)}
+                      </span>
+                    </td>
+                    <td>{row.nip ?? "-"}</td>
+                    <td>
+                      <div className="fw-bold text-gray-900">
+                        {row.nama ?? "-"}
+                      </div>
+                      <div className="text-gray-500 fs-8">
+                        NIK: {row.nik ?? "-"}
+                      </div>
+                    </td>
+                    <td className="text-gray-600 fs-7">
+                      {row.siasnId ?? "-"}
+                    </td>
+                    <td>
+                      <pre className="mb-0 max-h-150px overflow-auto rounded bg-light-danger px-4 py-3 fs-8 text-danger">
+                        {formatError(row.errors)}
+                      </pre>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )

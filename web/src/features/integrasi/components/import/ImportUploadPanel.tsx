@@ -1,4 +1,5 @@
 import { useRef } from "react"
+import { KTIcon } from "@/_metronic/helpers"
 
 type ImportUploadPanelProps = {
   file: File | null
@@ -23,50 +24,58 @@ export function ImportUploadPanel({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-5 py-4">
-        <h2 className="text-base font-semibold text-slate-950">
-          Upload File Import
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Upload file Excel atau CSV untuk membuat batch staging pegawai.
-        </p>
+    <div className="card shadow-sm h-100">
+      <div className="card-header border-0 pt-6">
+        <div className="card-title flex-column align-items-start">
+          <h3 className="fw-bold text-gray-900 mb-1">Upload File Import</h3>
+          <div className="text-gray-600 fs-7">
+            Format yang didukung: .xlsx, .xls, atau .csv
+          </div>
+        </div>
       </div>
 
+      <div className="card-body pt-2">
         <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls,.csv"
-            onChange={onChange}
-            className="hidden"
-            style={{ display: "none" }}
+          ref={fileInputRef}
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          onChange={onChange}
+          style={{ display: "none" }}
         />
 
-      <div className="p-5">
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <div className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700 ring-1 ring-blue-100">
-                .xlsx / .xls / .csv
+        <div className="rounded border border-gray-300 border-dashed bg-light-primary bg-opacity-10 px-5 py-5">
+          <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-5">
+            <div className="d-flex align-items-start gap-4">
+              <div className="symbol symbol-50px">
+                <div className="symbol-label bg-light-primary">
+                  <KTIcon iconName="file-up" className="fs-2 text-primary" />
+                </div>
               </div>
 
-              <p className="mt-3 truncate text-sm font-semibold text-slate-950">
-                {file ? file.name : "Belum ada file dipilih"}
-              </p>
+              <div>
+                <div className="fw-bold text-gray-900 fs-6">
+                  {file ? file.name : "Belum ada file dipilih"}
+                </div>
+                <div className="text-gray-600 fs-7 mt-1">
+                  {file
+                    ? `Ukuran file: ${formatFileSize(file)}`
+                    : "Pilih file sumber data pegawai sebelum upload."}
+                </div>
 
-              <p className="mt-1 text-xs text-slate-500">
-                {file
-                  ? `Ukuran file: ${formatFileSize(file)}`
-                  : "Pilih file sumber data pegawai sebelum upload."}
-              </p>
+                <div className="d-flex flex-wrap gap-2 mt-3">
+                  <span className="badge badge-light-primary">.xlsx</span>
+                  <span className="badge badge-light-primary">.xls</span>
+                  <span className="badge badge-light-primary">.csv</span>
+                </div>
+              </div>
             </div>
 
-            <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <div className="d-flex gap-2">
               <button
                 type="button"
                 disabled={disabled || loading}
                 onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn btn-sm btn-light-primary"
               >
                 Pilih File
               </button>
@@ -75,7 +84,7 @@ export function ImportUploadPanel({
                 type="button"
                 disabled={!file || disabled || loading}
                 onClick={onUpload}
-                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="btn btn-sm btn-primary"
               >
                 {loading ? "Mengupload..." : "Upload File"}
               </button>
@@ -83,6 +92,6 @@ export function ImportUploadPanel({
           </div>
         </div>
       </div>
-    </section>
+    </div>
   )
 }

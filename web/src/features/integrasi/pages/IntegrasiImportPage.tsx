@@ -68,13 +68,13 @@ export default function IntegrasiImportPage() {
           onCommit={() => void workspace.handleCommit()}
           onCancel={() => void workspace.handleCancel()}
         />
-
-        <ImportCommitReadinessPanel
-          batch={workspace.selectedBatch}
-          missingReferences={workspace.missingReferencesQuery.data}
-          loading={workspace.missingReferencesQuery.isLoading}
-        />        
       </div>
+
+      <ImportCommitReadinessPanel
+        batch={workspace.selectedBatch}
+        missingReferences={workspace.missingReferencesQuery.data}
+        loading={workspace.missingReferencesQuery.isLoading}
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
         <ImportStatCard
