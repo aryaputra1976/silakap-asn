@@ -19,6 +19,11 @@ import type {
   IntegrasiSiasnSummary,  
 } from "../types"
 
+import type {
+  UploadImportPegawaiResponse,
+  IntegrasiLogRowsQuery,
+} from "../types"
+
 type EmptyBody = Record<string, never>
 
 function toQueryString(query: ImportBatchQuery) {
@@ -145,4 +150,56 @@ export function getIntegrasiSiasnSummary() {
 
 export function getIntegrasiSiasnStatus() {
   return getRequest<IntegrasiSiasnStatus>("/integrasi/siasn/status")
+}
+
+function toLogRowsQueryString(query: IntegrasiLogRowsQuery) {
+  const params = new URLSearchParams()
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && String(value).length > 0) {
+      params.set(key, String(value))
+    }
+  })
+
+  const qs = params.toString()
+
+  return qs ? `?${qs}` : ""
+}
+
+export function uploadImportPegawaiFile(file: File) {
+  const formData = new FormData()
+  formData.append("file", file)
+
+  return postRequest<UploadImportPegawaiResponse, FormData>(
+    "/integrasi/import/pegawai/upload",
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
+  )
+}
+
+export function cancelImportBatch(batchId: string) {
+  return postRequest<CommitBatchResponse, EmptyBody>(
+    `/integrasi/import/pegawai/batches/${batchId}/cancel`,
+    {},
+  )
+}
+
+export function getIntegrasiLogRows(
+  id: string,
+  query: IntegrasiLogRowsQuery,
+) {
+  return getRequest<PaginatedResponse<ImportErrorRow>>(
+    `/integrasi/logs/${id}/rows${toLogRowsQueryString(query)}`,
+  )
+}
+
+export function runIntegrasiCancelJob(batchId: string) {
+  return postRequest<RunIntegrasiJobResponse, EmptyBody>(
+    `/integrasi/jobs/import-batches/${batchId}/cancel`,
+    {},
+  )
 }

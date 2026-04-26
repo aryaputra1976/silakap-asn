@@ -451,4 +451,61 @@ async updateBatchStatus(
   });
 }
 
+async createImportBatch(payload: {
+  batchCode: string;
+  fileName: string;
+  totalRows: number;
+  status: string;
+  errors: Prisma.InputJsonValue;
+  rows: {
+    rowNumber: number;
+    rawData: Prisma.InputJsonValue;
+    mappedData: Prisma.InputJsonValue;
+    nip: string | null;
+    nik: string | null;
+    nama: string | null;
+    siasnId: string | null;
+    isValid: boolean;
+    isImported: boolean;
+  }[];
+}) {
+  return this.prisma.$transaction(
+    async (tx) => {
+      const batch = await tx.silakapPegawaiImportBatch.create({
+        data: {
+          batchCode: payload.batchCode,
+          fileName: payload.fileName,
+          totalRows: payload.totalRows,
+          validRows: 0,
+          invalidRows: 0,
+          importedRows: 0,
+          status: payload.status,
+          errors: payload.errors,
+        },
+      });
+
+      await tx.silakapPegawaiImportStaging.createMany({
+        data: payload.rows.map((row) => ({
+          batchId: batch.id,
+          rowNumber: row.rowNumber,
+          nip: row.nip,
+          nik: row.nik,
+          nama: row.nama,
+          siasnId: row.siasnId,
+          rawData: row.rawData,
+          mappedData: row.mappedData,
+          errors: Prisma.JsonNull,
+          isValid: row.isValid,
+          isImported: row.isImported,
+        })),
+      });
+
+      return batch;
+    },
+    {
+      timeout: 60_000,
+      maxWait: 10_000,
+    },
+  );
+}
 }

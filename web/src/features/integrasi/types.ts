@@ -1,8 +1,12 @@
 export type IntegrasiBatchStatus =
   | "DRAFT"
+  | "VALIDATING"
   | "VALIDATED"
   | "VALIDATED_WITH_ERROR"
+  | "COMMITTING"
   | "IMPORTED"
+  | "FAILED"
+  | "CANCELLED"
   | string
 
 export type PaginatedResponse<T> = {
@@ -108,7 +112,7 @@ export type IntegrasiLogItem = {
 
 export type IntegrasiLogDetail = IntegrasiLogItem & {
   errors: unknown
-  rows: ImportErrorRow[]
+  availableRowEndpoint?: string
 }
 
 export type IntegrasiLogsSummary = {
@@ -204,4 +208,24 @@ export type IntegrasiSiasnStatus = {
   status: "HEALTHY" | "WARNING" | "PARTIAL" | string
   message: string
   checkedAt: string
+}
+
+export type UploadImportPegawaiResponse = {
+  batchId: string
+  batchCode: string
+  fileName: string
+  totalRows: number
+  validRows: number
+  invalidRows: number
+  importedRows: number
+  status: IntegrasiBatchStatus
+  createdAt: string
+  message: string
+}
+
+export type IntegrasiLogRowsQuery = {
+  page?: number
+  limit?: number
+  q?: string
+  rowStatus?: "ALL" | "ERROR" | "IMPORTED" | "VALID"
 }

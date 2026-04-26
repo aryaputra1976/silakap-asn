@@ -1,12 +1,18 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Param,
   ParseIntPipe,
   Post,
   Query,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Express } from 'express';
+import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
   QueryImportBatchDto,
@@ -14,10 +20,60 @@ import {
 } from './dto/query-import-batch.dto';
 import { IntegrasiImportService } from './integrasi-import.service';
 
+const MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024;
+
+const ALLOWED_EXCEL_MIME_TYPES = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'text/csv',
+  'application/csv',
+]);
+
 @Controller('integrasi/import/pegawai')
 @UseGuards(JwtAuthGuard)
 export class IntegrasiImportController {
   constructor(private readonly service: IntegrasiImportService) {}
+
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: MAX_UPLOAD_SIZE_BYTES,
+        files: 1,
+      },
+      fileFilter: (_request, file, callback) => {
+        const filename = file.originalname.toLowerCase();
+        const isAllowedExtension =
+          filename.endsWith('.xlsx') ||
+          filename.endsWith('.xls') ||
+          filename.endsWith('.csv');
+
+        const isAllowedMime =
+          ALLOWED_EXCEL_MIME_TYPES.has(file.mimetype) ||
+          file.mimetype === 'application/octet-stream';
+
+        if (!isAllowedExtension || !isAllowedMime) {
+          callback(
+            new BadRequestException(
+              'File harus berformat .xlsx, .xls, atau .csv',
+            ),
+            false,
+          );
+          return;
+        }
+
+        callback(null, true);
+      },
+    }),
+  )
+  uploadPegawaiImport(@UploadedFile() file?: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('File import wajib diunggah');
+    }
+
+    return this.service.uploadPegawaiImport(file);
+  }
 
   @Get('batches')
   findBatches(@Query() query: QueryImportBatchDto) {

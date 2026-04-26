@@ -19,6 +19,8 @@ import {
   VALIDATE_ALLOWED_STATUSES,
   type IntegrasiImportStatus,
 } from './integrasi-import-status.constant';
+import type { Express } from 'express';
+import * as XLSX from 'xlsx';
 
 type MissingReferenceItem = {
   value: string;
@@ -42,6 +44,35 @@ type ValidationErrorItem = {
 };
 
 type ReferenceType = 'jabatan' | 'unor' | 'pendidikan';
+
+type ParsedImportRow = {
+  rowNumber: number;
+  rawData: Prisma.JsonObject;
+  mappedData: Prisma.JsonObject;
+  nip: string | null;
+  nik: string | null;
+  nama: string | null;
+  siasnId: string | null;
+};
+
+type CreateImportBatchPayload = {
+  batchCode: string;
+  fileName: string;
+  totalRows: number;
+  status: string;
+  errors: Prisma.InputJsonValue;
+  rows: {
+    rowNumber: number;
+    rawData: Prisma.InputJsonValue;
+    mappedData: Prisma.InputJsonValue;
+    nip: string | null;
+    nik: string | null;
+    nama: string | null;
+    siasnId: string | null;
+    isValid: boolean;
+    isImported: boolean;
+  }[];
+};
 
 @Injectable()
 export class IntegrasiImportService {
@@ -664,6 +695,246 @@ async cancelBatch(batchId: bigint) {
     status: INTEGRASI_IMPORT_STATUS.CANCELLED,
     message: 'Batch import berhasil dibatalkan',
   };
+}
+
+async uploadPegawaiImport(file: Express.Multer.File) {
+  const rows = this.parseWorkbookToRows(file);
+
+  if (rows.length === 0) {
+    throw new BadRequestException('File import tidak memiliki data pegawai');
+  }
+
+  const batchCode = this.generateBatchCode();
+  const created = await this.repository.createImportBatch({
+    batchCode,
+    fileName: file.originalname,
+    totalRows: rows.length,
+    status: INTEGRASI_IMPORT_STATUS.DRAFT,
+    errors: this.buildAuditEvent('IMPORT_FILE_UPLOADED', {
+      fileName: file.originalname,
+      mimeType: file.mimetype,
+      size: file.size,
+      totalRows: rows.length,
+    }),
+    rows: rows.map((row) => ({
+      rowNumber: row.rowNumber,
+      rawData: row.rawData,
+      mappedData: row.mappedData,
+      nip: row.nip,
+      nik: row.nik,
+      nama: row.nama,
+      siasnId: row.siasnId,
+      isValid: false,
+      isImported: false,
+    })),
+  });
+
+  return {
+    batchId: created.id.toString(),
+    batchCode: created.batchCode,
+    fileName: created.fileName,
+    totalRows: created.totalRows,
+    validRows: created.validRows,
+    invalidRows: created.invalidRows,
+    importedRows: created.importedRows,
+    status: created.status,
+    createdAt: created.createdAt,
+    message:
+      'File berhasil diunggah ke staging. Lanjutkan proses validasi batch.',
+  };
+}
+
+private parseWorkbookToRows(file: Express.Multer.File): ParsedImportRow[] {
+  const workbook = XLSX.read(file.buffer, {
+    type: 'buffer',
+    cellDates: false,
+    raw: false,
+  });
+
+  const firstSheetName = workbook.SheetNames[0];
+
+  if (!firstSheetName) {
+    throw new BadRequestException('File Excel tidak memiliki sheet');
+  }
+
+  const worksheet = workbook.Sheets[firstSheetName];
+
+  if (!worksheet) {
+    throw new BadRequestException('Sheet pertama tidak ditemukan');
+  }
+
+  const records = XLSX.utils.sheet_to_json<Record<string, unknown>>(worksheet, {
+    defval: null,
+    raw: false,
+  });
+
+  return records
+    .map((record, index) => this.toParsedImportRow(record, index + 2))
+    .filter((row): row is ParsedImportRow => row !== null);
+}
+
+private toParsedImportRow(
+  record: Record<string, unknown>,
+  rowNumber: number,
+): ParsedImportRow | null {
+  const normalizedRecord = this.normalizeRecord(record);
+
+  if (Object.keys(normalizedRecord).length === 0) {
+    return null;
+  }
+
+  const nip = this.extractFirstValue(normalizedRecord, normalizedRecord, [
+    'nip',
+    'NIP',
+    'nipBaru',
+    'nip_baru',
+    'NIP BARU',
+  ]);
+
+  const nik = this.extractFirstValue(normalizedRecord, normalizedRecord, [
+    'nik',
+    'NIK',
+  ]);
+
+  const nama = this.extractFirstValue(normalizedRecord, normalizedRecord, [
+    'nama',
+    'NAMA',
+    'namaPegawai',
+    'nama_pegawai',
+    'NAMA PEGAWAI',
+  ]);
+
+  const siasnId = this.extractFirstValue(normalizedRecord, normalizedRecord, [
+    'siasnId',
+    'siasn_id',
+    'SIASN ID',
+    'idSiasn',
+    'id_siasn',
+    'ID SIASN',
+  ]);
+
+  return {
+    rowNumber,
+    rawData: normalizedRecord,
+    mappedData: {
+      nip,
+      nik,
+      nama,
+      siasnId,
+      jabatanId: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'jabatanId',
+        'jabatan_id',
+        'JABATAN ID',
+        'idJabatan',
+        'id_jabatan',
+        'jabatanSiasnId',
+        'jabatan_siasn_id',
+        'JABATAN_ID',
+      ]),
+      jabatanNama: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'jabatanNama',
+        'jabatan_nama',
+        'JABATAN NAMA',
+        'namaJabatan',
+        'nama_jabatan',
+        'NAMA JABATAN',
+        'jabatan',
+        'JABATAN',
+      ]),
+      unorId: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'unorId',
+        'unor_id',
+        'UNOR ID',
+        'idUnor',
+        'id_unor',
+        'unorSiasnId',
+        'unor_siasn_id',
+        'UNOR_ID',
+      ]),
+      unorNama: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'unorNama',
+        'unor_nama',
+        'UNOR NAMA',
+        'namaUnor',
+        'nama_unor',
+        'NAMA UNOR',
+        'unitKerja',
+        'unit_kerja',
+        'UNIT KERJA',
+      ]),
+      unorIndukId: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'unorIndukId',
+        'unor_induk_id',
+        'UNOR INDUK ID',
+        'idUnorInduk',
+        'id_unor_induk',
+        'UNOR_INDUK_ID',
+      ]),
+      pendidikanId: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'pendidikanId',
+        'pendidikan_id',
+        'PENDIDIKAN ID',
+        'idPendidikan',
+        'id_pendidikan',
+        'pendidikanSiasnId',
+        'pendidikan_siasn_id',
+        'PENDIDIKAN_ID',
+      ]),
+      pendidikanNama: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'pendidikanNama',
+        'pendidikan_nama',
+        'PENDIDIKAN NAMA',
+        'namaPendidikan',
+        'nama_pendidikan',
+        'NAMA PENDIDIKAN',
+        'pendidikan',
+        'PENDIDIKAN',
+      ]),
+    },
+    nip,
+    nik,
+    nama,
+    siasnId,
+  };
+}
+
+private normalizeRecord(record: Record<string, unknown>): Prisma.JsonObject {
+  const normalized: Prisma.JsonObject = {};
+
+  for (const [key, value] of Object.entries(record)) {
+    const cleanKey = key.trim();
+
+    if (cleanKey.length === 0) {
+      continue;
+    }
+
+    if (value === null || value === undefined) {
+      continue;
+    }
+
+    const cleanValue =
+      value instanceof Date ? value.toISOString() : String(value).trim();
+
+    if (cleanValue.length === 0) {
+      continue;
+    }
+
+    normalized[cleanKey] = cleanValue;
+  }
+
+  return normalized;
+}
+
+private generateBatchCode() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const date = String(now.getDate()).padStart(2, '0');
+  const hour = String(now.getHours()).padStart(2, '0');
+  const minute = String(now.getMinutes()).padStart(2, '0');
+  const second = String(now.getSeconds()).padStart(2, '0');
+
+  return `PEG-${year}${month}${date}${hour}${minute}${second}`;
 }
 
   private async buildMissingReferences(batchId: bigint) {
