@@ -6,16 +6,12 @@ type ImportErrorTableProps = {
   batch: ImportBatchItem
   rows: ImportErrorRow[]
   loading: boolean
+  onEditRow: (row: ImportErrorRow) => void
 }
 
 function formatError(errors: unknown): string {
-  if (!errors) {
-    return "-"
-  }
-
-  if (typeof errors === "string") {
-    return errors
-  }
+  if (!errors) return "-"
+  if (typeof errors === "string") return errors
 
   try {
     return JSON.stringify(errors, null, 2)
@@ -28,6 +24,7 @@ export function ImportErrorTable({
   batch,
   rows,
   loading,
+  onEditRow,
 }: ImportErrorTableProps) {
   return (
     <div className="card shadow-sm h-100">
@@ -71,19 +68,20 @@ export function ImportErrorTable({
                 <th>Nama</th>
                 <th>SIASN ID</th>
                 <th>Error</th>
+                <th className="text-end w-120px">Aksi</th>
               </tr>
             </thead>
 
             <tbody className="fw-semibold text-gray-700">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-gray-500">
+                  <td colSpan={6} className="text-center py-10 text-gray-500">
                     Memuat error import...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-gray-500">
+                  <td colSpan={6} className="text-center py-10 text-gray-500">
                     Tidak ada error pada batch ini.
                   </td>
                 </tr>
@@ -111,6 +109,15 @@ export function ImportErrorTable({
                       <pre className="mb-0 max-h-150px overflow-auto rounded bg-light-danger px-4 py-3 fs-8 text-danger">
                         {formatError(row.errors)}
                       </pre>
+                    </td>
+                    <td className="text-end">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-light-primary"
+                        onClick={() => onEditRow(row)}
+                      >
+                        Perbaiki
+                      </button>
                     </td>
                   </tr>
                 ))

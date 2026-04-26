@@ -12,6 +12,7 @@ import { ImportPageHeader } from "../components/import/ImportPageHeader"
 import { ImportStatCard } from "../components/import/ImportStatCard"
 import { ImportUploadPanel } from "../components/import/ImportUploadPanel"
 import { ImportCommitReadinessPanel } from "../components/import/ImportCommitReadinessPanel"
+import { ImportEditRowModal } from "../components/import/ImportEditRowModal"
 
 export default function IntegrasiImportPage() {
   const workspace = useIntegrasiImportWorkspace()
@@ -122,6 +123,7 @@ export default function IntegrasiImportPage() {
             batch={workspace.selectedBatch}
             rows={workspace.errorsQuery.data?.data ?? []}
             loading={workspace.errorsQuery.isLoading}
+            onEditRow={workspace.handleEditRow}
           />
 
           <ImportMissingReferencesPanel
@@ -139,6 +141,13 @@ export default function IntegrasiImportPage() {
               void workspace.handleCreatePendidikanReferences()
             }
           />
+          <ImportEditRowModal
+            row={workspace.selectedErrorRow}
+            loading={workspace.updateRowLoading}
+            error={workspace.updateRowError}
+            onClose={workspace.handleCloseEditRowModal}
+            onSubmit={workspace.handleUpdateRow}
+          />          
         </div>
       ) : null}
     </div>

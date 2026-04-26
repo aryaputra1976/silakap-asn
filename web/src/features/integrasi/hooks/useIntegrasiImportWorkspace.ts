@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ChangeEvent } from "react"
 import {
+  updateImportRow,
   cancelImportBatch,
   uploadImportPegawaiFile,
 } from "../api/integrasi.api"
@@ -13,7 +14,13 @@ import {
   useIntegrasiMissingReferences,
   useValidateIntegrasiBatch,
 } from "./useIntegrasiImport"
-import type { ImportBatchItem, ImportBatchQuery } from "../types"
+import type { ImportBatchItem, ImportBatchQuery, ImportErrorRow } from "../types"
+import type { ImportEditRowPayload } from "../components/import/ImportEditRowModal"
+
+
+const [selectedErrorRow, setSelectedErrorRow] = useState<ImportErrorRow | null>(null)
+const [updateRowLoading, setUpdateRowLoading] = useState(false)
+const [updateRowError, setUpdateRowError] = useState<string | null>(null)
 
 const ACCEPTED_FILE_EXTENSIONS = [".xlsx", ".xls", ".csv"]
 
@@ -136,6 +143,7 @@ export function useIntegrasiImportWorkspace() {
     localAction !== "idle" ||
     validateMutation.isPending ||
     commitMutation.isPending ||
+    updateRowLoading ||
     createJabatanMutation.isPending ||
     createUnorMutation.isPending ||
     createPendidikanMutation.isPending
@@ -161,6 +169,43 @@ export function useIntegrasiImportWorkspace() {
 
     setSelectedFile(file)
   }
+
+  function handleEditRow(row: ImportErrorRow) {
+    setUpdateRowError(null)
+    setSelectedErrorRow(row)
+  }
+
+  function handleCloseEditRowModal() {
+    if (updateRowLoading) return
+    setUpdateRowError(null)
+    setSelectedErrorRow(null)
+  }
+
+async function handleUpdateRow(rowId: string, payload: ImportEditRowPayload) {
+  try {
+    setUpdateRowLoading(true)
+    setUpdateRowError(null)
+    setNotice(null)
+
+    await updateImportRow(rowId, payload)
+    await errorsQuery.refetch()
+    await batchesQuery.refetch()
+    await missingReferencesQuery.refetch()
+
+    setSelectedErrorRow(null)
+
+    setNotice({
+      type: "success",
+      message: "Row staging berhasil diperbaiki. Jalankan validasi ulang untuk memastikan data valid.",
+    })
+  } catch (error) {
+    const message = getErrorMessage(error)
+    setUpdateRowError(message)
+    setNotice({ type: "error", message })
+  } finally {
+    setUpdateRowLoading(false)
+  }
+}
 
   async function handleUpload() {
     if (!selectedFile) {
@@ -340,5 +385,11 @@ export function useIntegrasiImportWorkspace() {
     handleCreateJabatanReferences,
     handleCreateUnorReferences,
     handleCreatePendidikanReferences,
+    selectedErrorRow,
+    updateRowLoading,
+    updateRowError,
+    handleEditRow,
+    handleCloseEditRowModal,
+    handleUpdateRow,    
   }
 }

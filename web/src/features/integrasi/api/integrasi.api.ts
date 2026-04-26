@@ -1,4 +1,4 @@
-import { getRequest, postRequest } from "@/core/http/httpClient"
+import { getRequest, patchRequest, postRequest } from "@/core/http/httpClient"
 import type {
   CommitBatchResponse,
   CreateReferenceResponse,
@@ -23,6 +23,13 @@ import type {
   UploadImportPegawaiResponse,
   IntegrasiLogRowsQuery,
 } from "../types"
+
+export type UpdateImportRowPayload = {
+  nip: string
+  nik: string
+  nama: string
+  siasnId: string
+}
 
 type EmptyBody = Record<string, never>
 
@@ -203,3 +210,14 @@ export function runIntegrasiCancelJob(batchId: string) {
     {},
   )
 }
+
+export function updateImportRow(
+  rowId: string,
+  payload: UpdateImportRowPayload,
+) {
+  return patchRequest<ImportErrorRow, UpdateImportRowPayload>(
+    `/integrasi/import/pegawai/rows/${rowId}`,
+    payload,
+  )
+}
+
