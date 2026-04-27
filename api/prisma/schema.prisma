@@ -1948,6 +1948,7 @@ model SilakapPegawaiImportBatch {
   importedRows Int      @default(0) @map("imported_rows")
   status       String   @default("DRAFT") @map("status") @db.VarChar(30)
   errors       Json?    @map("errors")
+  createdBy    String?  @map("created_by") @db.VarChar(36)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -1955,6 +1956,7 @@ model SilakapPegawaiImportBatch {
 
   @@index([status])
   @@index([createdAt])
+  @@index([createdBy])
   @@map("silakap_pegawai_import_batch")
 }
 

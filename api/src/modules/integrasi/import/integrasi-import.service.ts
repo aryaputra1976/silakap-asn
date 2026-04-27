@@ -876,24 +876,26 @@ async cancelBatch(batchId: bigint) {
   };
 }
 
-async uploadPegawaiImport(file: Express.Multer.File) {
-  const rows = this.parseWorkbookToRows(file);
+async uploadPegawaiImport(file: Express.Multer.File, userId?: string) {
+    const rows = this.parseWorkbookToRows(file);
 
-  if (rows.length === 0) {
-    throw new BadRequestException('File import tidak memiliki data pegawai');
-  }
+    if (rows.length === 0) {
+      throw new BadRequestException('File import tidak memiliki data pegawai');
+    }
 
-  const batchCode = this.generateBatchCode();
-  const created = await this.repository.createImportBatch({
-    batchCode,
-    fileName: file.originalname,
-    totalRows: rows.length,
-    status: INTEGRASI_IMPORT_STATUS.DRAFT,
-    errors: this.buildAuditEvent('IMPORT_FILE_UPLOADED', {
+    const batchCode = this.generateBatchCode();
+    const created = await this.repository.createImportBatch({
+      batchCode,
       fileName: file.originalname,
-      mimeType: file.mimetype,
-      size: file.size,
       totalRows: rows.length,
+      status: INTEGRASI_IMPORT_STATUS.DRAFT,
+      createdBy: userId || null,
+      errors: this.buildAuditEvent('IMPORT_FILE_UPLOADED', {
+        fileName: file.originalname,
+        mimeType: file.mimetype,
+        size: file.size,
+        totalRows: rows.length,
+        uploadedBy: userId,
     }),
     rows: rows.map((row) => ({
       rowNumber: row.rowNumber,

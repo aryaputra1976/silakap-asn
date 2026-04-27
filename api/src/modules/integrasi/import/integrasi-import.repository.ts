@@ -665,6 +665,7 @@ export class IntegrasiImportRepository {
     fileName: string;
     totalRows: number;
     status: string;
+    createdBy?: string | null;
     errors: Prisma.InputJsonValue;
     rows: {
       rowNumber: number;
@@ -689,6 +690,7 @@ export class IntegrasiImportRepository {
             invalidRows: 0,
             importedRows: 0,
             status: payload.status,
+            createdBy: payload.createdBy || null,
             errors: payload.errors,
           },
         });

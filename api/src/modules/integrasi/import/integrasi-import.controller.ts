@@ -8,14 +8,18 @@ import {
   Patch,
   Post,
   Query,
+  Request,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { BatchOwnershipGuard } from '../../../shared/guards/batch-ownership.guard';
+import { ValidateFileContentPipe } from '../../../shared/decorators/validate-file-content.decorator';
 import {
   QueryImportBatchDto,
   QueryImportErrorsDto,
@@ -37,7 +41,13 @@ const ALLOWED_EXCEL_MIME_TYPES = new Set([
 export class IntegrasiImportController {
   constructor(private readonly service: IntegrasiImportService) {}
 
+  /**
+   * Upload file Excel/CSV untuk import pegawai
+   * Rate limiting: 5 uploads per 60 seconds per user
+   * File validation: magic bytes check (prevent spoofing)
+   */
   @Post('upload')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -70,25 +80,31 @@ export class IntegrasiImportController {
       },
     }),
   )
-  uploadPegawaiImport(@UploadedFile() file?: Express.Multer.File) {
+  async uploadPegawaiImport(
+    @UploadedFile(new ValidateFileContentPipe()) file: Express.Multer.File,
+    @Request() req: any,
+  ) {
     if (!file) {
       throw new BadRequestException('File import wajib diunggah');
     }
 
-    return this.service.uploadPegawaiImport(file);
+    return this.service.uploadPegawaiImport(file, req.user.id);
   }
 
   @Get('batches')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   findBatches(@Query() query: QueryImportBatchDto) {
     return this.service.findBatches(query);
   }
 
   @Get('batches/:batchId')
+  @UseGuards(BatchOwnershipGuard)
   findBatchDetail(@Param('batchId', ParseIntPipe) batchId: number) {
     return this.service.findBatchDetail(BigInt(batchId));
   }
 
   @Get('batches/:batchId/errors')
+  @UseGuards(BatchOwnershipGuard)
   findErrorRows(
     @Param('batchId', ParseIntPipe) batchId: number,
     @Query() query: QueryImportErrorsDto,
@@ -105,26 +121,33 @@ export class IntegrasiImportController {
   }
     
   @Get('batches/:batchId/missing-references')
+  @UseGuards(BatchOwnershipGuard)
   findMissingReferences(@Param('batchId', ParseIntPipe) batchId: number) {
     return this.service.findMissingReferences(BigInt(batchId));
   }
 
   @Post('batches/:batchId/validate')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @UseGuards(BatchOwnershipGuard)
   validateBatch(@Param('batchId', ParseIntPipe) batchId: number) {
     return this.service.validateBatch(BigInt(batchId));
   }
 
   @Post('batches/:batchId/commit')
+  @Throttle({ default: { limit: 2, ttl: 60000 } })
+  @UseGuards(BatchOwnershipGuard)
   commitBatch(@Param('batchId', ParseIntPipe) batchId: number) {
     return this.service.commitBatch(BigInt(batchId));
   }
 
   @Post('batches/:batchId/cancel')
+  @UseGuards(BatchOwnershipGuard)
   cancelBatch(@Param('batchId', ParseIntPipe) batchId: number) {
     return this.service.cancelBatch(BigInt(batchId));
   }
 
   @Post('batches/:batchId/references/jabatan')
+  @UseGuards(BatchOwnershipGuard)
   createMissingJabatanReferences(
     @Param('batchId', ParseIntPipe) batchId: number,
   ) {
@@ -132,6 +155,7 @@ export class IntegrasiImportController {
   }
 
   @Post('batches/:batchId/references/unor')
+  @UseGuards(BatchOwnershipGuard)
   createMissingUnorReferences(
     @Param('batchId', ParseIntPipe) batchId: number,
   ) {
@@ -139,6 +163,7 @@ export class IntegrasiImportController {
   }
 
   @Post('batches/:batchId/references/pendidikan')
+  @UseGuards(BatchOwnershipGuard)
   createMissingPendidikanReferences(
     @Param('batchId', ParseIntPipe) batchId: number,
   ) {
