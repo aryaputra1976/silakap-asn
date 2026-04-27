@@ -235,7 +235,11 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
 
   "/integrasi/siasn": lazy(
     () => import("@/features/integrasi/pages/IntegrasiSiasnPage")
-  ),  
+  ),
+
+  "/integrasi/import-referensi": lazy(
+    () => import("@/features/integrasi/pages/IntegrasiReferenceImportPage")
+  ),    
 }
 
 /* =========================================================

@@ -322,7 +322,13 @@ export const APP_MENU: AppMenuItem[] = [
         title: "Import Data",
         path: "/integrasi/import",
         rolesAny: ADMIN_ROLES
-      }
+      },
+      {
+        key: "integrasi-import-referensi",
+        title: "Import Referensi",
+        path: "/integrasi/import-referensi",
+        rolesAny: ADMIN_ROLES
+      }      
     ]
   },
   {

@@ -30,6 +30,56 @@ export type UpdateImportRowPayload = {
   nama: string
   siasnId: string
 }
+export type ReferenceImportKind =
+  | "jabatan-fungsional"
+  | "jabatan-pelaksana"
+  | "jabatan-struktural"
+  | "unor"
+
+export type ReferenceImportResponse = {
+  type: string
+  jenis?: string
+  fileName: string
+  totalRows: number
+  validRows: number
+  created: number
+  updated: number
+  skipped: number
+}
+
+function getReferenceImportEndpoint(kind: ReferenceImportKind): string {
+  if (kind === "jabatan-fungsional") {
+    return "/integrasi/import/referensi/jabatan/fungsional"
+  }
+
+  if (kind === "jabatan-pelaksana") {
+    return "/integrasi/import/referensi/jabatan/pelaksana"
+  }
+
+  if (kind === "jabatan-struktural") {
+    return "/integrasi/import/referensi/jabatan/struktural"
+  }
+
+  return "/integrasi/import/referensi/unor"
+}
+
+export function uploadReferenceImportFile(
+  kind: ReferenceImportKind,
+  file: File,
+) {
+  const formData = new FormData()
+  formData.append("file", file)
+
+  return postRequest<ReferenceImportResponse, FormData>(
+    getReferenceImportEndpoint(kind),
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    },
+  )
+}
 
 type EmptyBody = Record<string, never>
 

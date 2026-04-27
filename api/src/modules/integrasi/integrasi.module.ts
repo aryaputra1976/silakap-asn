@@ -13,6 +13,11 @@ import { IntegrasiSiasnController } from './siasn/integrasi-siasn.controller';
 import { IntegrasiSiasnRepository } from './siasn/integrasi-siasn.repository';
 import { IntegrasiSiasnService } from './siasn/integrasi-siasn.service';
 
+import { IntegrasiReferenceImportController } from './reference-import/integrasi-reference-import.controller';
+import { IntegrasiReferenceImportRepository } from './reference-import/integrasi-reference-import.repository';
+import { IntegrasiReferenceImportService } from './reference-import/integrasi-reference-import.service';
+
+
 @Module({
   imports: [PrismaModule],
   controllers: [
@@ -20,6 +25,7 @@ import { IntegrasiSiasnService } from './siasn/integrasi-siasn.service';
     IntegrasiLogsController,
     IntegrasiJobsController,
     IntegrasiSiasnController,
+    IntegrasiReferenceImportController,
   ],
   providers: [
     IntegrasiImportService,
@@ -30,6 +36,8 @@ import { IntegrasiSiasnService } from './siasn/integrasi-siasn.service';
     IntegrasiJobsRepository,
     IntegrasiSiasnService,
     IntegrasiSiasnRepository,
+    IntegrasiReferenceImportService,
+    IntegrasiReferenceImportRepository,
   ],
 })
 export class IntegrasiModule {}
