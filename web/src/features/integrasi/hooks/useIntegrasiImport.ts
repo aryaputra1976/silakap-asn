@@ -1,9 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   commitImportBatch,
-  createMissingJabatanReferences,
   createMissingPendidikanReferences,
-  createMissingUnorReferences,
   getImportBatchDetail,
   getImportBatchErrors,
   getImportBatches,
@@ -66,28 +64,6 @@ export function useCommitIntegrasiBatch() {
 
   return useMutation({
     mutationFn: commitImportBatch,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["integrasi"] })
-    },
-  })
-}
-
-export function useCreateJabatanReferences() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: createMissingJabatanReferences,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["integrasi"] })
-    },
-  })
-}
-
-export function useCreateUnorReferences() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: createMissingUnorReferences,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["integrasi"] })
     },

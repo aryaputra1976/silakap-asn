@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react"
 import { useIntegrasiImportBatchDetail, useIntegrasiImportErrors, useIntegrasiMissingReferences, useValidateIntegrasiBatch, useCommitIntegrasiBatch, useCreatePendidikanReferences } from "../hooks/useIntegrasiImport"
 import { cancelImportBatch, updateImportRow } from "../api/integrasi.api"
-import type { ImportErrorRow, WizardStepKey, CommitReadiness, MissingReferencesResponse, BlockingReason } from "../types"
+import type { ImportErrorRow, WizardStepKey, MissingReferencesResponse } from "../types"
+import { getCommitReadiness } from "../utils/commit-readiness"
 import type { ImportEditRowPayload } from "../components/import/ImportEditRowModal"
 import { BatchWizardStepper } from "../components/import/BatchWizardStepper"
 import { BatchImportPreviewStep } from "./BatchImportPreviewStep"
@@ -28,58 +29,8 @@ function deriveInitialStep(
   return "preview"
 }
 
-function buildCommitReadiness(
-  invalidRows: number,
-  missing: MissingReferencesResponse | undefined,
-  missingLoading: boolean,
-): CommitReadiness {
-  if (missingLoading) {
-    return { isReady: false, invalidRows, missingJabatan: 0, missingUnor: 0, missingPendidikan: 0, blockingReasons: [] }
-  }
-
-  const missingJabatan = missing?.jabatan.length ?? 0
-  const missingUnor = missing?.unor.length ?? 0
-  const missingPendidikan = missing?.pendidikan.length ?? 0
-  const blockingReasons: BlockingReason[] = []
-
-  if (invalidRows > 0) {
-    blockingReasons.push({
-      key: "invalid-rows",
-      label: `${invalidRows} baris masih gagal validasi`,
-      detail: "Perbaiki data pada tab Validasi atau jalankan validasi ulang setelah referensi diisi.",
-    })
-  }
-  if (missingJabatan > 0) {
-    blockingReasons.push({
-      key: "missing-jabatan",
-      label: `${missingJabatan} jabatan belum ada di master`,
-      detail: "Import referensi jabatan via halaman Import Referensi, kemudian validasi ulang batch ini.",
-    })
-  }
-  if (missingUnor > 0) {
-    blockingReasons.push({
-      key: "missing-unor",
-      label: `${missingUnor} UNOR belum ada di master`,
-      detail: "Import referensi UNOR via halaman Import Referensi, kemudian validasi ulang batch ini.",
-    })
-  }
-
-  return {
-    isReady: blockingReasons.length === 0,
-    invalidRows,
-    missingJabatan,
-    missingUnor,
-    missingPendidikan,
-    blockingReasons,
-  }
-}
-
 function canValidate(status: string): boolean {
   return ["DRAFT", "VALIDATED_WITH_ERROR", "FAILED"].includes(status.toUpperCase())
-}
-
-function canCancel(status: string): boolean {
-  return ["DRAFT", "VALIDATED", "VALIDATED_WITH_ERROR", "FAILED"].includes(status.toUpperCase())
 }
 
 function getErrorMessage(error: unknown): string {
@@ -126,7 +77,7 @@ export function BatchImportCreatePage({ batchId, onBack, onNewUpload }: BatchImp
 
   const readiness = useMemo(() => {
     if (!batch) return null
-    return buildCommitReadiness(batch.invalidRows, missingQuery.data, missingQuery.isLoading)
+    return getCommitReadiness(batch, missingQuery.data, missingQuery.isLoading)
   }, [batch, missingQuery.data, missingQuery.isLoading])
 
   const isActionLoading =
@@ -314,6 +265,7 @@ export function BatchImportCreatePage({ batchId, onBack, onNewUpload }: BatchImp
 
       {currentStep === "commit-result" && (
         <BatchImportCommitResultStep
+          batchId={batchId}
           batch={batch}
           onNewUpload={onNewUpload}
         />

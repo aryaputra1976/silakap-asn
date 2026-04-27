@@ -1,16 +1,21 @@
+import { useIntegrasiImportBatchDetail } from "../hooks/useIntegrasiImport"
 import type { ImportBatchItem } from "../types"
 import { formatDate, formatNumber } from "../components/import/import-ui"
 import { ImportStatusBadge } from "../components/import/ImportStatusBadge"
 
 type BatchImportCommitResultStepProps = {
+  batchId: string
   batch: ImportBatchItem
   onNewUpload: () => void
 }
 
 export function BatchImportCommitResultStep({
-  batch,
+  batchId,
+  batch: initialBatch,
   onNewUpload,
 }: BatchImportCommitResultStepProps) {
+  const { data } = useIntegrasiImportBatchDetail(batchId)
+  const batch = data ?? initialBatch
   const status = batch.status.toUpperCase()
   const isCommitting = status === "COMMITTING"
   const isImported = status === "IMPORTED"
