@@ -5,32 +5,51 @@
     "roles": ["SUPER_ADMIN"]
   },
   {
-    "username": "admin",
-    "password": "AdminBkpsdm123!",
-    "roles": ["ADMIN_BKPSDM"]
-  },
-  {
     "username": "operator.opd1",
     "password": "Operator123!",
-    "roles": ["OPERATOR"],
+    "roles": ["OPERATOR_OPD"],
     "pegawai_nip": "198001012010011001"
   },
   {
-    "username": "verifikator.opd1",
-    "password": "Verifikator123!",
-    "roles": ["VERIFIKATOR"],
+    "username": "pelaksana1",
+    "password": "Pelaksana123!",
+    "roles": ["PELAKSANA"],
     "pegawai_nip": "198002022010012002"
   },
   {
-    "username": "ppk.bkpsdm",
-    "password": "Ppk123!",
-    "roles": ["PPK"],
-    "pegawai_nip": "197912122005011001"
+    "username": "analis.pertama1",
+    "password": "AnalisPertama123!",
+    "roles": ["ANALIS_PERTAMA"],
+    "pegawai_nip": "198503032012011001"
   },
   {
-    "username": "asn.demo",
-    "password": "Asn123!",
-    "roles": ["ASN"],
+    "username": "analis.muda1",
+    "password": "AnalisMuda123!",
+    "roles": ["ANALIS_MUDA"],
+    "pegawai_nip": "198004042008011002"
+  },
+  {
+    "username": "analis.madya1",
+    "password": "AnalisMadya123!",
+    "roles": ["ANALIS_MADYA"],
+    "pegawai_nip": "197905052005011003"
+  },
+  {
+    "username": "kabid.bkpsdm",
+    "password": "Kabid123!",
+    "roles": ["KEPALA_BIDANG"],
+    "pegawai_nip": "197812122003011001"
+  },
+  {
+    "username": "kaban.bkpsdm",
+    "password": "Kaban123!",
+    "roles": ["KEPALA_BADAN"],
+    "pegawai_nip": "197612121999031001"
+  },
+  {
+    "username": "pppk.paruh1",
+    "password": "PppkParuh123!",
+    "roles": ["PPPK_PARUH"],
     "pegawai_nip": "199001012020011001"
   }
 ]

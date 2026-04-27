@@ -1,8 +1,11 @@
 [
   { "name": "SUPER_ADMIN" },
-  { "name": "ADMIN_BKPSDM" },
-  { "name": "VERIFIKATOR" },
-  { "name": "PPK" },
-  { "name": "OPERATOR" },
-  { "name": "ASN" }
+  { "name": "OPERATOR_OPD" },
+  { "name": "PELAKSANA" },
+  { "name": "ANALIS_PERTAMA" },
+  { "name": "ANALIS_MUDA" },
+  { "name": "ANALIS_MADYA" },
+  { "name": "KEPALA_BIDANG" },
+  { "name": "KEPALA_BADAN" },
+  { "name": "PPPK_PARUH" }
 ]
