@@ -10,37 +10,47 @@ type Notice = {
   message: string
 }
 
-type ReferenceImportCard = {
+type ReferenceImportOption = {
   kind: ReferenceImportKind
   title: string
+  shortTitle: string
   description: string
   endpoint: string
+  helper: string
 }
 
-const CARDS: ReferenceImportCard[] = [
+const OPTIONS: ReferenceImportOption[] = [
   {
     kind: "jabatan-fungsional",
     title: "Jabatan Fungsional",
-    description: "Import referensi jabatan fungsional resmi ke ref_jabatan.",
+    shortTitle: "Fungsional",
+    description: "Referensi jabatan fungsional resmi untuk master ref_jabatan.",
     endpoint: "/integrasi/import/referensi/jabatan/fungsional",
+    helper: "Gunakan file Referensi-Jabatan-Fungsional.xlsx.",
   },
   {
     kind: "jabatan-pelaksana",
     title: "Jabatan Pelaksana",
-    description: "Import referensi jabatan pelaksana resmi ke ref_jabatan.",
+    shortTitle: "Pelaksana",
+    description: "Referensi jabatan pelaksana resmi untuk master ref_jabatan.",
     endpoint: "/integrasi/import/referensi/jabatan/pelaksana",
+    helper: "Gunakan file Referensi-Jabatan-Pelaksana.xlsx.",
   },
   {
     kind: "jabatan-struktural",
     title: "Jabatan Struktural",
-    description: "Import referensi jabatan struktural resmi ke ref_jabatan.",
+    shortTitle: "Struktural",
+    description: "Referensi jabatan struktural resmi untuk master ref_jabatan.",
     endpoint: "/integrasi/import/referensi/jabatan/struktural",
+    helper: "Gunakan file Referensi-Jabatan-Struktural.xlsx.",
   },
   {
     kind: "unor",
     title: "UNOR",
-    description: "Import referensi unit organisasi resmi ke ref_unor.",
+    shortTitle: "UNOR",
+    description: "Referensi unit organisasi resmi untuk master ref_unor.",
     endpoint: "/integrasi/import/referensi/unor",
+    helper: "Gunakan file Referensi-unor.xlsx.",
   },
 ]
 
@@ -49,9 +59,7 @@ type LoadingMap = Partial<Record<ReferenceImportKind, boolean>>
 type ResultMap = Partial<Record<ReferenceImportKind, ReferenceImportResponse>>
 
 function getErrorMessage(error: unknown): string {
-  if (error instanceof Error) {
-    return error.message
-  }
+  if (error instanceof Error) return error.message
 
   if (
     typeof error === "object" &&
@@ -74,50 +82,46 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat("id-ID").format(value)
 }
 
+function formatFileSize(size: number): string {
+  return `${formatNumber(Math.ceil(size / 1024))} KB`
+}
+
 export default function IntegrasiReferenceImportPage() {
+  const [activeKind, setActiveKind] =
+    useState<ReferenceImportKind>("jabatan-fungsional")
   const [files, setFiles] = useState<SelectedFiles>({})
   const [loading, setLoading] = useState<LoadingMap>({})
   const [results, setResults] = useState<ResultMap>({})
   const [notice, setNotice] = useState<Notice | null>(null)
 
+  const activeOption = OPTIONS.find((item) => item.kind === activeKind) ?? OPTIONS[0]
+  const activeFile = files[activeKind] ?? null
+  const activeResult = results[activeKind] ?? null
+  const activeLoading = loading[activeKind] === true
+
   const totalCreated = useMemo(
-    () =>
-      Object.values(results).reduce(
-        (acc, item) => acc + (item?.created ?? 0),
-        0,
-      ),
+    () => Object.values(results).reduce((acc, item) => acc + (item?.created ?? 0), 0),
     [results],
   )
 
   const totalUpdated = useMemo(
-    () =>
-      Object.values(results).reduce(
-        (acc, item) => acc + (item?.updated ?? 0),
-        0,
-      ),
+    () => Object.values(results).reduce((acc, item) => acc + (item?.updated ?? 0), 0),
     [results],
   )
 
   const totalSkipped = useMemo(
-    () =>
-      Object.values(results).reduce(
-        (acc, item) => acc + (item?.skipped ?? 0),
-        0,
-      ),
+    () => Object.values(results).reduce((acc, item) => acc + (item?.skipped ?? 0), 0),
     [results],
   )
 
-  function handleFileChange(
-    kind: ReferenceImportKind,
-    event: ChangeEvent<HTMLInputElement>,
-  ) {
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
     setNotice(null)
 
     if (!file) {
       setFiles((current) => ({
         ...current,
-        [kind]: undefined,
+        [activeKind]: undefined,
       }))
       return
     }
@@ -126,7 +130,7 @@ export default function IntegrasiReferenceImportPage() {
       event.target.value = ""
       setFiles((current) => ({
         ...current,
-        [kind]: undefined,
+        [activeKind]: undefined,
       }))
       setNotice({
         type: "error",
@@ -137,14 +141,12 @@ export default function IntegrasiReferenceImportPage() {
 
     setFiles((current) => ({
       ...current,
-      [kind]: file,
+      [activeKind]: file,
     }))
   }
 
-  async function handleUpload(kind: ReferenceImportKind) {
-    const file = files[kind]
-
-    if (!file) {
+  async function handleUpload() {
+    if (!activeFile) {
       setNotice({
         type: "error",
         message: "Pilih file referensi terlebih dahulu.",
@@ -155,15 +157,15 @@ export default function IntegrasiReferenceImportPage() {
     try {
       setLoading((current) => ({
         ...current,
-        [kind]: true,
+        [activeKind]: true,
       }))
       setNotice(null)
 
-      const result = await uploadReferenceImportFile(kind, file)
+      const result = await uploadReferenceImportFile(activeKind, activeFile)
 
       setResults((current) => ({
         ...current,
-        [kind]: result,
+        [activeKind]: result,
       }))
 
       setNotice({
@@ -182,53 +184,51 @@ export default function IntegrasiReferenceImportPage() {
     } finally {
       setLoading((current) => ({
         ...current,
-        [kind]: false,
+        [activeKind]: false,
       }))
     }
   }
 
   return (
-    <div className="p-6">
-      <div className="card shadow-sm mb-6">
-        <div className="card-body p-10">
-          <div className="d-flex flex-column flex-lg-row justify-content-between gap-6">
-            <div>
-              <div className="badge badge-light-primary mb-4">
-                Integrasi Eksternal
-              </div>
-              <h1 className="fw-bold text-gray-900 mb-3">
+    <div className="space-y-6 p-6">
+      <div className="card border-0 shadow-sm mb-7 overflow-hidden">
+        <div
+          className="px-6 px-lg-8 py-6"
+          style={{
+            background:
+              "linear-gradient(135deg, #1d4ed8 0%, #16224a 52%, #0f172a 100%)",
+          }}
+        >
+          <div className="d-flex align-items-start justify-content-between gap-4">
+            <div className="flex-grow-1">
+              <div className="text-white fw-bolder fs-2 mb-2">
                 Import Referensi Resmi
-              </h1>
-              <div className="text-gray-600 fs-5">
-                Upload referensi Jabatan dan UNOR resmi terlebih dahulu agar
-                proses import pegawai bersih, konsisten, dan siap commit.
               </div>
-            </div>
 
-            <div className="d-flex flex-wrap gap-3">
-              <div className="rounded border border-gray-300 border-dashed px-5 py-4">
-                <div className="text-gray-500 fs-8 fw-semibold text-uppercase">
-                  Created
-                </div>
-                <div className="fw-bold fs-2 text-gray-900">
-                  {formatNumber(totalCreated)}
-                </div>
+              <div className="text-white opacity-75 fs-6 lh-lg">
+                Upload referensi Jabatan dan UNOR resmi sebelum validasi import
+                pegawai agar data bersih, konsisten, dan siap commit.
               </div>
-              <div className="rounded border border-gray-300 border-dashed px-5 py-4">
-                <div className="text-gray-500 fs-8 fw-semibold text-uppercase">
-                  Updated
-                </div>
-                <div className="fw-bold fs-2 text-gray-900">
-                  {formatNumber(totalUpdated)}
-                </div>
-              </div>
-              <div className="rounded border border-gray-300 border-dashed px-5 py-4">
-                <div className="text-gray-500 fs-8 fw-semibold text-uppercase">
-                  Skipped
-                </div>
-                <div className="fw-bold fs-2 text-gray-900">
-                  {formatNumber(totalSkipped)}
-                </div>
+
+              <div className="d-flex flex-wrap gap-2 mt-4">
+                {OPTIONS.map((option) => (
+                  <button
+                    key={option.kind}
+                    type="button"
+                    className={
+                      option.kind === activeKind
+                        ? "badge badge-light-primary border-0"
+                        : "badge badge-light border-0"
+                    }
+                    disabled={activeLoading}
+                    onClick={() => {
+                      setActiveKind(option.kind)
+                      setNotice(null)
+                    }}
+                  >
+                    {option.shortTitle}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -239,157 +239,197 @@ export default function IntegrasiReferenceImportPage() {
         <div
           className={
             notice.type === "success"
-              ? "alert alert-success d-flex align-items-center p-5 mb-6"
+              ? "alert alert-success d-flex align-items-center p-5 mb-0"
               : notice.type === "error"
-                ? "alert alert-danger d-flex align-items-center p-5 mb-6"
-                : "alert alert-primary d-flex align-items-center p-5 mb-6"
+                ? "alert alert-danger d-flex align-items-center p-5 mb-0"
+                : "alert alert-primary d-flex align-items-center p-5 mb-0"
           }
         >
           <div className="fw-semibold">{notice.message}</div>
         </div>
       ) : null}
 
-      <div className="row g-6">
-        {CARDS.map((card) => {
-          const file = files[card.kind]
-          const isLoading = loading[card.kind] === true
-          const result = results[card.kind]
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <div className="card shadow-sm h-100">
+          <div className="card-header border-0 pt-6">
+            <div className="card-title flex-column align-items-start">
+              <h3 className="fw-bold text-gray-900 mb-1">
+                Upload File Referensi
+              </h3>
+              <div className="text-gray-600 fs-7">
+                Format yang didukung: .xlsx atau .xls
+              </div>
+            </div>
 
-          return (
-            <div className="col-xl-6" key={card.kind}>
-              <div className="card shadow-sm h-100">
-                <div className="card-header border-0 pt-6">
-                  <div className="card-title flex-column align-items-start">
-                    <h3 className="fw-bold text-gray-900 mb-1">
-                      {card.title}
-                    </h3>
-                    <div className="text-gray-600 fs-7">
-                      {card.description}
+            <div className="card-toolbar">
+              <span className="badge badge-light-primary">
+                {activeOption.title}
+              </span>
+            </div>
+          </div>
+
+          <div className="card-body pt-2">
+            <div className="rounded border border-gray-300 border-dashed px-5 py-5 mb-5">
+              <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+                <div className="d-flex align-items-center gap-4">
+                  <div className="symbol symbol-60px">
+                    <div className="symbol-label bg-light-primary">
+                      <i className="ki-duotone ki-file-up fs-2x text-primary">
+                        <span className="path1" />
+                        <span className="path2" />
+                      </i>
                     </div>
                   </div>
 
-                  <div className="card-toolbar">
-                    <span className="badge badge-light">
-                      Excel Reference
-                    </span>
+                  <div>
+                    <div className="fw-bold text-gray-900 fs-5 mb-1">
+                      {activeFile ? activeFile.name : "Belum ada file dipilih"}
+                    </div>
+                    <div className="text-gray-600 fs-7">
+                      {activeFile
+                        ? `Ukuran file: ${formatFileSize(activeFile.size)}`
+                        : activeOption.helper}
+                    </div>
+
+                    <div className="d-flex gap-2 mt-3">
+                      <span className="badge badge-light-primary">.xlsx</span>
+                      <span className="badge badge-light-primary">.xls</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="card-body pt-2">
-                  <div className="rounded border border-gray-300 border-dashed bg-light px-5 py-4 mb-5">
-                    <div className="text-gray-500 fs-8 fw-semibold mb-1">
-                      Endpoint
-                    </div>
-                    <div className="fw-semibold text-gray-800 fs-7">
-                      {card.endpoint}
-                    </div>
-                  </div>
+                <div className="d-flex gap-2">
+                  <label className="btn btn-sm btn-light-primary mb-0">
+                    Pilih File
+                    <input
+                      type="file"
+                      className="d-none"
+                      accept=".xlsx,.xls"
+                      disabled={activeLoading}
+                      onChange={handleFileChange}
+                    />
+                  </label>
 
-                  <div className="rounded border border-gray-300 border-dashed px-5 py-5 mb-5">
-                    <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
-                      <div>
-                        <div className="fw-bold text-gray-900 fs-6">
-                          {file ? file.name : "Belum ada file dipilih"}
-                        </div>
-                        <div className="text-gray-600 fs-7 mt-1">
-                          {file
-                            ? `Ukuran file: ${formatNumber(
-                                Math.ceil(file.size / 1024),
-                              )} KB`
-                            : "Pilih file .xlsx atau .xls referensi resmi."}
-                        </div>
-                      </div>
-
-                      <div className="d-flex gap-2">
-                        <label className="btn btn-sm btn-light-primary mb-0">
-                          Pilih File
-                          <input
-                            type="file"
-                            className="d-none"
-                            accept=".xlsx,.xls"
-                            disabled={isLoading}
-                            onChange={(event) =>
-                              handleFileChange(card.kind, event)
-                            }
-                          />
-                        </label>
-
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          disabled={!file || isLoading}
-                          onClick={() => void handleUpload(card.kind)}
-                        >
-                          {isLoading ? (
-                            <>
-                              <span className="spinner-border spinner-border-sm me-2" />
-                              Upload...
-                            </>
-                          ) : (
-                            "Upload"
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {result ? (
-                    <div className="row g-3">
-                      <div className="col-6 col-md-3">
-                        <div className="rounded bg-light-success px-4 py-3">
-                          <div className="text-gray-600 fs-8">Created</div>
-                          <div className="fw-bold text-success fs-5">
-                            {formatNumber(result.created)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-6 col-md-3">
-                        <div className="rounded bg-light-primary px-4 py-3">
-                          <div className="text-gray-600 fs-8">Updated</div>
-                          <div className="fw-bold text-primary fs-5">
-                            {formatNumber(result.updated)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-6 col-md-3">
-                        <div className="rounded bg-light-warning px-4 py-3">
-                          <div className="text-gray-600 fs-8">Skipped</div>
-                          <div className="fw-bold text-warning fs-5">
-                            {formatNumber(result.skipped)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="col-6 col-md-3">
-                        <div className="rounded bg-light-info px-4 py-3">
-                          <div className="text-gray-600 fs-8">Valid Rows</div>
-                          <div className="fw-bold text-info fs-5">
-                            {formatNumber(result.validRows)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-gray-500 fs-7">
-                      Belum ada hasil import untuk kategori ini.
-                    </div>
-                  )}
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    disabled={!activeFile || activeLoading}
+                    onClick={() => void handleUpload()}
+                  >
+                    {activeLoading ? "Uploading..." : "Upload File"}
+                  </button>
                 </div>
               </div>
             </div>
-          )
-        })}
+
+            <div className="rounded border border-gray-300 border-dashed bg-light px-5 py-4">
+              <div className="fw-bold text-gray-900 fs-6 mb-1">
+                {activeOption.title}
+              </div>
+              <div className="text-gray-600 fs-7 mb-3">
+                {activeOption.description}
+              </div>
+              <div className="text-gray-500 fs-8">
+                Endpoint:{" "}
+                <span className="fw-semibold text-gray-700">
+                  {activeOption.endpoint}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="card shadow-sm h-100">
+          <div className="card-header border-0 pt-6">
+            <div className="card-title flex-column align-items-start">
+              <h3 className="fw-bold text-gray-900 mb-1">Hasil Import</h3>
+              <div className="text-gray-600 fs-7">
+                Ringkasan hasil untuk kategori aktif.
+              </div>
+            </div>
+          </div>
+
+          <div className="card-body pt-2">
+            {activeResult ? (
+              <>
+                <div className="rounded border border-gray-300 border-dashed px-5 py-4 mb-5">
+                  <div className="fw-bold text-gray-900 fs-6 mb-1">
+                    {activeResult.fileName}
+                  </div>
+                  <div className="text-gray-600 fs-7">
+                    Total row: {formatNumber(activeResult.totalRows)} · Valid:{" "}
+                    {formatNumber(activeResult.validRows)}
+                  </div>
+                </div>
+
+                <div className="row g-4">
+                  <div className="col-6">
+                    <div className="rounded bg-light-success px-4 py-4">
+                      <div className="text-gray-600 fs-8">Created</div>
+                      <div className="fw-bold text-success fs-2">
+                        {formatNumber(activeResult.created)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="rounded bg-light-primary px-4 py-4">
+                      <div className="text-gray-600 fs-8">Updated</div>
+                      <div className="fw-bold text-primary fs-2">
+                        {formatNumber(activeResult.updated)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="rounded bg-light-warning px-4 py-4">
+                      <div className="text-gray-600 fs-8">Skipped</div>
+                      <div className="fw-bold text-warning fs-2">
+                        {formatNumber(activeResult.skipped)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-6">
+                    <div className="rounded bg-light-info px-4 py-4">
+                      <div className="text-gray-600 fs-8">Valid Rows</div>
+                      <div className="fw-bold text-info fs-2">
+                        {formatNumber(activeResult.validRows)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="d-flex flex-column align-items-center justify-content-center py-10 text-center">
+                <div className="fw-bold text-gray-900 fs-5 mb-1">
+                  Belum ada hasil import
+                </div>
+                <div className="text-gray-600 fs-7">
+                  Pilih file referensi, lalu upload untuk melihat ringkasan.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
-      <div className="card shadow-sm mt-6">
+      <div className="card shadow-sm">
         <div className="card-body p-6">
-          <div className="fw-bold text-gray-900 mb-2">
-            Alur kerja setelah import referensi
-          </div>
-          <div className="text-gray-600 fs-7">
-            Setelah semua referensi resmi berhasil diupload, kembali ke halaman
-            Import Data, lalu jalankan validasi ulang batch pegawai. Jika
-            Missing References sudah 0 dan Invalid Rows sudah 0, proses commit
-            dapat dijalankan.
+          <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-4">
+            <div>
+              <div className="fw-bold text-gray-900 fs-5 mb-1">
+                Alur kerja setelah import referensi
+              </div>
+              <div className="text-gray-600 fs-7">
+                Setelah semua referensi resmi diupload, kembali ke Import Data
+                Pegawai lalu jalankan validasi ulang batch.
+              </div>
+            </div>
+
+            <a href="/integrasi/import" className="btn btn-sm btn-light-primary">
+              Buka Import Data Pegawai
+            </a>
           </div>
         </div>
       </div>
