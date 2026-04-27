@@ -29,16 +29,22 @@ import { DmsMonitoringService } from './dms-monitoring.service'
 
 const DMS_MANAGE_ROLES = [
   'SUPER_ADMIN',
-  'ADMIN_BKPSDM',
-  'OPERATOR',
+  'PELAKSANA',
+  'ANALIS_PERTAMA',
+  'ANALIS_MUDA',
+  'ANALIS_MADYA',
 ]
 
 const DMS_READ_ROLES = [
   'SUPER_ADMIN',
-  'ADMIN_BKPSDM',
-  'VERIFIKATOR',
-  'PPK',
-  'OPERATOR',
+  'OPERATOR_OPD',
+  'PELAKSANA',
+  'ANALIS_PERTAMA',
+  'ANALIS_MUDA',
+  'ANALIS_MADYA',
+  'KEPALA_BIDANG',
+  'KEPALA_BADAN',
+  'PPPK_PARUH',
 ]
 
 type DmsRequestUser = {

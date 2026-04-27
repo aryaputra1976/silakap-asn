@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C d:/silakap-asn log --oneline -15)"
+    ]
+  }
+}

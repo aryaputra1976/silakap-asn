@@ -1,0 +1,2164 @@
+<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="UTF-8">
+<meta name="ProgId" content="Word.Document">
+<meta name="Generator" content="Microsoft Word">
+<title>Alur Kerja SILAKAP-ASN</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2.5cm 2.5cm 2.5cm 2.5cm;
+    mso-page-orientation: portrait;
+  }
+  body {
+    font-family: "Times New Roman", serif;
+    font-size: 12pt;
+    color: #000000;
+    line-height: 1.5;
+    margin: 0;
+    padding: 0;
+  }
+  h1 {
+    font-family: "Arial", sans-serif;
+    font-size: 18pt;
+    font-weight: bold;
+    color: #1F3864;
+    text-align: center;
+    margin-top: 24pt;
+    margin-bottom: 6pt;
+    border-bottom: 3px solid #1F3864;
+    padding-bottom: 6pt;
+    page-break-after: avoid;
+  }
+  h2 {
+    font-family: "Arial", sans-serif;
+    font-size: 14pt;
+    font-weight: bold;
+    color: #1F3864;
+    margin-top: 18pt;
+    margin-bottom: 6pt;
+    background-color: #D6E4F7;
+    padding: 4pt 8pt;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-family: "Arial", sans-serif;
+    font-size: 12pt;
+    font-weight: bold;
+    color: #2E75B6;
+    margin-top: 12pt;
+    margin-bottom: 4pt;
+    page-break-after: avoid;
+  }
+  h4 {
+    font-family: "Arial", sans-serif;
+    font-size: 11pt;
+    font-weight: bold;
+    color: #404040;
+    margin-top: 10pt;
+    margin-bottom: 3pt;
+    page-break-after: avoid;
+  }
+  p {
+    margin: 4pt 0 8pt 0;
+    text-align: justify;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 10pt 0 14pt 0;
+    font-size: 10.5pt;
+  }
+  th {
+    background-color: #1F3864;
+    color: #FFFFFF;
+    font-family: "Arial", sans-serif;
+    font-size: 10pt;
+    font-weight: bold;
+    padding: 6pt 8pt;
+    border: 1px solid #1F3864;
+    text-align: center;
+  }
+  td {
+    padding: 5pt 8pt;
+    border: 1px solid #BDD7EE;
+    vertical-align: top;
+  }
+  tr:nth-child(even) td {
+    background-color: #EEF4FB;
+  }
+  ul {
+    margin: 4pt 0 8pt 0;
+    padding-left: 20pt;
+  }
+  ol {
+    margin: 4pt 0 8pt 0;
+    padding-left: 20pt;
+  }
+  li {
+    margin-bottom: 3pt;
+  }
+  .cover-page {
+    text-align: center;
+    page-break-after: always;
+    padding-top: 80pt;
+  }
+  .cover-title {
+    font-family: "Arial", sans-serif;
+    font-size: 28pt;
+    font-weight: bold;
+    color: #1F3864;
+    margin-bottom: 10pt;
+  }
+  .cover-subtitle {
+    font-family: "Arial", sans-serif;
+    font-size: 16pt;
+    color: #2E75B6;
+    margin-bottom: 6pt;
+  }
+  .cover-org {
+    font-family: "Arial", sans-serif;
+    font-size: 14pt;
+    color: #404040;
+    margin-top: 40pt;
+  }
+  .cover-date {
+    font-family: "Arial", sans-serif;
+    font-size: 12pt;
+    color: #404040;
+    margin-top: 8pt;
+  }
+  .cover-line {
+    border: none;
+    border-top: 3px solid #1F3864;
+    margin: 20pt auto;
+    width: 60%;
+  }
+  .badge-green {
+    background-color: #E2EFDA;
+    color: #375623;
+    padding: 2pt 6pt;
+    font-weight: bold;
+    font-size: 9pt;
+  }
+  .badge-blue {
+    background-color: #D6E4F7;
+    color: #1F3864;
+    padding: 2pt 6pt;
+    font-weight: bold;
+    font-size: 9pt;
+  }
+  .badge-orange {
+    background-color: #FCE4D6;
+    color: #833C00;
+    padding: 2pt 6pt;
+    font-weight: bold;
+    font-size: 9pt;
+  }
+  .note-box {
+    background-color: #FFF2CC;
+    border-left: 4px solid #FFB900;
+    padding: 6pt 10pt;
+    margin: 8pt 0;
+    font-size: 10.5pt;
+  }
+  .info-box {
+    background-color: #D6E4F7;
+    border-left: 4px solid #2E75B6;
+    padding: 6pt 10pt;
+    margin: 8pt 0;
+    font-size: 10.5pt;
+  }
+  .flow-box {
+    background-color: #F2F2F2;
+    border: 1px solid #BFBFBF;
+    padding: 8pt 12pt;
+    margin: 8pt 0;
+    font-family: "Courier New", monospace;
+    font-size: 10pt;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+  .center { text-align: center; }
+  .bold { font-weight: bold; }
+  .italic { font-style: italic; }
+  .toc-item {
+    margin: 3pt 0;
+    font-size: 11pt;
+  }
+  .toc-item-2 {
+    margin: 2pt 0 2pt 16pt;
+    font-size: 10.5pt;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== COVER PAGE ===== -->
+<div class="cover-page">
+  <p style="font-family:Arial; font-size:11pt; color:#666; margin-bottom:60pt;">
+    PEMERINTAH DAERAH KABUPATEN TOLITOLI<br>
+    BADAN KEPEGAWAIAN DAN PENGEMBANGAN SUMBER DAYA MANUSIA
+  </p>
+  <hr class="cover-line">
+  <div class="cover-title">SILAKAP-ASN</div>
+  <div class="cover-subtitle">Sistem Informasi Layanan Kepegawaian ASN</div>
+  <hr class="cover-line">
+  <p style="font-size:16pt; font-weight:bold; color:#1F3864; margin-top:30pt;">
+    DOKUMEN ALUR KERJA SISTEM
+  </p>
+  <p style="font-size:13pt; color:#404040; font-style:italic;">
+    Panduan Lengkap Proses Bisnis &amp; Implementasi Teknis
+  </p>
+  <div class="cover-org" style="margin-top:70pt;">
+    Versi 1.0 &nbsp;|&nbsp; April 2026
+  </div>
+  <div class="cover-date">
+    Dikembangkan oleh Tim Pengembang SILAKAP-ASN<br>
+    Teknologi: NestJS &bull; React &bull; Vite &bull; TypeScript &bull; Prisma ORM
+  </div>
+</div>
+
+<!-- ===== DAFTAR ISI ===== -->
+<div class="page-break"></div>
+<h1>DAFTAR ISI</h1>
+<p style="margin-top:16pt;">
+<div class="toc-item"><strong>1. Ringkasan Eksekutif</strong></div>
+<div class="toc-item"><strong>2. Arsitektur Sistem</strong></div>
+<div class="toc-item-2">2.1 Control Plane (Lapisan Kendali)</div>
+<div class="toc-item-2">2.2 Transaction Plane (Lapisan Transaksi)</div>
+<div class="toc-item-2">2.3 Visibility &amp; Governance Plane</div>
+<div class="toc-item"><strong>3. Dependency Map &amp; Urutan Implementasi</strong></div>
+<div class="toc-item"><strong>4. Modul dan Fitur Sistem</strong></div>
+<div class="toc-item-2">4.1 Master Referensi</div>
+<div class="toc-item-2">4.2 Pengaturan Sistem (Role &amp; Workflow)</div>
+<div class="toc-item-2">4.3 Data ASN</div>
+<div class="toc-item-2">4.4 Layanan ASN</div>
+<div class="toc-item-2">4.5 Verifikasi &amp; Persetujuan</div>
+<div class="toc-item-2">4.6 Dokumen &amp; Arsip</div>
+<div class="toc-item-2">4.7 Dashboard &amp; Laporan</div>
+<div class="toc-item-2">4.8 Keamanan &amp; Audit</div>
+<div class="toc-item-2">4.9 Integrasi Eksternal (SIASN)</div>
+<div class="toc-item-2">4.10 Analitik SDM</div>
+<div class="toc-item"><strong>5. Alur Kerja Layanan ASN</strong></div>
+<div class="toc-item-2">5.1 Alur Umum Layanan (Standar)</div>
+<div class="toc-item-2">5.2 Layanan Pensiun</div>
+<div class="toc-item-2">5.3 Layanan Mutasi</div>
+<div class="toc-item-2">5.4 Layanan Kenaikan Gaji Berkala (KGB)</div>
+<div class="toc-item-2">5.5 Layanan Jabatan</div>
+<div class="toc-item-2">5.6 Layanan Peremajaan Data</div>
+<div class="toc-item"><strong>6. Alur Verifikasi &amp; Persetujuan</strong></div>
+<div class="toc-item"><strong>7. Role &amp; Hak Akses</strong></div>
+<div class="toc-item"><strong>8. Integrasi Eksternal SIASN</strong></div>
+<div class="toc-item"><strong>9. Rencana Sprint Pengembangan</strong></div>
+<div class="toc-item"><strong>10. Endpoint API Baku</strong></div>
+<div class="toc-item"><strong>11. Checklist &amp; Definition of Done</strong></div>
+</p>
+
+<!-- ===== BAB 1 ===== -->
+<div class="page-break"></div>
+<h1>1. RINGKASAN EKSEKUTIF</h1>
+
+<p>
+<strong>SILAKAP-ASN</strong> (Sistem Informasi Layanan Kepegawaian ASN) adalah sistem manajemen layanan kepegawaian berbasis web yang dikembangkan untuk mendukung operasional BKPSDM Kabupaten Tolitoli. Sistem ini dirancang sebagai platform <em>workflow-driven</em>, <em>data-driven</em>, dan <em>audit-ready</em> — bukan sekadar kumpulan menu atau formulir input.
+</p>
+
+<table>
+  <tr>
+    <th style="width:25%;">Aspek</th>
+    <th>Keterangan</th>
+  </tr>
+  <tr>
+    <td><strong>Tujuan Utama</strong></td>
+    <td>Mengotomatiskan dan melacak proses layanan kepegawaian ASN secara end-to-end</td>
+  </tr>
+  <tr>
+    <td><strong>Pengguna Utama</strong></td>
+    <td>ASN, Operator BKPSDM, Verifikator, PPK, Admin BKPSDM, Super Admin</td>
+  </tr>
+  <tr>
+    <td><strong>Layanan Utama</strong></td>
+    <td>Pensiun, Mutasi, KGB, Jabatan, Peremajaan Data</td>
+  </tr>
+  <tr>
+    <td><strong>Teknologi Backend</strong></td>
+    <td>NestJS 10, Prisma ORM, BullMQ, Redis, OpenTelemetry</td>
+  </tr>
+  <tr>
+    <td><strong>Teknologi Frontend</strong></td>
+    <td>React 18, Vite, TypeScript, TanStack Query, React Hook Form</td>
+  </tr>
+  <tr>
+    <td><strong>Database</strong></td>
+    <td>MySQL (via Prisma ORM)</td>
+  </tr>
+  <tr>
+    <td><strong>Autentikasi</strong></td>
+    <td>JWT (JSON Web Token) + Role-Based Access Control</td>
+  </tr>
+  <tr>
+    <td><strong>Integrasi</strong></td>
+    <td>SIASN (Sistem Informasi ASN Nasional) via sinkronisasi data</td>
+  </tr>
+</table>
+
+<div class="info-box">
+  <strong>Prinsip Utama Pengembangan:</strong><br>
+  Alur bisnis lebih penting daripada kosmetik UI. Source of truth harus jelas. Satu perubahan workflow dianggap perubahan lintas layer.
+</div>
+
+<!-- ===== BAB 2 ===== -->
+<div class="page-break"></div>
+<h1>2. ARSITEKTUR SISTEM</h1>
+
+<p>Sistem SILAKAP-ASN dibangun dalam tiga lapisan arsitektur utama yang saling bergantung secara berurutan:</p>
+
+<h2>2.1 Control Plane — Lapisan Kendali</h2>
+<p>Lapisan ini adalah <strong>fondasi sistem</strong>. Tanpa lapisan ini, transaksi layanan akan liar dan tidak konsisten.</p>
+<table>
+  <tr>
+    <th>Komponen</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Master Referensi</strong></td>
+    <td>Menyediakan data referensi stabil: jenis layanan, jabatan, organisasi, dokumen, status kepegawaian</td>
+  </tr>
+  <tr>
+    <td><strong>Pengaturan Role</strong></td>
+    <td>Mendefinisikan siapa boleh melihat apa dan mengerjakan apa</td>
+  </tr>
+  <tr>
+    <td><strong>Workflow Engine</strong></td>
+    <td>Mengatur transisi status layanan dan aturan persetujuan</td>
+  </tr>
+  <tr>
+    <td><strong>Permission Matrix</strong></td>
+    <td>Matriks hak akses per role ke setiap menu dan aksi sistem</td>
+  </tr>
+</table>
+
+<h2>2.2 Transaction Plane — Lapisan Transaksi</h2>
+<p>Lapisan ini adalah <strong>inti aplikasi</strong> yang dipakai pengguna untuk bekerja sehari-hari.</p>
+<table>
+  <tr>
+    <th>Komponen</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Data ASN</strong></td>
+    <td>Single source of truth identitas pegawai, jabatan, unit kerja, status, riwayat</td>
+  </tr>
+  <tr>
+    <td><strong>Layanan ASN</strong></td>
+    <td>Proses pengajuan: create, draft, submit, workflow, detail</td>
+  </tr>
+  <tr>
+    <td><strong>Verifikasi &amp; Persetujuan</strong></td>
+    <td>Antrian kerja, tindakan workflow, disposisi</td>
+  </tr>
+  <tr>
+    <td><strong>Dokumen &amp; Arsip</strong></td>
+    <td>Upload dokumen, validasi kelengkapan, arsip digital</td>
+  </tr>
+</table>
+
+<h2>2.3 Visibility &amp; Governance Plane — Lapisan Keterlihatan</h2>
+<p>Lapisan ini dibangun <strong>setelah proses inti stabil</strong>.</p>
+<table>
+  <tr>
+    <th>Komponen</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Dashboard &amp; Laporan</strong></td>
+    <td>Ringkasan layanan, SLA warning, laporan pegawai, export Excel/PDF</td>
+  </tr>
+  <tr>
+    <td><strong>Keamanan &amp; Audit</strong></td>
+    <td>Audit log, aktivitas pengguna, ketertelusuran perubahan</td>
+  </tr>
+  <tr>
+    <td><strong>Integrasi Eksternal</strong></td>
+    <td>Sinkronisasi SIASN, import data referensi, monitoring job</td>
+  </tr>
+  <tr>
+    <td><strong>Analitik SDM</strong></td>
+    <td>Dashboard SDM, formasi, ABK, talent pool</td>
+  </tr>
+</table>
+
+<!-- ===== BAB 3 ===== -->
+<div class="page-break"></div>
+<h1>3. DEPENDENCY MAP &amp; URUTAN IMPLEMENTASI</h1>
+
+<p>Berikut adalah urutan ketergantungan antar modul. Setiap modul hanya dapat berfungsi optimal jika modul di atasnya sudah stabil:</p>
+
+<div class="flow-box">
+MASTER REFERENSI<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (referensi stabil)<br>
+PENGATURAN SISTEM (Role + Workflow)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (aturan otorisasi jelas)<br>
+DATA ASN<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (identitas pegawai tersedia)<br>
+LAYANAN ASN (Pensiun, Mutasi, KGB, Jabatan, Peremajaan)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (transaksi berjalan)<br>
+VERIFIKASI &amp; PERSETUJUAN<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (workflow hidup end-to-end)<br>
+DOKUMEN &amp; ARSIP<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (layanan valid administratif)<br>
+DASHBOARD &amp; LAPORAN<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (visibilitas operasional)<br>
+KEAMANAN &amp; AUDIT<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (sistem siap diaudit)<br>
+INTEGRASI EKSTERNAL (SIASN)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (sinkronisasi data)<br>
+ANALITIK SDM
+</div>
+
+<h2>Penjelasan Setiap Dependency</h2>
+
+<table>
+  <tr>
+    <th style="width:22%;">Modul</th>
+    <th>Jika Tidak Ada / Tidak Stabil</th>
+  </tr>
+  <tr>
+    <td><strong>Master Referensi</strong></td>
+    <td>Dropdown tidak stabil, mapping referensi rusak, validasi layanan inkonsisten, laporan salah klasifikasi</td>
+  </tr>
+  <tr>
+    <td><strong>Pengaturan Sistem</strong></td>
+    <td>Tidak ada kontrol siapa boleh melihat/mengerjakan apa, transisi workflow tidak terkontrol</td>
+  </tr>
+  <tr>
+    <td><strong>Data ASN</strong></td>
+    <td>Layanan tidak bisa resolve identitas pegawai, jabatan, dan unit kerja dengan benar</td>
+  </tr>
+  <tr>
+    <td><strong>Layanan ASN</strong></td>
+    <td>Tidak ada transaksi utama — tidak ada data untuk diverifikasi, didokumentasi, atau dilaporkan</td>
+  </tr>
+  <tr>
+    <td><strong>Verifikasi &amp; Persetujuan</strong></td>
+    <td>Layanan hanya menjadi form input tanpa alur kerja yang nyata</td>
+  </tr>
+  <tr>
+    <td><strong>Dokumen &amp; Arsip</strong></td>
+    <td>Tidak ada syarat kelengkapan untuk submit dan approve — layanan tidak valid administratif</td>
+  </tr>
+</table>
+
+<!-- ===== BAB 4 ===== -->
+<div class="page-break"></div>
+<h1>4. MODUL DAN FITUR SISTEM</h1>
+
+<h2>4.1 Master Referensi</h2>
+<p>Modul fondasi yang menyediakan data referensi untuk seluruh sistem.</p>
+<table>
+  <tr>
+    <th>Sub-Modul</th>
+    <th>Isi Data</th>
+    <th>Digunakan Oleh</th>
+  </tr>
+  <tr>
+    <td><strong>Referensi ASN</strong></td>
+    <td>Golongan, pendidikan, jenis pegawai, status kepegawaian, jenis kelamin, agama</td>
+    <td>Profil pegawai, laporan, layanan</td>
+  </tr>
+  <tr>
+    <td><strong>Referensi Organisasi</strong></td>
+    <td>Jabatan (fungsional, struktural, pelaksana), UNOR (unit organisasi), eselon</td>
+    <td>Mutasi, pensiun, layanan jabatan, laporan</td>
+  </tr>
+  <tr>
+    <td><strong>Referensi Dokumen</strong></td>
+    <td>Jenis dokumen, persyaratan per layanan</td>
+    <td>Kelengkapan dokumen, validasi submit</td>
+  </tr>
+  <tr>
+    <td><strong>Referensi Layanan</strong></td>
+    <td>Jenis layanan, alasan pensiun, jenis mutasi, jenis pensiun</td>
+    <td>Semua modul layanan ASN</td>
+  </tr>
+</table>
+
+<div class="note-box">
+  <strong>Penting:</strong> Seluruh dropdown di sistem harus mengambil data dari master referensi. Tidak boleh ada nilai yang di-hardcode secara statis di kode frontend maupun backend.
+</div>
+
+<h2>4.2 Pengaturan Sistem</h2>
+<p>Modul pengendalian akses dan alur kerja sistem.</p>
+<table>
+  <tr>
+    <th>Fitur</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Manajemen Role</strong></td>
+    <td>Mendefinisikan role pengguna dan hak akses ke setiap menu dan aksi</td>
+  </tr>
+  <tr>
+    <td><strong>Workflow Transition</strong></td>
+    <td>Mengatur transisi status (DRAFT → SUBMITTED → VERIFIED → APPROVED/REJECTED)</td>
+  </tr>
+  <tr>
+    <td><strong>Manajemen Pengguna</strong></td>
+    <td>Pembuatan akun, penetapan role, aktivasi/nonaktivasi pengguna</td>
+  </tr>
+  <tr>
+    <td><strong>Permission Matrix</strong></td>
+    <td>Matriks lengkap hak akses per role ke setiap fitur</td>
+  </tr>
+</table>
+
+<h2>4.3 Data ASN</h2>
+<p>Modul yang menjadi <strong>single source of truth</strong> untuk seluruh data pegawai.</p>
+<table>
+  <tr>
+    <th>Fitur</th>
+    <th>Data yang Dikelola</th>
+  </tr>
+  <tr>
+    <td><strong>Daftar Pegawai</strong></td>
+    <td>Pencarian, filter, dan paginasi seluruh pegawai aktif</td>
+  </tr>
+  <tr>
+    <td><strong>Profil Pegawai</strong></td>
+    <td>Identitas, NIP, jabatan, golongan, unit kerja, status</td>
+  </tr>
+  <tr>
+    <td><strong>Riwayat ASN</strong></td>
+    <td>Riwayat jabatan, pangkat, pendidikan, penghargaan, hukdis</td>
+  </tr>
+  <tr>
+    <td><strong>Kelengkapan Data</strong></td>
+    <td>Monitoring dan validasi kelengkapan data master pegawai</td>
+  </tr>
+</table>
+
+<h2>4.4 Layanan ASN</h2>
+<p>Modul inti transaksi. Setiap layanan mengikuti pola baku yang sama (blueprint: Pensiun).</p>
+<table>
+  <tr>
+    <th>Layanan</th>
+    <th>Kode</th>
+    <th>Deskripsi Singkat</th>
+  </tr>
+  <tr>
+    <td><strong>Pensiun</strong></td>
+    <td><code>pensiun</code></td>
+    <td>Proses pengajuan pensiun ASN, BUP, pensiun dini, APS</td>
+  </tr>
+  <tr>
+    <td><strong>Mutasi</strong></td>
+    <td><code>mutasi</code></td>
+    <td>Perpindahan jabatan/unit kerja antar instansi atau dalam instansi</td>
+  </tr>
+  <tr>
+    <td><strong>KGB</strong></td>
+    <td><code>kgb</code></td>
+    <td>Kenaikan Gaji Berkala — kenaikan gaji periodik otomatis</td>
+  </tr>
+  <tr>
+    <td><strong>Jabatan</strong></td>
+    <td><code>jabatan</code></td>
+    <td>Pengangkatan, pelantikan, perpindahan jabatan struktural/fungsional</td>
+  </tr>
+  <tr>
+    <td><strong>Peremajaan Data</strong></td>
+    <td><code>peremajaan</code></td>
+    <td>Pembaruan data master pegawai (nama, pendidikan, dll.)</td>
+  </tr>
+</table>
+
+<h2>4.5 Verifikasi &amp; Persetujuan</h2>
+<table>
+  <tr>
+    <th>Fitur</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Antrian Verifikasi</strong></td>
+    <td>Daftar usulan yang menunggu tindakan sesuai role pengguna aktif</td>
+  </tr>
+  <tr>
+    <td><strong>Monitoring Workflow</strong></td>
+    <td>Pantauan status seluruh usulan aktif di semua layanan</td>
+  </tr>
+  <tr>
+    <td><strong>Disposisi</strong></td>
+    <td>Pelimpahan tugas verifikasi ke petugas lain</td>
+  </tr>
+</table>
+
+<h2>4.6 Dokumen &amp; Arsip</h2>
+<table>
+  <tr>
+    <th>Fitur</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Dokumen Usulan</strong></td>
+    <td>Dokumen pendukung yang dilampirkan pada setiap usulan layanan</td>
+  </tr>
+  <tr>
+    <td><strong>Kelengkapan Dokumen</strong></td>
+    <td>Validasi dan checklist dokumen wajib per jenis layanan</td>
+  </tr>
+  <tr>
+    <td><strong>Dokumen Pegawai</strong></td>
+    <td>Arsip dokumen permanen milik pegawai (SK, ijazah, dll.)</td>
+  </tr>
+  <tr>
+    <td><strong>Arsip DMS</strong></td>
+    <td>Integrasi dengan sistem manajemen dokumen (Document Management System)</td>
+  </tr>
+</table>
+
+<h2>4.7 Dashboard &amp; Laporan</h2>
+<table>
+  <tr>
+    <th>Fitur</th>
+    <th>Konten</th>
+  </tr>
+  <tr>
+    <td><strong>Dashboard</strong></td>
+    <td>Ringkasan layanan aktif, notifikasi, aktivitas terakhir, SLA warning</td>
+  </tr>
+  <tr>
+    <td><strong>Rekap Jenis Kelamin</strong></td>
+    <td>Distribusi pegawai berdasarkan jenis kelamin dan status</td>
+  </tr>
+  <tr>
+    <td><strong>Rekap Pendidikan</strong></td>
+    <td>Distribusi pegawai berdasarkan tingkat pendidikan (SD-SMA, Diploma, S1+)</td>
+  </tr>
+  <tr>
+    <td><strong>Rekap Golongan</strong></td>
+    <td>Distribusi pegawai per golongan ruang</td>
+  </tr>
+  <tr>
+    <td><strong>Rekap Jabatan</strong></td>
+    <td>Distribusi per jenis jabatan (struktural, fungsional, pelaksana, PPPK)</td>
+  </tr>
+</table>
+
+<h2>4.8 Keamanan &amp; Audit</h2>
+<table>
+  <tr>
+    <th>Fitur</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Audit Log</strong></td>
+    <td>Rekam jejak setiap perubahan status workflow dan data sensitif</td>
+  </tr>
+  <tr>
+    <td><strong>Aktivitas Pengguna</strong></td>
+    <td>Log login, aksi penting, dan akses per pengguna</td>
+  </tr>
+</table>
+
+<h2>4.9 Integrasi Eksternal (SIASN)</h2>
+<table>
+  <tr>
+    <th>Fitur</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Sinkronisasi SIASN</strong></td>
+    <td>Mengambil dan memperbarui data ASN dari sistem nasional BKN</td>
+  </tr>
+  <tr>
+    <td><strong>Job Monitoring</strong></td>
+    <td>Pantauan status job sinkronisasi (antrian, berjalan, selesai, gagal)</td>
+  </tr>
+  <tr>
+    <td><strong>Riwayat Sinkronisasi</strong></td>
+    <td>Log historis sinkronisasi beserta hasil dan error</td>
+  </tr>
+  <tr>
+    <td><strong>Import Data Referensi</strong></td>
+    <td>Upload file Excel untuk jabatan fungsional, pelaksana, struktural, dan UNOR</td>
+  </tr>
+</table>
+
+<h2>4.10 Analitik SDM</h2>
+<table>
+  <tr>
+    <th>Fitur</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td><strong>Dashboard SDM</strong></td>
+    <td>Gambaran strategis komposisi ASN dan tren kepegawaian</td>
+  </tr>
+  <tr>
+    <td><strong>Formasi &amp; Kebutuhan</strong></td>
+    <td>Analisis formasi ideal vs realisasi per unit organisasi</td>
+  </tr>
+  <tr>
+    <td><strong>Analisis Beban Kerja (ABK)</strong></td>
+    <td>Perhitungan beban kerja berbasis tugas jabatan</td>
+  </tr>
+  <tr>
+    <td><strong>Talent Pool</strong></td>
+    <td>Identifikasi pegawai potensial untuk pengembangan karir</td>
+  </tr>
+</table>
+
+<!-- ===== BAB 5 ===== -->
+<div class="page-break"></div>
+<h1>5. ALUR KERJA LAYANAN ASN</h1>
+
+<h2>5.1 Alur Umum Layanan (Berlaku untuk Semua Layanan)</h2>
+
+<p>Setiap layanan ASN di SILAKAP mengikuti alur baku yang sama. Perbedaan hanya pada data domain spesifik masing-masing layanan.</p>
+
+<div class="flow-box">
+[ASN/OPERATOR] Buat Usulan (Create)
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[SISTEM] Simpan sebagai DRAFT
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[ASN/OPERATOR] Lengkapi Data &amp; Dokumen
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[ASN/OPERATOR] Submit Usulan
+&nbsp;&nbsp;&nbsp;&nbsp;↓ (validasi dokumen &amp; dependency)
+[SISTEM] Status: SUBMITTED
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[VERIFIKATOR] Terima di Antrian Verifikasi
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[VERIFIKATOR] Verifikasi Dokumen &amp; Data
+&nbsp;&nbsp;&nbsp;&nbsp;↓ ↓ (dua kemungkinan)
+[LULUS VERIFIKASI]          [DIKEMBALIKAN]
+&nbsp;&nbsp;&nbsp;&nbsp;↓                           ↓
+[PPK] Persetujuan         [OPERATOR] Perbaiki
+&nbsp;&nbsp;&nbsp;&nbsp;↓ ↓                         ↓
+[DISETUJUI] [DITOLAK]     [Re-Submit]
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[SISTEM] Buat Dokumen Hasil
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[SELESAI] Arsip &amp; Audit Trail Lengkap
+</div>
+
+<h3>Tabel Status Workflow</h3>
+<table>
+  <tr>
+    <th>Status</th>
+    <th>Keterangan</th>
+    <th>Aktor</th>
+  </tr>
+  <tr>
+    <td><strong>DRAFT</strong></td>
+    <td>Usulan dibuat, belum disubmit. Dapat diedit.</td>
+    <td>ASN / Operator</td>
+  </tr>
+  <tr>
+    <td><strong>SUBMITTED</strong></td>
+    <td>Usulan disubmit, menunggu verifikasi. Tidak dapat diedit.</td>
+    <td>ASN / Operator</td>
+  </tr>
+  <tr>
+    <td><strong>VERIFIED</strong></td>
+    <td>Dokumen dan data sudah diverifikasi, menunggu persetujuan PPK.</td>
+    <td>Verifikator</td>
+  </tr>
+  <tr>
+    <td><strong>RETURNED</strong></td>
+    <td>Dikembalikan karena ada kekurangan. ASN dapat memperbaiki.</td>
+    <td>Verifikator</td>
+  </tr>
+  <tr>
+    <td><strong>APPROVED</strong></td>
+    <td>Disetujui oleh PPK. Proses selesai.</td>
+    <td>PPK</td>
+  </tr>
+  <tr>
+    <td><strong>REJECTED</strong></td>
+    <td>Ditolak. Usulan tidak dapat dilanjutkan.</td>
+    <td>PPK / Verifikator</td>
+  </tr>
+  <tr>
+    <td><strong>COMPLETED</strong></td>
+    <td>Dokumen hasil diterbitkan dan diarsip.</td>
+    <td>Sistem / Admin</td>
+  </tr>
+</table>
+
+<div class="page-break"></div>
+<h2>5.2 Layanan Pensiun</h2>
+<p>Pensiun adalah <strong>layanan flagship</strong> dan blueprint arsitektur untuk semua layanan lain di sistem ini.</p>
+
+<h3>Jenis Pensiun</h3>
+<ul>
+  <li><strong>BUP (Batas Usia Pensiun)</strong> — pensiun karena mencapai batas usia</li>
+  <li><strong>APS (Atas Permintaan Sendiri)</strong> — pensiun sukarela</li>
+  <li><strong>Pensiun Dini</strong> — pensiun sebelum BUP karena kondisi tertentu</li>
+  <li><strong>Pensiun Janda/Duda</strong> — pensiun ahli waris</li>
+</ul>
+
+<h3>Alur Detail Layanan Pensiun</h3>
+<table>
+  <tr>
+    <th style="width:5%;">No.</th>
+    <th style="width:20%;">Tahap</th>
+    <th style="width:20%;">Aktor</th>
+    <th>Tindakan</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Buat Usulan</td>
+    <td>Operator BKPSDM</td>
+    <td>Input data pensiun: NIP, jenis pensiun, TMT pensiun, alasan</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Simpan Draft</td>
+    <td>Sistem</td>
+    <td>Resolve pegawaiId, jenisLayananId, simpan ke database dengan status DRAFT</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Upload Dokumen</td>
+    <td>Operator / ASN</td>
+    <td>Upload SK terakhir, SK Pangkat, ijazah, surat keterangan, dll.</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Submit</td>
+    <td>Operator</td>
+    <td>Validasi kelengkapan dokumen wajib, ubah status ke SUBMITTED</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Verifikasi</td>
+    <td>Verifikator</td>
+    <td>Cek kesesuaian data dan kelengkapan dokumen. Lulus → VERIFIED. Kurang → RETURNED.</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>Persetujuan PPK</td>
+    <td>PPK</td>
+    <td>Review usulan yang telah diverifikasi. Setuju → APPROVED. Tolak → REJECTED.</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>Proses BKN/BPD</td>
+    <td>Admin BKPSDM</td>
+    <td>Pengiriman berkas ke BKN/BPD untuk penetapan SK Pensiun</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>Selesai</td>
+    <td>Sistem</td>
+    <td>Update status COMPLETED, simpan audit trail, arsip dokumen</td>
+  </tr>
+</table>
+
+<h3>Dokumen Wajib Pensiun</h3>
+<ul>
+  <li>SK Pangkat/Golongan Terakhir</li>
+  <li>SK Jabatan Terakhir</li>
+  <li>Surat Keterangan Bebas Temuan (dari Inspektorat)</li>
+  <li>Fotocopy Ijazah Terakhir</li>
+  <li>Fotocopy KTP &amp; KK</li>
+  <li>Pas Foto 4x6 (terbaru)</li>
+  <li>Daftar Riwayat Pekerjaan (DRH)</li>
+</ul>
+
+<h2>5.3 Layanan Mutasi</h2>
+<p>Proses perpindahan jabatan atau unit kerja pegawai, baik dalam satu instansi maupun antar instansi.</p>
+
+<h3>Jenis Mutasi</h3>
+<ul>
+  <li><strong>Mutasi Internal</strong> — perpindahan antar unit dalam satu instansi</li>
+  <li><strong>Mutasi Eksternal (Masuk)</strong> — penerimaan pegawai dari instansi lain</li>
+  <li><strong>Mutasi Eksternal (Keluar)</strong> — pelepasan pegawai ke instansi lain</li>
+</ul>
+
+<h3>Alur Layanan Mutasi</h3>
+<table>
+  <tr>
+    <th style="width:5%;">No.</th>
+    <th style="width:20%;">Tahap</th>
+    <th style="width:20%;">Aktor</th>
+    <th>Tindakan</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Inisiasi</td>
+    <td>Operator / PPK</td>
+    <td>Input data mutasi: NIP, jabatan asal, jabatan tujuan, UNOR tujuan, TMT</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Draft</td>
+    <td>Sistem</td>
+    <td>Simpan usulan mutasi dengan status DRAFT</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Dokumen</td>
+    <td>Operator</td>
+    <td>Upload surat permohonan, persetujuan atasan, nota dinas</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Submit</td>
+    <td>Operator</td>
+    <td>Validasi kelengkapan, submit ke Verifikator</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Verifikasi</td>
+    <td>Verifikator</td>
+    <td>Cek kesesuaian formasi, kebutuhan unit, dan persyaratan</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>Persetujuan</td>
+    <td>PPK</td>
+    <td>Setujui atau tolak usulan mutasi</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>SK Mutasi</td>
+    <td>Admin BKPSDM</td>
+    <td>Penerbitan SK Mutasi, update data pegawai</td>
+  </tr>
+</table>
+
+<h2>5.4 Layanan Kenaikan Gaji Berkala (KGB)</h2>
+<p>Proses kenaikan gaji berkala yang terjadi setiap 2 tahun sekali bagi pegawai yang memenuhi syarat.</p>
+
+<h3>Alur Layanan KGB</h3>
+<table>
+  <tr>
+    <th style="width:5%;">No.</th>
+    <th style="width:20%;">Tahap</th>
+    <th style="width:20%;">Aktor</th>
+    <th>Tindakan</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Identifikasi</td>
+    <td>Sistem / Operator</td>
+    <td>Identifikasi pegawai yang memenuhi syarat KGB (masa kerja 2 tahun dari KGB terakhir)</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Buat Usulan</td>
+    <td>Operator</td>
+    <td>Input: NIP, gaji pokok lama, golongan, masa kerja, TMT KGB baru</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Dokumen</td>
+    <td>Operator</td>
+    <td>Upload SK KGB terakhir, SKP 2 tahun terakhir, surat pengantar</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Submit &amp; Verifikasi</td>
+    <td>Operator / Verifikator</td>
+    <td>Submit, verifikasi data dan dokumen</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Persetujuan PPK</td>
+    <td>PPK</td>
+    <td>Setujui usulan KGB</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>SK KGB</td>
+    <td>Admin</td>
+    <td>Penerbitan SK KGB, update gaji pokok pegawai di data ASN</td>
+  </tr>
+</table>
+
+<h2>5.5 Layanan Jabatan</h2>
+<p>Proses pengangkatan, pelantikan, dan perpindahan jabatan struktural maupun fungsional.</p>
+
+<h3>Jenis Layanan Jabatan</h3>
+<ul>
+  <li><strong>Pengangkatan Jabatan Struktural</strong></li>
+  <li><strong>Pengangkatan Jabatan Fungsional</strong></li>
+  <li><strong>Kenaikan Jenjang Jabatan Fungsional</strong></li>
+  <li><strong>Pemberhentian dari Jabatan</strong></li>
+  <li><strong>Pelaksana Tugas (Plt)</strong></li>
+</ul>
+
+<h3>Alur Layanan Jabatan</h3>
+<table>
+  <tr>
+    <th style="width:5%;">No.</th>
+    <th style="width:20%;">Tahap</th>
+    <th style="width:20%;">Aktor</th>
+    <th>Tindakan</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Inisiasi</td>
+    <td>PPK / Operator</td>
+    <td>Input data pengangkatan: NIP, jabatan baru, TMT, dasar hukum</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Validasi Syarat</td>
+    <td>Sistem</td>
+    <td>Cek persyaratan jabatan (golongan minimal, pendidikan, masa kerja)</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Dokumen</td>
+    <td>Operator</td>
+    <td>Upload berita acara serah terima, keputusan Baperjakat, surat pertimbangan</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Verifikasi</td>
+    <td>Verifikator</td>
+    <td>Cek kesesuaian formasi dan persyaratan jabatan</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Persetujuan</td>
+    <td>PPK</td>
+    <td>Setujui pengangkatan</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>SK Jabatan</td>
+    <td>Admin</td>
+    <td>Penerbitan SK Jabatan, update data jabatan pegawai</td>
+  </tr>
+</table>
+
+<h2>5.6 Layanan Peremajaan Data</h2>
+<p>Proses pembaruan data master pegawai yang mengalami perubahan (nama, gelar, pendidikan, dll.).</p>
+
+<h3>Alur Layanan Peremajaan Data</h3>
+<table>
+  <tr>
+    <th style="width:5%;">No.</th>
+    <th style="width:20%;">Tahap</th>
+    <th style="width:20%;">Aktor</th>
+    <th>Tindakan</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Pengajuan</td>
+    <td>ASN / Operator</td>
+    <td>Input field yang ingin diperbarui beserta nilai baru</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Bukti Perubahan</td>
+    <td>ASN / Operator</td>
+    <td>Upload dokumen pendukung (putusan pengadilan, ijazah baru, dll.)</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Verifikasi</td>
+    <td>Verifikator</td>
+    <td>Validasi kebenaran perubahan data dan kelengkapan bukti</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Persetujuan</td>
+    <td>PPK / Admin</td>
+    <td>Setujui pembaruan data</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Update Data</td>
+    <td>Sistem</td>
+    <td>Update data master pegawai dan sinkronisasi ke SIASN</td>
+  </tr>
+</table>
+
+<!-- ===== BAB 6 ===== -->
+<div class="page-break"></div>
+<h1>6. ALUR VERIFIKASI &amp; PERSETUJUAN</h1>
+
+<h2>6.1 Prinsip Pembagian Kerja</h2>
+<p>
+Semua usulan layanan ASN masuk melalui <strong>Operator OPD</strong> — staf yang ditunjuk di setiap Organisasi Perangkat Daerah (Dinas, Badan, Kantor, Kecamatan). BKPSDM berperan sebagai <strong>pengolah dan pemutus</strong>, bukan pengumpul data. Di ujung akhir proses, <strong>PPPK Paruh Waktu</strong> menangani dokumentasi dan pengarsipan hasil yang telah disetujui.
+</p>
+<div class="info-box">
+  <strong>Prinsip Alur:</strong> OPD mengajukan → BKPSDM memverifikasi &amp; memutuskan → PPPK mendokumentasikan. Tidak ada usulan yang diinput langsung oleh staf BKPSDM kecuali ada kondisi khusus yang diizinkan Kepala Bidang.
+</div>
+
+<h2>6.2 Pemetaan Jabatan ke Peran Sistem</h2>
+<table>
+  <tr>
+    <th style="width:28%;">Jabatan / Aktor</th>
+    <th style="width:18%;">Peran di Sistem</th>
+    <th style="width:15%;">Kode Role</th>
+    <th>Tanggung Jawab Utama</th>
+  </tr>
+  <tr>
+    <td><strong>Operator OPD</strong><br><em>(staf OPD — eksternal BKPSDM)</em></td>
+    <td>Pengusul</td>
+    <td><code>OPERATOR_OPD</code></td>
+    <td>Input data usulan, upload dokumen persyaratan, submit ke BKPSDM, perbaiki berkas yang dikembalikan</td>
+  </tr>
+  <tr>
+    <td><strong>Pelaksana Teknis BKPSDM</strong></td>
+    <td>Koordinator Internal</td>
+    <td><code>PELAKSANA</code></td>
+    <td>Monitoring antrian masuk dari OPD, koordinasi dengan OPD jika ada kendala teknis, dukungan operasional sistem</td>
+  </tr>
+  <tr>
+    <td><strong>Analis SDMA Ahli Pertama</strong></td>
+    <td>Verifikator Kelengkapan</td>
+    <td><code>ANALIS_PERTAMA</code></td>
+    <td>Verifikasi kelengkapan berkas/dokumen, cek format dan keabsahan, identifikasi kekurangan</td>
+  </tr>
+  <tr>
+    <td><strong>Analis SDMA Ahli Muda</strong></td>
+    <td>Verifikator Substansi</td>
+    <td><code>ANALIS_MUDA</code></td>
+    <td>Verifikasi kesesuaian data dengan peraturan, cek persyaratan teknis jabatan/layanan</td>
+  </tr>
+  <tr>
+    <td><strong>Analis SDMA Ahli Madya</strong></td>
+    <td>Penelaah Teknis</td>
+    <td><code>ANALIS_MADYA</code></td>
+    <td>Telaahan teknis substansi layanan kompleks, menyusun nota pertimbangan, koordinasi lintas bidang</td>
+  </tr>
+  <tr>
+    <td><strong>Kepala Bidang</strong></td>
+    <td>Pejabat Persetujuan Teknis</td>
+    <td><code>KEPALA_BIDANG</code></td>
+    <td>Persetujuan teknis bidang, rekomendasi ke Kepala Badan, persetujuan final layanan rutin</td>
+  </tr>
+  <tr>
+    <td><strong>Kepala Badan</strong></td>
+    <td>Pejabat Penetap</td>
+    <td><code>KEPALA_BADAN</code></td>
+    <td>Penetapan &amp; persetujuan final layanan strategis (Pensiun, Mutasi). Tanda tangan SK.</td>
+  </tr>
+  <tr>
+    <td><strong>PPPK Paruh Waktu</strong></td>
+    <td>Petugas Dokumentasi</td>
+    <td><code>PPPK_PARUH</code></td>
+    <td>Cetak SK/dokumen hasil, pengarsipan fisik &amp; digital, distribusi dokumen ke OPD — <em>bekerja setelah usulan APPROVED</em></td>
+  </tr>
+</table>
+
+<div class="page-break"></div>
+<h2>6.3 Alur Verifikasi — Layanan KOMPLEKS (Pensiun &amp; Mutasi)</h2>
+<p>Layanan strategis yang berdampak besar. Usulan masuk dari Operator OPD, diproses 5 tahap di BKPSDM, dan diarsipkan oleh PPPK Paruh Waktu di akhir.</p>
+
+<div class="flow-box">
+┌─────────────────────────────────────────────────────┐
+│  TAHAP 1 — PENGAJUAN DARI OPD                       │
+│  Operator OPD (Dinas / Badan / Kantor / Kecamatan)  │
+│  • Input data usulan ke sistem SILAKAP              │
+│  • Upload dokumen persyaratan (scan berkas)         │
+│  • Submit ke BKPSDM                                 │
+│  • Pantau status dan perbaiki jika dikembalikan     │
+└──────────────────────┬──────────────────────────────┘
+                       ↓  [Status: SUBMITTED]
+┌─────────────────────────────────────────────────────┐
+│  TAHAP 2 — VERIFIKASI KELENGKAPAN BERKAS            │
+│  Analis SDMA Ahli PERTAMA (BKPSDM)                  │
+│  • Cek jumlah &amp; jenis dokumen wajib              │
+│  • Cek format, TTD, cap, tanggal keabsahan          │
+│  ✓ Lengkap → lanjut                                 │
+│  ✗ Kurang → DIKEMBALIKAN ke Operator OPD            │
+└──────────────────────┬──────────────────────────────┘
+                       ↓  [Status: CHECKED]
+┌─────────────────────────────────────────────────────┐
+│  TAHAP 3 — VERIFIKASI SUBSTANSI                     │
+│  Analis SDMA Ahli MUDA (BKPSDM)                     │
+│  • Cek kesesuaian data dengan peraturan             │
+│  • Cek masa kerja, golongan, syarat usia, SKP       │
+│  ✓ Valid → lanjut                                   │
+│  ✗ Tidak valid → DIKEMBALIKAN ke Operator OPD       │
+└──────────────────────┬──────────────────────────────┘
+                       ↓  [Status: VERIFIED]
+┌─────────────────────────────────────────────────────┐
+│  TAHAP 4 — TELAAHAN TEKNIS                          │
+│  Analis SDMA Ahli MADYA (BKPSDM)                    │
+│  • Susun nota pertimbangan teknis                   │
+│  • Analisis dampak, risiko, dan preseden            │
+│  • Berikan rekomendasi tertulis ke Kepala Bidang    │
+│  ✓ Direkomendasikan → lanjut                        │
+│  ✗ Ditolak teknis → REJECTED dengan alasan          │
+└──────────────────────┬──────────────────────────────┘
+                       ↓  [Status: REVIEWED]
+┌─────────────────────────────────────────────────────┐
+│  TAHAP 5 — PERSETUJUAN KEPALA BIDANG                │
+│  Kepala Bidang (BKPSDM)                             │
+│  • Review nota teknis dari Analis Madya             │
+│  • Setuju → rekomendasikan ke Kepala Badan          │
+│  • Tolak → REJECTED dengan catatan tertulis         │
+└──────────────────────┬──────────────────────────────┘
+                       ↓  [Status: RECOMMENDED]
+┌─────────────────────────────────────────────────────┐
+│  TAHAP 6 — PENETAPAN KEPALA BADAN                   │
+│  Kepala Badan (BKPSDM)                              │
+│  • Tanda tangan / penetapan final                   │
+│  ✓ DISETUJUI → proses SK  ✗ DITOLAK → arsip        │
+└──────────────────────┬──────────────────────────────┘
+                       ↓  [Status: APPROVED]
+┌─────────────────────────────────────────────────────┐
+│  TAHAP AKHIR — DOKUMENTASI &amp; PENGARSIPAN          │
+│  PPPK Paruh Waktu (BKPSDM)                          │
+│  • Cetak SK / dokumen hasil yang telah ditandatangani│
+│  • Arsip digital: scan &amp; upload ke DMS            │
+│  • Arsip fisik: simpan di ordner/lemari arsip       │
+│  • Distribusi dokumen ke OPD pemohon                │
+│  • Catat di buku register / ekspedisi               │
+│  • Update status di sistem: COMPLETED               │
+└──────────────────────┬──────────────────────────────┘
+                       ↓  [Status: COMPLETED]
+              [Selesai — Data ASN diperbarui]
+</div>
+
+<h2>6.4 Alur Verifikasi — Layanan MENENGAH (KGB &amp; Jabatan)</h2>
+<p>Layanan rutin periodik. Analis Madya dan Kepala Badan tidak terlibat langsung. Kepala Bidang adalah persetujuan final.</p>
+
+<div class="flow-box">
+┌──────────────────────────────────────────────┐
+│  TAHAP 1 — PENGAJUAN DARI OPD                │
+│  Operator OPD                                │
+│  Input data + upload dokumen + submit        │
+└──────────────────┬───────────────────────────┘
+                   ↓  [Status: SUBMITTED]
+┌──────────────────────────────────────────────┐
+│  TAHAP 2 — VERIFIKASI KELENGKAPAN            │
+│  Analis SDMA Ahli PERTAMA                    │
+│  Cek kelengkapan berkas wajib                │
+│  ✓ Lengkap → lanjut  ✗ → kembalikan ke OPD  │
+└──────────────────┬───────────────────────────┘
+                   ↓  [Status: CHECKED]
+┌──────────────────────────────────────────────┐
+│  TAHAP 3 — VERIFIKASI SUBSTANSI              │
+│  Analis SDMA Ahli MUDA                       │
+│  Cek syarat teknis (masa kerja, SKP, dll.)   │
+│  ✓ Valid → lanjut  ✗ → kembalikan ke OPD    │
+└──────────────────┬───────────────────────────┘
+                   ↓  [Status: VERIFIED]
+┌──────────────────────────────────────────────┐
+│  TAHAP 4 — PERSETUJUAN FINAL                 │
+│  Kepala Bidang                               │
+│  ✓ DISETUJUI  ✗ DITOLAK                     │
+└──────────────────┬───────────────────────────┘
+                   ↓  [Status: APPROVED]
+┌──────────────────────────────────────────────┐
+│  TAHAP AKHIR — DOKUMENTASI                   │
+│  PPPK Paruh Waktu                            │
+│  Cetak SK + arsip digital &amp; fisik            │
+│  Distribusi ke OPD → COMPLETED               │
+└──────────────────────────────────────────────┘
+</div>
+
+<h2>6.5 Alur Verifikasi — Layanan SEDERHANA (Peremajaan Data)</h2>
+<p>Pembaruan data rutin. Verifikasi satu level, persetujuan Kepala Bidang.</p>
+
+<div class="flow-box">
+┌──────────────────────────────────────────────┐
+│  TAHAP 1 — PENGAJUAN DARI OPD                │
+│  Operator OPD                                │
+│  Input perubahan data + upload bukti         │
+└──────────────────┬───────────────────────────┘
+                   ↓  [Status: SUBMITTED]
+┌──────────────────────────────────────────────┐
+│  TAHAP 2 — VERIFIKASI                        │
+│  Analis SDMA Ahli PERTAMA atau MUDA          │
+│  Cek kebenaran data &amp; kelengkapan bukti      │
+│  ✓ Valid → lanjut  ✗ → kembalikan ke OPD    │
+└──────────────────┬───────────────────────────┘
+                   ↓  [Status: VERIFIED]
+┌──────────────────────────────────────────────┐
+│  TAHAP 3 — PERSETUJUAN                       │
+│  Kepala Bidang                               │
+│  ✓ DISETUJUI → update data ASN              │
+└──────────────────┬───────────────────────────┘
+                   ↓  [Status: APPROVED]
+┌──────────────────────────────────────────────┐
+│  TAHAP AKHIR — DOKUMENTASI                   │
+│  PPPK Paruh Waktu                            │
+│  Arsip bukti perubahan → COMPLETED           │
+└──────────────────────────────────────────────┘
+</div>
+
+<div class="page-break"></div>
+<h2>6.6 Tabel Lengkap Aksi Workflow per Jabatan</h2>
+<table>
+  <tr>
+    <th>Aksi</th>
+    <th>Kode</th>
+    <th>Dilakukan Oleh</th>
+    <th>Dari Status</th>
+    <th>Ke Status</th>
+    <th>Berlaku Untuk</th>
+  </tr>
+  <tr>
+    <td>Submit Usulan</td>
+    <td>SUBMIT</td>
+    <td><strong>Operator OPD</strong></td>
+    <td>DRAFT</td>
+    <td>SUBMITTED</td>
+    <td>Semua layanan</td>
+  </tr>
+  <tr>
+    <td>Re-Submit (setelah perbaikan)</td>
+    <td>RESUBMIT</td>
+    <td><strong>Operator OPD</strong></td>
+    <td>RETURNED</td>
+    <td>SUBMITTED</td>
+    <td>Semua layanan</td>
+  </tr>
+  <tr>
+    <td>Cek Kelengkapan ✓</td>
+    <td>CHECK</td>
+    <td>Analis Ahli Pertama</td>
+    <td>SUBMITTED</td>
+    <td>CHECKED</td>
+    <td>Semua layanan</td>
+  </tr>
+  <tr>
+    <td>Kembalikan — Berkas Kurang</td>
+    <td>RETURN_1</td>
+    <td>Analis Ahli Pertama</td>
+    <td>SUBMITTED</td>
+    <td>RETURNED</td>
+    <td>Semua layanan</td>
+  </tr>
+  <tr>
+    <td>Verifikasi Substansi ✓</td>
+    <td>VERIFY</td>
+    <td>Analis Ahli Muda</td>
+    <td>CHECKED</td>
+    <td>VERIFIED</td>
+    <td>Semua layanan</td>
+  </tr>
+  <tr>
+    <td>Kembalikan — Data Tidak Valid</td>
+    <td>RETURN_2</td>
+    <td>Analis Ahli Muda</td>
+    <td>CHECKED</td>
+    <td>RETURNED</td>
+    <td>Semua layanan</td>
+  </tr>
+  <tr>
+    <td>Telaahan Teknis ✓</td>
+    <td>REVIEW</td>
+    <td>Analis Ahli Madya</td>
+    <td>VERIFIED</td>
+    <td>REVIEWED</td>
+    <td>Pensiun, Mutasi</td>
+  </tr>
+  <tr>
+    <td>Tolak Teknis</td>
+    <td>REJECT_REVIEW</td>
+    <td>Analis Ahli Madya</td>
+    <td>VERIFIED</td>
+    <td>REJECTED</td>
+    <td>Pensiun, Mutasi</td>
+  </tr>
+  <tr>
+    <td>Rekomendasikan ke Kabadan ✓</td>
+    <td>RECOMMEND</td>
+    <td>Kepala Bidang</td>
+    <td>REVIEWED</td>
+    <td>RECOMMENDED</td>
+    <td>Pensiun, Mutasi</td>
+  </tr>
+  <tr>
+    <td>Setujui Final (Kabid)</td>
+    <td>APPROVE_KABID</td>
+    <td>Kepala Bidang</td>
+    <td>VERIFIED</td>
+    <td>APPROVED</td>
+    <td>KGB, Jabatan, Peremajaan</td>
+  </tr>
+  <tr>
+    <td>Tolak (Kabid)</td>
+    <td>REJECT_KABID</td>
+    <td>Kepala Bidang</td>
+    <td>VERIFIED / REVIEWED</td>
+    <td>REJECTED</td>
+    <td>Semua layanan</td>
+  </tr>
+  <tr>
+    <td>Tetapkan / Setujui Final (Kabadan)</td>
+    <td>APPROVE</td>
+    <td>Kepala Badan</td>
+    <td>RECOMMENDED</td>
+    <td>APPROVED</td>
+    <td>Pensiun, Mutasi</td>
+  </tr>
+  <tr>
+    <td>Tolak Final (Kabadan)</td>
+    <td>REJECT</td>
+    <td>Kepala Badan</td>
+    <td>RECOMMENDED</td>
+    <td>REJECTED</td>
+    <td>Pensiun, Mutasi</td>
+  </tr>
+  <tr>
+    <td>Dokumentasi &amp; Selesaikan</td>
+    <td>COMPLETE</td>
+    <td><strong>PPPK Paruh Waktu</strong></td>
+    <td>APPROVED</td>
+    <td>COMPLETED</td>
+    <td>Semua layanan</td>
+  </tr>
+</table>
+<p style="font-size:9.5pt; font-style:italic;">Catatan: Pelaksana Teknis BKPSDM tidak memiliki aksi workflow — perannya adalah monitoring, koordinasi dengan OPD, dan dukungan teknis operasional sistem.</p>
+
+<h2>6.7 Audit Trail Wajib per Transisi</h2>
+<p>Setiap perpindahan status <strong>wajib</strong> menulis 4 rekam jejak:</p>
+<ol>
+  <li><strong>Perubahan Status</strong> — status baru, jabatan aktor, NIP, timestamp</li>
+  <li><strong>Layanan Log</strong> — catatan keputusan dan catatan yang diberikan</li>
+  <li><strong>Workflow Timeline</strong> — histori alur per tahap dengan durasi proses</li>
+  <li><strong>Audit Log</strong> — rekam jejak sistem untuk keperluan audit BPK/Inspektorat</li>
+</ol>
+<div class="note-box">
+  Jika salah satu dari keempat hal di atas tidak tertulis, workflow dianggap <strong>belum selesai</strong> dan tidak memenuhi Definition of Done. Setiap aksi harus disertai <em>catatan/komentar</em> terutama untuk aksi RETURN dan REJECT.
+</div>
+
+<!-- ===== BAB 7 ===== -->
+<div class="page-break"></div>
+<h1>7. ROLE, HAK AKSES &amp; PEMBAGIAN KERJA</h1>
+
+<h2>7.1 Daftar Role Sistem</h2>
+<table>
+  <tr>
+    <th style="width:22%;">Jabatan</th>
+    <th style="width:20%;">Kode Role</th>
+    <th>Deskripsi Kewenangan</th>
+  </tr>
+  <tr>
+    <td><strong>Kepala Badan</strong></td>
+    <td><code>KEPALA_BADAN</code></td>
+    <td>Penetapan final Pensiun &amp; Mutasi. Akses monitoring penuh semua layanan dan laporan eksekutif.</td>
+  </tr>
+  <tr>
+    <td><strong>Kepala Bidang</strong></td>
+    <td><code>KEPALA_BIDANG</code></td>
+    <td>Persetujuan teknis semua layanan. Persetujuan final KGB, Jabatan, Peremajaan. Rekomendasi Pensiun &amp; Mutasi ke Kepala Badan.</td>
+  </tr>
+  <tr>
+    <td><strong>Analis SDMA Ahli Madya</strong></td>
+    <td><code>ANALIS_MADYA</code></td>
+    <td>Telaahan teknis Pensiun &amp; Mutasi. Koordinasi lintas bidang. Akses seluruh data ASN untuk analisis.</td>
+  </tr>
+  <tr>
+    <td><strong>Analis SDMA Ahli Muda</strong></td>
+    <td><code>ANALIS_MUDA</code></td>
+    <td>Verifikasi substansi dan persyaratan teknis semua layanan. Dapat menangguhkan atau mengembalikan berkas.</td>
+  </tr>
+  <tr>
+    <td><strong>Analis SDMA Ahli Pertama</strong></td>
+    <td><code>ANALIS_PERTAMA</code></td>
+    <td>Verifikasi kelengkapan berkas. Dapat mengembalikan berkas kurang lengkap. Finalisasi dokumen yang approved.</td>
+  </tr>
+  <tr>
+    <td><strong>Pelaksana Teknis</strong></td>
+    <td><code>PELAKSANA</code></td>
+    <td>Input data penuh, upload dokumen, submit semua jenis layanan, re-submit setelah perbaikan, monitoring status.</td>
+  </tr>
+  <tr>
+    <td><strong>PPPK Paruh Waktu</strong></td>
+    <td><code>PPPK_PARUH</code></td>
+    <td>Input data dasar dan upload dokumen <em>pada layanan yang ditugaskan saja</em>. Tidak dapat submit mandiri, tidak akses data kepegawaian sensitif.</td>
+  </tr>
+</table>
+
+<div class="page-break"></div>
+<h2>7.2 Rincian Tugas Harian per Jabatan</h2>
+
+<h3>Operator OPD &nbsp;<span style="font-weight:normal; font-size:10pt; color:#666;">(staf di setiap Dinas/Badan/Kantor/Kecamatan)</span></h3>
+<ul>
+  <li>Menerima berkas fisik dari ASN pegawai OPD-nya</li>
+  <li>Menscan/memfoto dokumen persyaratan</li>
+  <li>Menginput data usulan ke sistem SILAKAP melalui akun OPD</li>
+  <li>Mengupload dokumen hasil scan ke sistem</li>
+  <li>Mengsubmit usulan ke BKPSDM</li>
+  <li>Memantau status usulan yang telah disubmit</li>
+  <li>Menerima notifikasi dan memperbaiki berkas yang dikembalikan BKPSDM</li>
+  <li>Mengambil dan mendistribusikan dokumen hasil (SK, dll.) ke ASN yang bersangkutan</li>
+</ul>
+
+<h3>Pelaksana Teknis BKPSDM &nbsp;<span style="font-weight:normal; font-size:10pt; color:#666;">(internal BKPSDM)</span></h3>
+<ul>
+  <li>Memantau volume antrian usulan yang masuk dari seluruh OPD</li>
+  <li>Menjadi kontak pertama OPD jika ada kendala teknis dalam penggunaan sistem</li>
+  <li>Membantu OPD yang mengalami kesulitan teknis (bukan mengambil alih input)</li>
+  <li>Memonitor SLA dan melaporkan bottleneck kepada Kepala Bidang</li>
+  <li>Mengelola akun dan akses Operator OPD (pembuatan akun baru, reset password)</li>
+  <li>Mengelola konfigurasi teknis sistem bersama dengan tim IT</li>
+</ul>
+
+<h3>Analis SDMA Ahli Pertama &nbsp;<span style="font-weight:normal; font-size:10pt; color:#666;">(verifikasi kelengkapan — gate pertama BKPSDM)</span></h3>
+<ul>
+  <li>Membuka antrian verifikasi kelengkapan setiap pagi hari kerja</li>
+  <li>Memeriksa daftar dokumen wajib berdasarkan jenis layanan yang diajukan</li>
+  <li>Memeriksa keabsahan dokumen: tanda tangan, cap dinas, tanggal, legibilitas</li>
+  <li>Mengembalikan berkas yang kurang dengan catatan <em>rinci dan spesifik</em> tentang apa yang kurang</li>
+  <li>Meneruskan berkas yang lengkap ke Analis Ahli Muda</li>
+  <li>Melakukan verifikasi mandiri untuk layanan Peremajaan Data (verifikasi sekaligus substansi)</li>
+</ul>
+
+<h3>Analis SDMA Ahli Muda &nbsp;<span style="font-weight:normal; font-size:10pt; color:#666;">(verifikasi substansi — gate teknis utama)</span></h3>
+<ul>
+  <li>Menerima berkas yang sudah dinyatakan lengkap oleh Analis Ahli Pertama</li>
+  <li>Memverifikasi kesesuaian data dengan peraturan perundang-undangan yang berlaku</li>
+  <li>Memeriksa syarat teknis: masa kerja, nilai SKP, golongan, syarat usia, syarat jabatan</li>
+  <li>Meneruskan berkas yang valid ke tahap berikutnya</li>
+  <li>Mengembalikan berkas yang tidak memenuhi syarat dengan <em>dasar hukum yang jelas</em></li>
+  <li>Menjadi verifikator final untuk layanan KGB dan Jabatan (teruskan ke Kepala Bidang)</li>
+  <li>Melaporkan pola kesalahan berulang dari OPD tertentu kepada Analis Madya</li>
+</ul>
+
+<h3>Analis SDMA Ahli Madya &nbsp;<span style="font-weight:normal; font-size:10pt; color:#666;">(telaahan teknis — hanya Pensiun &amp; Mutasi)</span></h3>
+<ul>
+  <li>Menerima berkas Pensiun dan Mutasi yang sudah valid dari Analis Ahli Muda</li>
+  <li>Melakukan telaahan teknis mendalam terhadap substansi dan dampak usulan</li>
+  <li>Menyusun <em>nota pertimbangan teknis tertulis</em> untuk setiap usulan</li>
+  <li>Menganalisis preseden, risiko, dan konsistensi dengan kebijakan yang berlaku</li>
+  <li>Memberikan rekomendasi tertulis (setuju/tidak setuju beserta alasan) kepada Kepala Bidang</li>
+  <li>Mengkoordinasikan isu yang memerlukan konfirmasi lintas bidang</li>
+  <li>Membimbing Analis Ahli Muda dan Pertama dalam penyelesaian kasus teknis yang kompleks</li>
+</ul>
+
+<h3>Kepala Bidang &nbsp;<span style="font-weight:normal; font-size:10pt; color:#666;">(persetujuan teknis bidang)</span></h3>
+<ul>
+  <li>Mereview nota pertimbangan teknis dari Analis Madya untuk Pensiun dan Mutasi</li>
+  <li>Merekomendasikan ke Kepala Badan untuk layanan Pensiun dan Mutasi</li>
+  <li>Memberikan <em>persetujuan final</em> untuk KGB, Jabatan, dan Peremajaan Data</li>
+  <li>Menandatangani dokumen hasil yang sesuai batas kewenangannya</li>
+  <li>Monitoring SLA tim dan bottleneck proses verifikasi</li>
+  <li>Melaporkan rekapitulasi layanan kepada Kepala Badan secara berkala</li>
+</ul>
+
+<h3>Kepala Badan &nbsp;<span style="font-weight:normal; font-size:10pt; color:#666;">(penetapan final — hanya Pensiun &amp; Mutasi)</span></h3>
+<ul>
+  <li>Menerima usulan Pensiun dan Mutasi yang sudah direkomendasikan Kepala Bidang</li>
+  <li>Memberikan penetapan/persetujuan final atau penolakan beserta catatan</li>
+  <li>Menandatangani SK Pensiun dan SK Mutasi</li>
+  <li>Memonitor dashboard eksekutif: SLA keseluruhan, volume layanan, OPD paling aktif</li>
+  <li><strong>Tidak terlibat</strong> dalam proses teknis harian — fokus pada keputusan strategis</li>
+</ul>
+
+<h3>PPPK Paruh Waktu &nbsp;<span style="font-weight:normal; font-size:10pt; color:#666;">(dokumentasi &amp; pengarsipan — bekerja di ujung proses)</span></h3>
+<ul>
+  <li>Memantau antrian usulan yang berstatus APPROVED setiap hari</li>
+  <li>Mencetak SK dan dokumen hasil yang telah ditandatangani pejabat berwenang</li>
+  <li>Menscan dan mengupload dokumen hasil ke sistem DMS (arsip digital)</li>
+  <li>Menyimpan arsip fisik ke dalam ordner/lemari arsip sesuai klasifikasi</li>
+  <li>Mencatat nomor SK dan data layanan ke buku register/ekspedisi</li>
+  <li>Menyiapkan dokumen untuk didistribusikan ke OPD pemohon</li>
+  <li>Mengubah status usulan di sistem menjadi COMPLETED setelah semua dokumentasi selesai</li>
+  <li>Bekerja pada jam paruh waktu yang ditetapkan (misal: 07.30–12.00)</li>
+</ul>
+
+<h2>7.3 Matriks Akses Menu per Role</h2>
+<table>
+  <tr>
+    <th style="width:23%;">Menu / Fitur</th>
+    <th class="center" style="width:8%;">Operator<br>OPD</th>
+    <th class="center" style="width:8%;">Pelaksana<br>BKPSDM</th>
+    <th class="center" style="width:8%;">Analis<br>Pertama</th>
+    <th class="center" style="width:8%;">Analis<br>Muda</th>
+    <th class="center" style="width:8%;">Analis<br>Madya</th>
+    <th class="center" style="width:8%;">Kabid</th>
+    <th class="center" style="width:8%;">Kabadan</th>
+    <th class="center" style="width:8%;">PPPK<br>Paruh</th>
+  </tr>
+  <tr>
+    <td>Dashboard (ringkasan)</td>
+    <td class="center">✓</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">✓</td>
+  </tr>
+  <tr>
+    <td>Dashboard Eksekutif (SLA total)</td>
+    <td class="center">—</td><td class="center">✓</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Input Data Usulan (Create)</td>
+    <td class="center">✓</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Upload Dokumen Persyaratan</td>
+    <td class="center">✓</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Submit &amp; Re-Submit Usulan</td>
+    <td class="center">✓</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Status Layanan (usulan OPD sendiri)</td>
+    <td class="center">✓</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Monitoring Semua Usulan (BKPSDM)</td>
+    <td class="center">—</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Antrian Cek Kelengkapan Berkas</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">✓</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Antrian Verifikasi Substansi</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">✓</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Antrian Telaahan Teknis (Madya)</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">✓</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Antrian Persetujuan Kepala Bidang</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">✓</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Antrian Penetapan Kepala Badan</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">✓</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Antrian Dokumentasi (APPROVED)</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">✓</td>
+  </tr>
+  <tr>
+    <td>Selesaikan / COMPLETE</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">✓</td>
+  </tr>
+  <tr>
+    <td>Data ASN (baca seluruh pegawai)</td>
+    <td class="center">—*</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Laporan Kepegawaian</td>
+    <td class="center">—</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Master Referensi (kelola)</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Pengaturan Sistem, Role &amp; Akun OPD</td>
+    <td class="center">—</td><td class="center">✓</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">✓</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Audit Log &amp; Keamanan</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">—</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">✓</td><td class="center">—</td>
+  </tr>
+  <tr>
+    <td>Integrasi SIASN &amp; Import Referensi</td>
+    <td class="center">—</td><td class="center">—</td><td class="center">—</td>
+    <td class="center">✓</td><td class="center">✓</td><td class="center">✓</td>
+    <td class="center">—</td><td class="center">—</td>
+  </tr>
+</table>
+<p style="font-size:9.5pt; font-style:italic;">
+  * Operator OPD hanya dapat melihat data ASN pegawai di OPD-nya sendiri, bukan seluruh pegawai.<br>
+  Operator OPD tidak memiliki akses ke menu BKPSDM internal (antrian verifikasi, laporan keseluruhan, konfigurasi sistem).
+</p>
+
+<h2>7.4 Distribusi Beban Kerja yang Adil</h2>
+<table>
+  <tr>
+    <th style="width:25%;">Jabatan</th>
+    <th style="width:25%;">Volume Kerja Utama</th>
+    <th>Catatan Keseimbangan</th>
+  </tr>
+  <tr>
+    <td><strong>Kepala Badan</strong></td>
+    <td>Rendah (hanya keputusan strategis)</td>
+    <td>Hanya menerima berkas yang sudah matang dari Kepala Bidang. Tidak dibebani detail teknis.</td>
+  </tr>
+  <tr>
+    <td><strong>Kepala Bidang</strong></td>
+    <td>Menengah (semua jenis layanan)</td>
+    <td>Persetujuan final 3 jenis layanan + rekomendasi 2 jenis layanan. Fokus pada keputusan, bukan input data.</td>
+  </tr>
+  <tr>
+    <td><strong>Analis Ahli Madya</strong></td>
+    <td>Menengah (hanya layanan kompleks)</td>
+    <td>Fokus pada Pensiun &amp; Mutasi. Punya waktu untuk koordinasi dan pembimbingan junior.</td>
+  </tr>
+  <tr>
+    <td><strong>Analis Ahli Muda</strong></td>
+    <td>Tinggi (semua layanan, tahap substansi)</td>
+    <td>Posisi terbanyak memproses. Perlu dibantu SLA monitoring agar tidak menjadi bottleneck.</td>
+  </tr>
+  <tr>
+    <td><strong>Analis Ahli Pertama</strong></td>
+    <td>Tinggi (semua layanan, tahap kelengkapan)</td>
+    <td>Gate pertama — paling banyak interaksi dengan Pelaksana. Perlu checklist yang jelas agar efisien.</td>
+  </tr>
+  <tr>
+    <td><strong>Pelaksana Teknis</strong></td>
+    <td>Tinggi (input &amp; koordinasi)</td>
+    <td>Ujung tombak input data. Perlu sistem yang mudah agar tidak ada salah input. PPPK membantu beban kerja ini.</td>
+  </tr>
+  <tr>
+    <td><strong>PPPK Paruh Waktu</strong></td>
+    <td>Menengah (sesuai jam paruh waktu)</td>
+    <td>Dialokasikan untuk tugas bervolume tinggi tapi rutin: scan dokumen, input data dasar, arsip fisik.</td>
+  </tr>
+</table>
+
+<!-- ===== BAB 8 ===== -->
+<div class="page-break"></div>
+<h1>8. INTEGRASI EKSTERNAL — SIASN</h1>
+
+<h2>8.1 Gambaran Integrasi</h2>
+<p>SILAKAP-ASN terhubung dengan sistem nasional SIASN (Sistem Informasi ASN) milik Badan Kepegawaian Negara (BKN) untuk memastikan data kepegawaian tetap sinkron dan valid secara nasional.</p>
+
+<h2>8.2 Alur Import Data Referensi (Excel)</h2>
+<p>Data referensi (jabatan dan UNOR) diimport dari file Excel yang diekspor dari SIASN.</p>
+<table>
+  <tr>
+    <th style="width:5%;">No.</th>
+    <th>Tahap</th>
+    <th>Keterangan</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Download dari SIASN</td>
+    <td>Admin mendownload file Excel data referensi dari portal SIASN</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Upload ke SILAKAP</td>
+    <td>Upload melalui menu Integrasi Eksternal → Import Data</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Parsing &amp; Validasi</td>
+    <td>Sistem membaca file Excel, validasi format, filter baris tidak valid</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Upsert Database</td>
+    <td>Data yang valid di-upsert: create jika baru, update jika sudah ada (berdasarkan ID SIASN)</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Laporan Hasil</td>
+    <td>Sistem menampilkan: total baris, baris valid, created, updated, skipped</td>
+  </tr>
+</table>
+
+<h3>Jenis File yang Dapat Diimport</h3>
+<table>
+  <tr>
+    <th>Jenis</th>
+    <th>Endpoint</th>
+    <th>Format</th>
+    <th>Maks. Ukuran</th>
+  </tr>
+  <tr>
+    <td>Jabatan Fungsional</td>
+    <td>POST /api/integrasi/import/referensi/jabatan/fungsional</td>
+    <td>.xlsx / .xls</td>
+    <td>15 MB</td>
+  </tr>
+  <tr>
+    <td>Jabatan Pelaksana</td>
+    <td>POST /api/integrasi/import/referensi/jabatan/pelaksana</td>
+    <td>.xlsx / .xls</td>
+    <td>15 MB</td>
+  </tr>
+  <tr>
+    <td>Jabatan Struktural</td>
+    <td>POST /api/integrasi/import/referensi/jabatan/struktural</td>
+    <td>.xlsx / .xls</td>
+    <td>15 MB</td>
+  </tr>
+  <tr>
+    <td>UNOR (Hierarki Organisasi)</td>
+    <td>POST /api/integrasi/import/referensi/unor</td>
+    <td>.xlsx / .xls</td>
+    <td>15 MB</td>
+  </tr>
+</table>
+
+<h2>8.3 Alur Sinkronisasi SIASN (Job Otomatis)</h2>
+<div class="flow-box">
+[JADWAL / TRIGGER MANUAL]
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[JOB QUEUE] Antri job sinkronisasi di BullMQ
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[WORKER] Ambil data dari API SIASN
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[SISTEM] Validasi &amp; transformasi data
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[DATABASE] Update data pegawai lokal
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[LOG] Simpan hasil: sukses/gagal per rekord
+&nbsp;&nbsp;&nbsp;&nbsp;↓
+[NOTIFIKASI] Admin diberitahu hasil sinkronisasi
+</div>
+
+<!-- ===== BAB 9 ===== -->
+<div class="page-break"></div>
+<h1>9. RENCANA SPRINT PENGEMBANGAN</h1>
+
+<table>
+  <tr>
+    <th>Sprint</th>
+    <th>Target Utama</th>
+    <th>Deliverable</th>
+  </tr>
+  <tr>
+    <td><strong>Sprint 1</strong><br><em>Stabilkan Fondasi</em></td>
+    <td>
+      Master referensi stabil<br>
+      Role &amp; workflow matrix jelas<br>
+      Kontrak sidebar dan role sinkron
+    </td>
+    <td>
+      Referensi aktif dan konsisten<br>
+      Role bisa dipetakan ke menu &amp; aksi<br>
+      Workflow transition baku siap
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Sprint 2</strong><br><em>Stabilkan Data ASN</em></td>
+    <td>
+      Data ASN menjadi source of truth<br>
+      Lookup ASN stabil
+    </td>
+    <td>
+      Daftar &amp; profil pegawai aktif<br>
+      Riwayat ASN tersedia<br>
+      Layanan bisa resolve identitas pegawai
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Sprint 3</strong><br><em>Finalkan Pensiun E2E</em></td>
+    <td>
+      Pensiun menjadi blueprint layanan<br>
+      Alur end-to-end stabil
+    </td>
+    <td>
+      Create, draft, submit, detail, workflow action<br>
+      Timeline &amp; audit trail terisi lengkap
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Sprint 4</strong><br><em>Verifikasi &amp; Dokumen</em></td>
+    <td>
+      Layanan tidak berhenti di form input<br>
+      Dokumen menjadi syarat submit &amp; approve
+    </td>
+    <td>
+      Antrian verifikasi operasional<br>
+      Kelengkapan dokumen tervalidasi<br>
+      DMS monitoring aktif
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Sprint 5</strong><br><em>Ekspansi Layanan &amp; Laporan</em></td>
+    <td>
+      Perluasan pola pensiun ke layanan lain<br>
+      Laporan berbasis data nyata
+    </td>
+    <td>
+      Mutasi, KGB, Jabatan, Peremajaan aktif<br>
+      Laporan bisa dipakai operasional<br>
+      Export Excel/PDF berfungsi
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Sprint 6</strong><br><em>Governance &amp; Integrasi</em></td>
+    <td>
+      Sistem siap audit<br>
+      Integrasi SIASN tidak merusak layanan inti
+    </td>
+    <td>
+      Audit log &amp; user activity aktif<br>
+      Sinkronisasi SIASN berjalan<br>
+      Dashboard SDM dasar tersedia
+    </td>
+  </tr>
+</table>
+
+<!-- ===== BAB 10 ===== -->
+<div class="page-break"></div>
+<h1>10. ENDPOINT API BAKU</h1>
+
+<h2>10.1 Layanan ASN</h2>
+<table>
+  <tr>
+    <th>Method</th>
+    <th>Endpoint</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/api/services/:service</td>
+    <td>Daftar usulan layanan (dengan filter dan paginasi)</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/api/services/:service/:id</td>
+    <td>Detail satu usulan (data, dokumen, timeline)</td>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/api/services/:service</td>
+    <td>Buat usulan baru (create)</td>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/api/services/:service/submit</td>
+    <td>Submit usulan (validasi &amp; ubah status)</td>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/api/services/:service/workflow</td>
+    <td>Tindakan workflow (verify, approve, reject, dll.)</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/api/services/:service/dashboard</td>
+    <td>Dashboard statistik layanan</td>
+  </tr>
+</table>
+<p style="font-size:9.5pt; font-style:italic;">:service = pensiun | mutasi | kgb | jabatan | peremajaan</p>
+
+<h2>10.2 Integrasi &amp; Import</h2>
+<table>
+  <tr>
+    <th>Method</th>
+    <th>Endpoint</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/api/integrasi/import/referensi/jabatan/:jenis</td>
+    <td>Import referensi jabatan dari Excel</td>
+  </tr>
+  <tr>
+    <td>POST</td>
+    <td>/api/integrasi/import/referensi/unor</td>
+    <td>Import hierarki UNOR dari Excel</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/api/integrasi/jobs</td>
+    <td>Daftar job sinkronisasi</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/api/integrasi/logs</td>
+    <td>Riwayat sinkronisasi</td>
+  </tr>
+</table>
+
+<h2>10.3 Data ASN</h2>
+<table>
+  <tr>
+    <th>Method</th>
+    <th>Endpoint</th>
+    <th>Fungsi</th>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/api/asn</td>
+    <td>Daftar pegawai (paginasi, filter)</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/api/asn/:id</td>
+    <td>Profil lengkap satu pegawai</td>
+  </tr>
+  <tr>
+    <td>GET</td>
+    <td>/api/asn/:id/riwayat</td>
+    <td>Riwayat ASN pegawai</td>
+  </tr>
+</table>
+
+<!-- ===== BAB 11 ===== -->
+<div class="page-break"></div>
+<h1>11. CHECKLIST &amp; DEFINITION OF DONE</h1>
+
+<h2>11.1 Checklist Verifikasi Setelah Setiap Perubahan</h2>
+<table>
+  <tr>
+    <th style="width:5%;">No.</th>
+    <th>Checklist Item</th>
+    <th class="center">Status</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td><code>cd api &amp;&amp; npm run build</code> — Backend build bersih tanpa error</td>
+    <td class="center">☐</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td><code>cd web &amp;&amp; npm run build</code> — Frontend build bersih tanpa error TypeScript</td>
+    <td class="center">☐</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Create usulan berfungsi (data tersimpan ke database)</td>
+    <td class="center">☐</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>Submit usulan berfungsi (validasi dokumen + ubah status)</td>
+    <td class="center">☐</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Halaman detail usulan menampilkan data lengkap</td>
+    <td class="center">☐</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>Tindakan workflow utama berhasil dieksekusi</td>
+    <td class="center">☐</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>Timeline dan log workflow terisi lengkap</td>
+    <td class="center">☐</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>Halaman laporan menampilkan data nyata (bukan dummy)</td>
+    <td class="center">☐</td>
+  </tr>
+  <tr>
+    <td>9</td>
+    <td>Export laporan berfungsi tanpa merusak halaman utama</td>
+    <td class="center">☐</td>
+  </tr>
+</table>
+
+<h2>11.2 Definition of Done — Suatu Pekerjaan Dinyatakan Selesai Jika</h2>
+<table>
+  <tr>
+    <th style="width:5%;">No.</th>
+    <th>Kriteria</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Endpoint aktif dan terdokumentasi jelas</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Payload dan response frontend-backend sudah sinkron</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Role akses sudah sesuai (tidak ada akses yang bocor atau terblokir salah)</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>UI tidak crash di browser (tidak ada error konsol yang kritis)</td>
+  </tr>
+  <tr>
+    <td>5</td>
+    <td>Build api dan web tetap hijau (tidak ada error TypeScript)</td>
+  </tr>
+  <tr>
+    <td>6</td>
+    <td>Audit trail lengkap: status, layanan log, workflow timeline, audit log</td>
+  </tr>
+  <tr>
+    <td>7</td>
+    <td>Laporan tidak memakai data dummy untuk runtime production</td>
+  </tr>
+  <tr>
+    <td>8</td>
+    <td>Tidak ada penggunaan route legacy yang baru dibuat</td>
+  </tr>
+</table>
+
+<h2>11.3 Panduan Troubleshooting Cepat</h2>
+<table>
+  <tr>
+    <th>Gejala</th>
+    <th>Yang Harus Dicek</th>
+  </tr>
+  <tr>
+    <td>Tombol workflow ada tapi gagal dieksekusi</td>
+    <td>1) Endpoint aktif benar &nbsp;2) Payload ada usulId &amp; actionCode &nbsp;3) JWT valid &nbsp;4) Role cocok &nbsp;5) Status usul cocok dengan transisi yang diijinkan</td>
+  </tr>
+  <tr>
+    <td>Create usulan gagal</td>
+    <td>1) Service code valid &nbsp;2) pegawaiId/NIP bisa di-resolve &nbsp;3) Payload domain lengkap &nbsp;4) Referensi bisa dinormalisasi</td>
+  </tr>
+  <tr>
+    <td>Timeline/log kosong</td>
+    <td>1) Backend menulis layananLog &nbsp;2) Workflow menulis log &nbsp;3) Workflow menulis timeline &nbsp;4) Workflow menulis audit</td>
+  </tr>
+  <tr>
+    <td>Laporan kosong</td>
+    <td>1) Query tabel sumber benar &nbsp;2) Klasifikasi tidak terlalu sempit &nbsp;3) Filter UNOR aktif &nbsp;4) Backend sudah restart</td>
+  </tr>
+  <tr>
+    <td>Export gagal</td>
+    <td>1) Endpoint export aktif &nbsp;2) Fallback frontend aman &nbsp;3) Popup browser tidak diblokir &nbsp;4) Format file cocok dengan ekstensi</td>
+  </tr>
+  <tr>
+    <td>Upload file error "Duplicate entry"</td>
+    <td>1) Tabel punya data lama dengan kode konflik &nbsp;2) Upload ulang setelah fix — sistem akan upsert otomatis berdasarkan ID SIASN</td>
+  </tr>
+</table>
+
+<hr style="border: 1px solid #1F3864; margin-top: 40pt;">
+<p style="text-align:center; font-size:10pt; color:#666; margin-top:10pt;">
+  <strong>SILAKAP-ASN</strong> — Sistem Informasi Layanan Kepegawaian ASN<br>
+  BKPSDM Kabupaten Tolitoli &nbsp;|&nbsp; Versi 1.0 &nbsp;|&nbsp; April 2026<br>
+  <em>Dokumen ini adalah referensi teknis dan operasional resmi sistem.</em>
+</p>
+
+</body>
+</html>
