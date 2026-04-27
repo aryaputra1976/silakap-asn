@@ -14,7 +14,7 @@ import {
   useIntegrasiMissingReferences,
   useValidateIntegrasiBatch,
 } from "./useIntegrasiImport"
-import type { ImportBatchItem, ImportBatchQuery, ImportErrorRow } from "../types"
+import type { BlockingReason, CommitReadiness, ImportBatchItem, ImportBatchQuery, ImportErrorRow, MissingReferencesResponse } from "../types"
 import type { ImportEditRowPayload } from "../components/import/ImportEditRowModal"
 
 const ACCEPTED_FILE_EXTENSIONS = [".xlsx", ".xls", ".csv"]
@@ -58,14 +58,80 @@ export function canValidateImportBatch(batch: ImportBatchItem): boolean {
   )
 }
 
-export function canCommitImportBatch(batch: ImportBatchItem): boolean {
-  return normalizeStatus(batch.status) === "VALIDATED" && batch.invalidRows === 0
+export function canCommitImportBatch(
+  batch: ImportBatchItem,
+  missing?: MissingReferencesResponse,
+): boolean {
+  if (normalizeStatus(batch.status) !== "VALIDATED") return false
+  if (batch.invalidRows > 0) return false
+  if (missing && (missing.jabatan.length > 0 || missing.unor.length > 0)) return false
+  return true
 }
 
 export function canCancelImportBatch(batch: ImportBatchItem): boolean {
   return ["DRAFT", "VALIDATED", "VALIDATED_WITH_ERROR", "FAILED"].includes(
     normalizeStatus(batch.status),
   )
+}
+
+export function getCommitReadiness(
+  batch: ImportBatchItem,
+  missing: MissingReferencesResponse | undefined,
+  missingLoading: boolean,
+): CommitReadiness {
+  if (missingLoading) {
+    return {
+      isReady: false,
+      invalidRows: batch.invalidRows,
+      missingJabatan: 0,
+      missingUnor: 0,
+      missingPendidikan: 0,
+      blockingReasons: [],
+    }
+  }
+
+  const missingJabatan = missing?.jabatan.length ?? 0
+  const missingUnor = missing?.unor.length ?? 0
+  const missingPendidikan = missing?.pendidikan.length ?? 0
+  const blockingReasons: BlockingReason[] = []
+
+  if (normalizeStatus(batch.status) !== "VALIDATED") {
+    blockingReasons.push({
+      key: "status",
+      label: "Status batch bukan VALIDATED",
+      detail: "Validasi batch terlebih dahulu.",
+    })
+  }
+  if (batch.invalidRows > 0) {
+    blockingReasons.push({
+      key: "invalid-rows",
+      label: `${batch.invalidRows} baris gagal validasi`,
+      detail: "Perbaiki data pada tab Validasi atau jalankan validasi ulang.",
+    })
+  }
+  if (missingJabatan > 0) {
+    blockingReasons.push({
+      key: "missing-jabatan",
+      label: `${missingJabatan} jabatan belum ada di master`,
+      detail: "Import referensi jabatan via halaman Import Referensi.",
+    })
+  }
+  if (missingUnor > 0) {
+    blockingReasons.push({
+      key: "missing-unor",
+      label: `${missingUnor} UNOR belum ada di master`,
+      detail: "Import referensi UNOR via halaman Import Referensi.",
+    })
+  }
+
+  return {
+    isReady: blockingReasons.length === 0,
+    invalidRows: batch.invalidRows,
+    missingJabatan,
+    missingUnor,
+    missingPendidikan,
+    blockingReasons,
+  }
 }
 
 export function useIntegrasiImportWorkspace() {
@@ -146,6 +212,15 @@ export function useIntegrasiImportWorkspace() {
     createJabatanMutation.isPending ||
     createUnorMutation.isPending ||
     createPendidikanMutation.isPending
+
+  const readiness = useMemo(() => {
+    if (!selectedBatch) return null
+    return getCommitReadiness(
+      selectedBatch,
+      missingReferencesQuery.data,
+      missingReferencesQuery.isLoading,
+    )
+  }, [selectedBatch, missingReferencesQuery.data, missingReferencesQuery.isLoading])
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
@@ -261,6 +336,15 @@ async function handleUpdateRow(rowId: string, payload: ImportEditRowPayload) {
 
   async function handleCommit() {
     if (!selectedBatch) return
+    if (!readiness?.isReady) {
+      setNotice({
+        type: "error",
+        message: readiness?.blockingReasons.length
+          ? `Batch belum siap: ${readiness.blockingReasons.map((r) => r.label).join("; ")}.`
+          : "Batch belum siap untuk commit.",
+      })
+      return
+    }
 
     try {
       setNotice(null)
@@ -384,11 +468,12 @@ async function handleUpdateRow(rowId: string, payload: ImportEditRowPayload) {
     handleCreateJabatanReferences,
     handleCreateUnorReferences,
     handleCreatePendidikanReferences,
+    readiness,
     selectedErrorRow,
     updateRowLoading,
     updateRowError,
     handleEditRow,
     handleCloseEditRowModal,
-    handleUpdateRow,    
+    handleUpdateRow,
   }
 }

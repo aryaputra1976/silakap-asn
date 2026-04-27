@@ -174,6 +174,11 @@ export function commitImportBatch(batchId: string) {
   )
 }
 
+/**
+ * @deprecated Non-default path. Jabatan references must be imported via the
+ * Reference Import page (/integrasi/import-referensi) using official master data.
+ * Auto-generating jabatan from batch data creates unverified stubs in the master.
+ */
 export function createMissingJabatanReferences(batchId: string) {
   return postRequest<CreateReferenceResponse, EmptyBody>(
     `/integrasi/import/pegawai/batches/${batchId}/references/jabatan`,
@@ -181,6 +186,11 @@ export function createMissingJabatanReferences(batchId: string) {
   )
 }
 
+/**
+ * @deprecated Non-default path. UNOR references must be imported via the
+ * Reference Import page (/integrasi/import-referensi) using official master data.
+ * Auto-generating UNOR from batch data creates unverified stubs with temporary kode.
+ */
 export function createMissingUnorReferences(batchId: string) {
   return postRequest<CreateReferenceResponse, EmptyBody>(
     `/integrasi/import/pegawai/batches/${batchId}/references/unor`,

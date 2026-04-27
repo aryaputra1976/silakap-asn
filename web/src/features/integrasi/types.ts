@@ -7,7 +7,6 @@ export type IntegrasiBatchStatus =
   | "IMPORTED"
   | "FAILED"
   | "CANCELLED"
-  | string
 
 export type PaginatedResponse<T> = {
   data: T[]
@@ -36,7 +35,7 @@ export type ImportBatchItem = {
   invalidRows: number
   importedRows: number
   status: IntegrasiBatchStatus
-  errors: unknown
+  errors: string[] | null
   createdAt: string
   updatedAt: string
 }
@@ -49,9 +48,9 @@ export type ImportErrorRow = {
   nik: string | null
   nama: string | null
   siasnId: string | null
-  rawData: unknown
-  mappedData: unknown
-  errors: unknown
+  rawData: Record<string, unknown>
+  mappedData: Record<string, unknown>
+  errors: string[] | null
   isValid: boolean
   isImported: boolean
   createdAt: string
@@ -70,6 +69,10 @@ export type MissingReferencesResponse = {
   unor: MissingReferenceItem[]
   pendidikan: MissingReferenceItem[]
 }
+
+export type MissingReferenceKindWajib = "jabatan" | "unor"
+export type MissingReferenceKindOpsional = "pendidikan"
+export type MissingReferenceKind = MissingReferenceKindWajib | MissingReferenceKindOpsional
 
 export type ValidateBatchResponse = {
   batchId: string

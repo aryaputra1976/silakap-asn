@@ -1,13 +1,18 @@
 import type { MissingReferencesResponse } from "../../types"
 import { formatNumber } from "./import-ui"
 
+const REFERENCE_IMPORT_HREF = "/integrasi/import-referensi"
+
+type ReferenceGroupKind = "jabatan" | "unor" | "pendidikan"
+
 type MissingReferenceGroup = {
-  key: "jabatan" | "unor" | "pendidikan"
+  key: ReferenceGroupKind
   title: string
   description: string
   items: MissingReferencesResponse["jabatan"]
   loading: boolean
   action: () => void
+  isBlocking: boolean
 }
 
 type ImportMissingReferencesPanelProps = {
@@ -35,39 +40,59 @@ function MissingReferenceCard({
   const hasItems = total > 0
 
   return (
-    <div className="rounded border border-gray-300 border-dashed bg-light-primary bg-opacity-10 px-5 py-5">
+    <div
+      className={`rounded border border-dashed px-5 py-5 ${
+        group.isBlocking && hasItems
+          ? "border-danger bg-light-danger bg-opacity-10"
+          : "border-gray-300 bg-light-primary bg-opacity-10"
+      }`}
+    >
       <div className="d-flex align-items-start justify-content-between gap-4 mb-4">
         <div>
           <div className="fw-bold text-gray-900 fs-5">{group.title}</div>
           <div className="text-gray-600 fs-7 lh-lg">{group.description}</div>
         </div>
 
-        <span
-          className={
-            hasItems
-              ? "badge badge-light-warning"
-              : "badge badge-light-success"
-          }
-        >
-          {formatNumber(total)} data
-        </span>
+        <div className="d-flex flex-column align-items-end gap-1">
+          {group.isBlocking ? (
+            <span className={hasItems ? "badge badge-light-danger" : "badge badge-light-success"}>
+              {hasItems ? "WAJIB · Memblok commit" : "Lengkap"}
+            </span>
+          ) : (
+            <span className={hasItems ? "badge badge-light-info" : "badge badge-light-success"}>
+              {hasItems ? "Opsional" : "Lengkap"}
+            </span>
+          )}
+          <span className="text-gray-500 fs-8">{formatNumber(total)} data</span>
+        </div>
       </div>
 
       <div className="d-flex align-items-center justify-content-between gap-3 mb-4">
         <div className="text-gray-600 fs-7">
-          {hasItems
-            ? "Generate referensi, lalu lakukan validasi ulang batch."
-            : "Tidak ada referensi hilang untuk kategori ini."}
+          {!hasItems
+            ? "Tidak ada referensi hilang untuk kategori ini."
+            : group.isBlocking
+            ? "Referensi ini wajib ada sebelum commit. Lengkapi melalui halaman Import Referensi."
+            : "Referensi dapat digenerate otomatis dan tidak memblok commit."}
         </div>
 
-        <button
-          type="button"
-          disabled={disabled || panelLoading || !hasItems}
-          onClick={group.action}
-          className="btn btn-sm btn-light-primary"
-        >
-          {group.loading ? "Memproses..." : "Generate"}
-        </button>
+        {group.isBlocking ? (
+          <a
+            href={REFERENCE_IMPORT_HREF}
+            className={`btn btn-sm ${hasItems ? "btn-light-danger" : "btn-light"}`}
+          >
+            Buka Import Referensi →
+          </a>
+        ) : (
+          <button
+            type="button"
+            disabled={disabled || panelLoading || !hasItems}
+            onClick={group.action}
+            className="btn btn-sm btn-light-primary"
+          >
+            {group.loading ? "Memproses..." : "Generate Otomatis"}
+          </button>
+        )}
       </div>
 
       <div className="separator separator-dashed my-4" />
@@ -137,6 +162,7 @@ export function ImportMissingReferencesPanel({
       items: data?.jabatan ?? [],
       loading: jabatanLoading,
       action: onCreateJabatan,
+      isBlocking: true,
     },
     {
       key: "unor",
@@ -145,6 +171,7 @@ export function ImportMissingReferencesPanel({
       items: data?.unor ?? [],
       loading: unorLoading,
       action: onCreateUnor,
+      isBlocking: true,
     },
     {
       key: "pendidikan",
@@ -153,10 +180,12 @@ export function ImportMissingReferencesPanel({
       items: data?.pendidikan ?? [],
       loading: pendidikanLoading,
       action: onCreatePendidikan,
+      isBlocking: false,
     },
   ]
 
-  const totalMissing = groups.reduce((total, group) => total + group.items.length, 0)
+  const blockingMissing = (data?.jabatan.length ?? 0) + (data?.unor.length ?? 0)
+  const totalMissing = blockingMissing + (data?.pendidikan.length ?? 0)
 
   return (
     <div className="card shadow-sm h-100">
@@ -164,21 +193,25 @@ export function ImportMissingReferencesPanel({
         <div className="card-title flex-column align-items-start">
           <h3 className="fw-bold text-gray-900 mb-1">Missing References</h3>
           <div className="text-gray-600 fs-7">
-            Lengkapi referensi yang hilang sebelum commit data.
+            Referensi wajib (Jabatan, UNOR) harus dilengkapi sebelum commit.
           </div>
         </div>
 
         <div className="card-toolbar">
           <span
             className={
-              totalMissing > 0
-                ? "badge badge-light-warning"
+              blockingMissing > 0
+                ? "badge badge-light-danger"
+                : totalMissing > 0
+                ? "badge badge-light-info"
                 : "badge badge-light-success"
             }
           >
-            {totalMissing > 0
-              ? `${formatNumber(totalMissing)} perlu dibuat`
-              : "Referensi lengkap"}
+            {blockingMissing > 0
+              ? `${formatNumber(blockingMissing)} wajib belum lengkap`
+              : totalMissing > 0
+              ? `${formatNumber(totalMissing)} opsional`
+              : "Semua referensi lengkap"}
           </span>
         </div>
       </div>
