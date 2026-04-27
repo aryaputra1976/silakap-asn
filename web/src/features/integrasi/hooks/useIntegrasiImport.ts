@@ -4,12 +4,25 @@ import {
   createMissingJabatanReferences,
   createMissingPendidikanReferences,
   createMissingUnorReferences,
+  getImportBatchDetail,
   getImportBatchErrors,
   getImportBatches,
   getMissingReferences,
   validateImportBatch,
 } from "../api/integrasi.api"
 import type { ImportBatchQuery } from "../types"
+
+export function useIntegrasiImportBatchDetail(batchId: string | null) {
+  return useQuery({
+    queryKey: ["integrasi", "import-batch-detail", batchId],
+    queryFn: () => getImportBatchDetail(batchId ?? ""),
+    enabled: Boolean(batchId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status?.toUpperCase()
+      return status === "VALIDATING" || status === "COMMITTING" ? 3000 : false
+    },
+  })
+}
 
 export function useIntegrasiImportBatches(query: ImportBatchQuery) {
   return useQuery({

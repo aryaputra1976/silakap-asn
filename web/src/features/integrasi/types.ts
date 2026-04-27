@@ -229,3 +229,64 @@ export type IntegrasiLogRowsQuery = {
   q?: string
   rowStatus?: "ALL" | "ERROR" | "IMPORTED" | "VALID"
 }
+
+// ─── Wizard ───────────────────────────────────────────────────────────────────
+
+export type WizardStepKey =
+  | "preview"
+  | "validation"
+  | "reference"
+  | "review"
+  | "commit-result"
+
+export type ReferenceType = "jabatan" | "unor" | "pendidikan"
+
+export type ValidationIssue = {
+  field: string
+  code: string
+  message: string
+  value?: string
+}
+
+export type ProblemRowItem = ImportErrorRow & {
+  issues: ValidationIssue[]
+}
+
+export type FilePreviewSummary = {
+  batchCode: string
+  fileName: string
+  totalRows: number
+  status: string
+  createdAt: string
+}
+
+export type ValidationSummary = {
+  totalRows: number
+  validRows: number
+  invalidRows: number
+  status: string
+}
+
+export type BlockingReason = {
+  key: string
+  label: string
+  detail: string
+}
+
+export type CommitReadiness = {
+  isReady: boolean
+  invalidRows: number
+  missingJabatan: number
+  missingUnor: number
+  missingPendidikan: number
+  blockingReasons: BlockingReason[]
+}
+
+export type CommitResult = {
+  batchId: string
+  importedRows: number
+  status: string
+  message?: string
+}
+
+export type BatchDetail = ImportBatchItem
