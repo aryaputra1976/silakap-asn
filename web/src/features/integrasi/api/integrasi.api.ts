@@ -5,23 +5,20 @@ import type {
   ImportBatchItem,
   ImportBatchQuery,
   ImportErrorRow,
-  IntegrasiLogDetail,
-  IntegrasiLogItem,
-  IntegrasiLogsSummary,
-  MissingReferencesResponse,
-  PaginatedResponse,
-  ValidateBatchResponse,
   IntegrasiJobDetail,
   IntegrasiJobItem,
   IntegrasiJobsSummary,
-  RunIntegrasiJobResponse,  
+  IntegrasiLogDetail,
+  IntegrasiLogItem,
+  IntegrasiLogsSummary,
   IntegrasiSiasnStatus,
-  IntegrasiSiasnSummary,  
-} from "../types"
-
-import type {
+  IntegrasiSiasnSummary,
+  MissingReferencesResponse,
+  PaginatedResponse,
+  RunIntegrasiJobResponse,
   UploadImportPegawaiResponse,
   IntegrasiLogRowsQuery,
+  ValidateBatchResponse,
 } from "../types"
 
 export type UpdateImportRowPayload = {
@@ -30,6 +27,7 @@ export type UpdateImportRowPayload = {
   nama: string
   siasnId: string
 }
+
 export type ReferenceImportKind =
   | "jabatan-fungsional"
   | "jabatan-pelaksana"
@@ -47,20 +45,61 @@ export type ReferenceImportResponse = {
   skipped: number
 }
 
-function getReferenceImportEndpoint(kind: ReferenceImportKind): string {
-  if (kind === "jabatan-fungsional") {
-    return "/integrasi/import/referensi/jabatan/fungsional"
-  }
+export type ReferenceImportConfig = {
+  kind: ReferenceImportKind
+  endpoint: string
+  title: string
+  shortTitle: string
+  description: string
+  helper: string
+}
 
-  if (kind === "jabatan-pelaksana") {
-    return "/integrasi/import/referensi/jabatan/pelaksana"
-  }
+export const REFERENCE_IMPORT_CONFIGS = [
+  {
+    kind: "jabatan-fungsional",
+    endpoint: "/integrasi/import/referensi/jabatan/fungsional",
+    title: "Jabatan Fungsional",
+    shortTitle: "Fungsional",
+    description: "Referensi jabatan fungsional resmi untuk master ref_jabatan.",
+    helper: "Gunakan file Referensi-Jabatan-Fungsional.xlsx.",
+  },
+  {
+    kind: "jabatan-pelaksana",
+    endpoint: "/integrasi/import/referensi/jabatan/pelaksana",
+    title: "Jabatan Pelaksana",
+    shortTitle: "Pelaksana",
+    description: "Referensi jabatan pelaksana resmi untuk master ref_jabatan.",
+    helper: "Gunakan file Referensi-Jabatan-Pelaksana.xlsx.",
+  },
+  {
+    kind: "jabatan-struktural",
+    endpoint: "/integrasi/import/referensi/jabatan/struktural",
+    title: "Jabatan Struktural",
+    shortTitle: "Struktural",
+    description: "Referensi jabatan struktural resmi untuk master ref_jabatan.",
+    helper: "Gunakan file Referensi-Jabatan-Struktural.xlsx.",
+  },
+  {
+    kind: "unor",
+    endpoint: "/integrasi/import/referensi/unor",
+    title: "UNOR",
+    shortTitle: "UNOR",
+    description: "Referensi unit organisasi resmi untuk master ref_unor.",
+    helper: "Gunakan file Referensi-unor.xlsx.",
+  },
+] as const satisfies readonly ReferenceImportConfig[]
 
-  if (kind === "jabatan-struktural") {
-    return "/integrasi/import/referensi/jabatan/struktural"
-  }
+export function getReferenceImportConfig(
+  kind: ReferenceImportKind,
+): ReferenceImportConfig {
+  return (
+    REFERENCE_IMPORT_CONFIGS.find((item) => item.kind === kind) ??
+    REFERENCE_IMPORT_CONFIGS[0]
+  )
+}
 
-  return "/integrasi/import/referensi/unor"
+export function getReferenceImportEndpoint(kind: ReferenceImportKind): string {
+  return getReferenceImportConfig(kind).endpoint
 }
 
 export function uploadReferenceImportFile(
@@ -93,7 +132,6 @@ function toQueryString(query: ImportBatchQuery) {
   })
 
   const qs = params.toString()
-
   return qs ? `?${qs}` : ""
 }
 
@@ -109,10 +147,7 @@ export function getImportBatchDetail(batchId: string) {
   )
 }
 
-export function getImportBatchErrors(
-  batchId: string,
-  query: ImportBatchQuery,
-) {
+export function getImportBatchErrors(batchId: string, query: ImportBatchQuery) {
   return getRequest<PaginatedResponse<ImportErrorRow>>(
     `/integrasi/import/pegawai/batches/${batchId}/errors${toQueryString(query)}`,
   )
@@ -219,7 +254,6 @@ function toLogRowsQueryString(query: IntegrasiLogRowsQuery) {
   })
 
   const qs = params.toString()
-
   return qs ? `?${qs}` : ""
 }
 
@@ -245,10 +279,7 @@ export function cancelImportBatch(batchId: string) {
   )
 }
 
-export function getIntegrasiLogRows(
-  id: string,
-  query: IntegrasiLogRowsQuery,
-) {
+export function getIntegrasiLogRows(id: string, query: IntegrasiLogRowsQuery) {
   return getRequest<PaginatedResponse<ImportErrorRow>>(
     `/integrasi/logs/${id}/rows${toLogRowsQueryString(query)}`,
   )
@@ -270,4 +301,3 @@ export function updateImportRow(
     payload,
   )
 }
-

@@ -7,6 +7,7 @@ export type ReferenceJabatanImportItem = {
   kode: string;
   nama: string;
   jenis: 'FUNGSIONAL' | 'PELAKSANA' | 'STRUKTURAL';
+  jenisJabatanId: number;
   eselonId: string | null;
   jenjang: string | null;
   bup: number | null;
@@ -41,21 +42,25 @@ export class IntegrasiReferenceImportRepository {
             select: { id: true },
           });
 
+          const data: Prisma.RefJabatanUncheckedUpdateInput = {
+            idSiasn: item.idSiasn,
+            kode: item.kode,
+            nama: item.nama,
+            jenisJabatanId: item.jenisJabatanId,
+            eselonId: item.eselonId,
+            jenjang: item.jenjang,
+            bup: item.bup,
+            unorNama: item.unorNama,
+            deletedAt: null,
+            isActive: true,
+          };
+
           if (existing) {
             await tx.refJabatan.update({
               where: { id: existing.id },
-              data: {
-                idSiasn: item.idSiasn,
-                kode: item.kode,
-                nama: item.nama,
-                eselonId: item.eselonId,
-                jenjang: item.jenjang,
-                bup: item.bup,
-                unorNama: item.unorNama,
-                deletedAt: null,
-                isActive: true,
-              },
+              data,
             });
+
             updated += 1;
           } else {
             await tx.refJabatan.create({
@@ -63,7 +68,7 @@ export class IntegrasiReferenceImportRepository {
                 idSiasn: item.idSiasn,
                 kode: item.kode,
                 nama: item.nama,
-                jenisJabatanId: null,
+                jenisJabatanId: item.jenisJabatanId,
                 eselonId: item.eselonId,
                 jenjang: item.jenjang,
                 bup: item.bup,
@@ -71,6 +76,7 @@ export class IntegrasiReferenceImportRepository {
                 isActive: true,
               },
             });
+
             created += 1;
           }
         }
@@ -113,6 +119,7 @@ export class IntegrasiReferenceImportRepository {
                 isActive: true,
               },
             });
+
             updated += 1;
           } else {
             await tx.refUnor.create({
@@ -128,6 +135,7 @@ export class IntegrasiReferenceImportRepository {
                 isActive: true,
               },
             });
+
             created += 1;
           }
         }

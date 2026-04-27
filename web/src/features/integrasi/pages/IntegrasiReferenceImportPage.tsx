@@ -1,5 +1,8 @@
-import { useMemo, useState, type ChangeEvent } from "react"
+import { useMemo, useRef, useState, type ChangeEvent } from "react"
+import { KTIcon } from "@/_metronic/helpers"
+import { ImportStatCard } from "../components/import/ImportStatCard"
 import {
+  REFERENCE_IMPORT_CONFIGS,
   uploadReferenceImportFile,
   type ReferenceImportKind,
   type ReferenceImportResponse,
@@ -9,50 +12,6 @@ type Notice = {
   type: "success" | "error" | "info"
   message: string
 }
-
-type ReferenceImportOption = {
-  kind: ReferenceImportKind
-  title: string
-  shortTitle: string
-  description: string
-  endpoint: string
-  helper: string
-}
-
-const OPTIONS: ReferenceImportOption[] = [
-  {
-    kind: "jabatan-fungsional",
-    title: "Jabatan Fungsional",
-    shortTitle: "Fungsional",
-    description: "Referensi jabatan fungsional resmi untuk master ref_jabatan.",
-    endpoint: "/integrasi/import/referensi/jabatan/fungsional",
-    helper: "Gunakan file Referensi-Jabatan-Fungsional.xlsx.",
-  },
-  {
-    kind: "jabatan-pelaksana",
-    title: "Jabatan Pelaksana",
-    shortTitle: "Pelaksana",
-    description: "Referensi jabatan pelaksana resmi untuk master ref_jabatan.",
-    endpoint: "/integrasi/import/referensi/jabatan/pelaksana",
-    helper: "Gunakan file Referensi-Jabatan-Pelaksana.xlsx.",
-  },
-  {
-    kind: "jabatan-struktural",
-    title: "Jabatan Struktural",
-    shortTitle: "Struktural",
-    description: "Referensi jabatan struktural resmi untuk master ref_jabatan.",
-    endpoint: "/integrasi/import/referensi/jabatan/struktural",
-    helper: "Gunakan file Referensi-Jabatan-Struktural.xlsx.",
-  },
-  {
-    kind: "unor",
-    title: "UNOR",
-    shortTitle: "UNOR",
-    description: "Referensi unit organisasi resmi untuk master ref_unor.",
-    endpoint: "/integrasi/import/referensi/unor",
-    helper: "Gunakan file Referensi-unor.xlsx.",
-  },
-]
 
 type SelectedFiles = Partial<Record<ReferenceImportKind, File>>
 type LoadingMap = Partial<Record<ReferenceImportKind, boolean>>
@@ -82,11 +41,60 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat("id-ID").format(value)
 }
 
-function formatFileSize(size: number): string {
-  return `${formatNumber(Math.ceil(size / 1024))} KB`
+function formatFileSize(file: File): string {
+  const sizeKb = Math.max(1, Math.round(file.size / 1024))
+  return `${sizeKb.toLocaleString("id-ID")} KB`
+}
+
+function ReferenceImportPageHeader() {
+  return (
+    <div className="card mb-5 mb-xl-8 bg-primary bg-opacity-90">
+      <div
+        className="card-body py-10 px-9"
+        style={{
+          background:
+            "linear-gradient(135deg, #2554d9 0%, #101a34 100%)",
+          borderRadius: "0.75rem",
+        }}
+      >
+        <div className="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-6">
+          <div>
+            <h1 className="fw-bold text-white mb-4">
+              Import Referensi Resmi
+            </h1>
+
+            <div className="text-white-75 fs-5 fw-semibold mw-850px lh-lg">
+              Upload referensi Jabatan dan UNOR resmi sebelum validasi import
+              pegawai agar data bersih, konsisten, dan siap commit.
+            </div>
+
+            <div className="d-flex flex-wrap gap-3 mt-6">
+              <span className="badge badge-light-primary fs-7 py-3 px-4">
+                Upload Referensi
+              </span>
+              <span className="badge badge-light-warning fs-7 py-3 px-4">
+                Validasi Ulang
+              </span>
+              <span className="badge badge-light-success fs-7 py-3 px-4">
+                Siap Commit
+              </span>
+            </div>
+          </div>
+
+          <div className="symbol symbol-100px symbol-lg-125px">
+            <div className="symbol-label bg-white bg-opacity-10">
+              <KTIcon iconName="file-up" className="fs-3x text-white" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function IntegrasiReferenceImportPage() {
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+
   const [activeKind, setActiveKind] =
     useState<ReferenceImportKind>("jabatan-fungsional")
   const [files, setFiles] = useState<SelectedFiles>({})
@@ -94,23 +102,47 @@ export default function IntegrasiReferenceImportPage() {
   const [results, setResults] = useState<ResultMap>({})
   const [notice, setNotice] = useState<Notice | null>(null)
 
-  const activeOption = OPTIONS.find((item) => item.kind === activeKind) ?? OPTIONS[0]
+  const activeOption =
+    REFERENCE_IMPORT_CONFIGS.find((item) => item.kind === activeKind) ??
+    REFERENCE_IMPORT_CONFIGS[0]
+
   const activeFile = files[activeKind] ?? null
   const activeResult = results[activeKind] ?? null
   const activeLoading = loading[activeKind] === true
 
   const totalCreated = useMemo(
-    () => Object.values(results).reduce((acc, item) => acc + (item?.created ?? 0), 0),
+    () =>
+      Object.values(results).reduce(
+        (acc, item) => acc + (item?.created ?? 0),
+        0,
+      ),
     [results],
   )
 
   const totalUpdated = useMemo(
-    () => Object.values(results).reduce((acc, item) => acc + (item?.updated ?? 0), 0),
+    () =>
+      Object.values(results).reduce(
+        (acc, item) => acc + (item?.updated ?? 0),
+        0,
+      ),
     [results],
   )
 
   const totalSkipped = useMemo(
-    () => Object.values(results).reduce((acc, item) => acc + (item?.skipped ?? 0), 0),
+    () =>
+      Object.values(results).reduce(
+        (acc, item) => acc + (item?.skipped ?? 0),
+        0,
+      ),
+    [results],
+  )
+
+  const totalValidRows = useMemo(
+    () =>
+      Object.values(results).reduce(
+        (acc, item) => acc + (item?.validRows ?? 0),
+        0,
+      ),
     [results],
   )
 
@@ -190,249 +222,319 @@ export default function IntegrasiReferenceImportPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="card border-0 shadow-sm mb-7 overflow-hidden">
-        <div
-          className="px-6 px-lg-8 py-6"
-          style={{
-            background:
-              "linear-gradient(135deg, #1d4ed8 0%, #16224a 52%, #0f172a 100%)",
-          }}
-        >
-          <div className="d-flex align-items-start justify-content-between gap-4">
-            <div className="flex-grow-1">
-              <div className="text-white fw-bolder fs-2 mb-2">
-                Import Referensi Resmi
-              </div>
+    <>
+      <ReferenceImportPageHeader />
 
-              <div className="text-white opacity-75 fs-6 lh-lg">
-                Upload referensi Jabatan dan UNOR resmi sebelum validasi import
-                pegawai agar data bersih, konsisten, dan siap commit.
-              </div>
-
-              <div className="d-flex flex-wrap gap-2 mt-4">
-                {OPTIONS.map((option) => (
-                  <button
-                    key={option.kind}
-                    type="button"
-                    className={
-                      option.kind === activeKind
-                        ? "badge badge-light-primary border-0"
-                        : "badge badge-light border-0"
-                    }
-                    disabled={activeLoading}
-                    onClick={() => {
-                      setActiveKind(option.kind)
-                      setNotice(null)
-                    }}
-                  >
-                    {option.shortTitle}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
+      <div className="row g-5 g-xl-8 mb-5 mb-xl-8">
+        <div className="col-xl-3">
+          <ImportStatCard
+            label="Created"
+            value={totalCreated}
+            helper="Referensi baru dibuat"
+            tone="success"
+          />
+        </div>
+        <div className="col-xl-3">
+          <ImportStatCard
+            label="Updated"
+            value={totalUpdated}
+            helper="Referensi diperbarui"
+            tone="info"
+          />
+        </div>
+        <div className="col-xl-3">
+          <ImportStatCard
+            label="Skipped"
+            value={totalSkipped}
+            helper="Data dilewati"
+            tone="warning"
+          />
+        </div>
+        <div className="col-xl-3">
+          <ImportStatCard
+            label="Valid Rows"
+            value={totalValidRows}
+            helper="Baris valid diproses"
+            tone="default"
+          />
         </div>
       </div>
 
       {notice ? (
         <div
-          className={
+          className={`alert ${
             notice.type === "success"
-              ? "alert alert-success d-flex align-items-center p-5 mb-0"
+              ? "alert-success"
               : notice.type === "error"
-                ? "alert alert-danger d-flex align-items-center p-5 mb-0"
-                : "alert alert-primary d-flex align-items-center p-5 mb-0"
-          }
+                ? "alert-danger"
+                : "alert-primary"
+          } d-flex align-items-center p-5 mb-5`}
         >
+          <KTIcon
+            iconName={
+              notice.type === "success"
+                ? "check-circle"
+                : notice.type === "error"
+                  ? "cross-circle"
+                  : "information-5"
+            }
+            className="fs-2hx me-4"
+          />
           <div className="fw-semibold">{notice.message}</div>
         </div>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <div className="card shadow-sm h-100">
-          <div className="card-header border-0 pt-6">
-            <div className="card-title flex-column align-items-start">
-              <h3 className="fw-bold text-gray-900 mb-1">
-                Upload File Referensi
-              </h3>
-              <div className="text-gray-600 fs-7">
-                Format yang didukung: .xlsx atau .xls
-              </div>
-            </div>
-
-            <div className="card-toolbar">
-              <span className="badge badge-light-primary">
-                {activeOption.title}
-              </span>
-            </div>
-          </div>
-
-          <div className="card-body pt-2">
-            <div className="rounded border border-gray-300 border-dashed px-5 py-5 mb-5">
-              <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
-                <div className="d-flex align-items-center gap-4">
-                  <div className="symbol symbol-60px">
-                    <div className="symbol-label bg-light-primary">
-                      <i className="ki-duotone ki-file-up fs-2x text-primary">
-                        <span className="path1" />
-                        <span className="path2" />
-                      </i>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="fw-bold text-gray-900 fs-5 mb-1">
-                      {activeFile ? activeFile.name : "Belum ada file dipilih"}
-                    </div>
-                    <div className="text-gray-600 fs-7">
-                      {activeFile
-                        ? `Ukuran file: ${formatFileSize(activeFile.size)}`
-                        : activeOption.helper}
-                    </div>
-
-                    <div className="d-flex gap-2 mt-3">
-                      <span className="badge badge-light-primary">.xlsx</span>
-                      <span className="badge badge-light-primary">.xls</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="d-flex gap-2">
-                  <label className="btn btn-sm btn-light-primary mb-0">
-                    Pilih File
-                    <input
-                      type="file"
-                      className="d-none"
-                      accept=".xlsx,.xls"
-                      disabled={activeLoading}
-                      onChange={handleFileChange}
-                    />
-                  </label>
-
+      <div className="card mb-5 mb-xl-8">
+        <div className="card-header border-0 pt-6">
+          <div className="card-toolbar">
+            <ul className="nav nav-stretch nav-line-tabs nav-line-tabs-2x border-transparent fs-5 fw-bold">
+              {REFERENCE_IMPORT_CONFIGS.map((option) => (
+                <li className="nav-item" key={option.kind}>
                   <button
                     type="button"
-                    className="btn btn-sm btn-primary"
-                    disabled={!activeFile || activeLoading}
-                    onClick={() => void handleUpload()}
+                    className={`nav-link text-active-primary py-5 me-6 bg-transparent border-0 ${
+                      activeKind === option.kind ? "active" : ""
+                    }`}
+                    onClick={() => {
+                      setActiveKind(option.kind)
+                      setNotice(null)
+                    }}
                   >
-                    {activeLoading ? "Uploading..." : "Upload File"}
+                    {option.title}
                   </button>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded border border-gray-300 border-dashed bg-light px-5 py-4">
-              <div className="fw-bold text-gray-900 fs-6 mb-1">
-                {activeOption.title}
-              </div>
-              <div className="text-gray-600 fs-7 mb-3">
-                {activeOption.description}
-              </div>
-              <div className="text-gray-500 fs-8">
-                Endpoint:{" "}
-                <span className="fw-semibold text-gray-700">
-                  {activeOption.endpoint}
-                </span>
-              </div>
-            </div>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 
-        <div className="card shadow-sm h-100">
-          <div className="card-header border-0 pt-6">
-            <div className="card-title flex-column align-items-start">
-              <h3 className="fw-bold text-gray-900 mb-1">Hasil Import</h3>
-              <div className="text-gray-600 fs-7">
-                Ringkasan hasil untuk kategori aktif.
+        <div className="card-body pt-4">
+          <div className="row g-5 g-xl-8">
+            <div className="col-xl-7">
+              <div className="card card-flush border h-100">
+                <div className="card-header">
+                  <div className="card-title">
+                    <div>
+                      <h3 className="fw-bold text-gray-900 mb-1">
+                        Upload File Referensi
+                      </h3>
+                      <div className="text-muted fw-semibold fs-7">
+                        Format yang didukung: .xlsx atau .xls
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-body">
+                  <div className="border border-dashed border-gray-300 rounded p-8 text-center bg-light-primary">
+                    <KTIcon
+                      iconName="file-up"
+                      className="fs-3x text-primary mb-5"
+                    />
+
+                    <div className="fw-bold text-gray-900 fs-5 mb-2">
+                      {activeOption.title}
+                    </div>
+
+                    <div className="text-gray-600 fw-semibold mb-2">
+                      {activeFile ? activeFile.name : activeOption.helper}
+                    </div>
+
+                    <div className="text-muted fs-7 mb-6">
+                      {activeFile ? formatFileSize(activeFile) : ".xlsx .xls"}
+                    </div>
+
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".xlsx,.xls"
+                      className="d-none"
+                      onChange={handleFileChange}
+                      disabled={activeLoading}
+                    />
+
+                    <div className="d-flex justify-content-center gap-3">
+                      <button
+                        type="button"
+                        className="btn btn-light-primary"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={activeLoading}
+                      >
+                        <KTIcon iconName="folder-up" className="fs-4 me-2" />
+                        Pilih File
+                      </button>
+
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => void handleUpload()}
+                        disabled={!activeFile || activeLoading}
+                      >
+                        {activeLoading ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2" />
+                            Mengupload...
+                          </>
+                        ) : (
+                          <>
+                            <KTIcon iconName="file-up" className="fs-4 me-2" />
+                            Upload File
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="notice d-flex bg-light-primary rounded border-primary border border-dashed p-6 mt-6">
+                    <KTIcon
+                      iconName="information-5"
+                      className="fs-2tx text-primary me-4"
+                    />
+                    <div>
+                      <div className="fw-bold text-gray-900 mb-1">
+                        {activeOption.title}
+                      </div>
+                      <div className="text-gray-700 fw-semibold mb-3">
+                        {activeOption.description}
+                      </div>
+                      <div className="text-muted fs-7">
+                        Endpoint:{" "}
+                        <code className="bg-white rounded px-2 py-1">
+                          {activeOption.endpoint}
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="col-xl-5">
+              <div className="card card-flush border h-100">
+                <div className="card-header">
+                  <div className="card-title">
+                    <h3 className="fw-bold text-gray-900 mb-0">
+                      Hasil Import
+                    </h3>
+                  </div>
+                  <div className="card-toolbar">
+                    <span className="badge badge-light">
+                      {activeResult ? "Sudah import" : "Belum ada import"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="card-body">
+                  {activeResult ? (
+                    <>
+                      <div className="d-flex align-items-center mb-6">
+                        <div className="symbol symbol-50px me-4">
+                          <span className="symbol-label bg-light-success">
+                            <KTIcon
+                              iconName="check"
+                              className="fs-2x text-success"
+                            />
+                          </span>
+                        </div>
+                        <div>
+                          <div className="fw-bold text-gray-900">
+                            {activeResult.fileName}
+                          </div>
+                          <div className="text-muted fw-semibold fs-7">
+                            Total row: {formatNumber(activeResult.totalRows)} ·
+                            Valid: {formatNumber(activeResult.validRows)}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="separator separator-dashed mb-5" />
+
+                      <div className="d-flex justify-content-between py-3">
+                        <span className="text-gray-600 fw-semibold">
+                          Total Rows
+                        </span>
+                        <span className="fw-bold text-gray-900">
+                          {formatNumber(activeResult.totalRows)}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between py-3">
+                        <span className="text-gray-600 fw-semibold">
+                          Valid Rows
+                        </span>
+                        <span className="fw-bold text-gray-900">
+                          {formatNumber(activeResult.validRows)}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between py-3">
+                        <span className="text-gray-600 fw-semibold">
+                          Created
+                        </span>
+                        <span className="fw-bold text-success">
+                          {formatNumber(activeResult.created)}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between py-3">
+                        <span className="text-gray-600 fw-semibold">
+                          Updated
+                        </span>
+                        <span className="fw-bold text-primary">
+                          {formatNumber(activeResult.updated)}
+                        </span>
+                      </div>
+                      <div className="d-flex justify-content-between py-3">
+                        <span className="text-gray-600 fw-semibold">
+                          Skipped
+                        </span>
+                        <span className="fw-bold text-warning">
+                          {formatNumber(activeResult.skipped)}
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-12">
+                      <div className="symbol symbol-75px mb-5">
+                        <span className="symbol-label bg-light-primary">
+                          <KTIcon
+                            iconName="file"
+                            className="fs-3x text-primary"
+                          />
+                        </span>
+                      </div>
+                      <div className="fw-bold text-gray-900 fs-5 mb-2">
+                        Belum ada hasil import
+                      </div>
+                      <div className="text-muted fw-semibold">
+                        Upload file referensi untuk melihat ringkasan hasil
+                        import.
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="card-body pt-2">
-            {activeResult ? (
-              <>
-                <div className="rounded border border-gray-300 border-dashed px-5 py-4 mb-5">
-                  <div className="fw-bold text-gray-900 fs-6 mb-1">
-                    {activeResult.fileName}
-                  </div>
-                  <div className="text-gray-600 fs-7">
-                    Total row: {formatNumber(activeResult.totalRows)} · Valid:{" "}
-                    {formatNumber(activeResult.validRows)}
-                  </div>
+          <div className="notice d-flex bg-light-info rounded border-info border border-dashed p-6 mt-8">
+            <KTIcon iconName="route" className="fs-2tx text-info me-4" />
+            <div className="d-flex flex-stack flex-grow-1">
+              <div>
+                <div className="fw-bold text-gray-900 mb-1">
+                  Alur kerja setelah import referensi
                 </div>
-
-                <div className="row g-4">
-                  <div className="col-6">
-                    <div className="rounded bg-light-success px-4 py-4">
-                      <div className="text-gray-600 fs-8">Created</div>
-                      <div className="fw-bold text-success fs-2">
-                        {formatNumber(activeResult.created)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="rounded bg-light-primary px-4 py-4">
-                      <div className="text-gray-600 fs-8">Updated</div>
-                      <div className="fw-bold text-primary fs-2">
-                        {formatNumber(activeResult.updated)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="rounded bg-light-warning px-4 py-4">
-                      <div className="text-gray-600 fs-8">Skipped</div>
-                      <div className="fw-bold text-warning fs-2">
-                        {formatNumber(activeResult.skipped)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="col-6">
-                    <div className="rounded bg-light-info px-4 py-4">
-                      <div className="text-gray-600 fs-8">Valid Rows</div>
-                      <div className="fw-bold text-info fs-2">
-                        {formatNumber(activeResult.validRows)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="d-flex flex-column align-items-center justify-content-center py-10 text-center">
-                <div className="fw-bold text-gray-900 fs-5 mb-1">
-                  Belum ada hasil import
-                </div>
-                <div className="text-gray-600 fs-7">
-                  Pilih file referensi, lalu upload untuk melihat ringkasan.
+                <div className="text-gray-700 fw-semibold">
+                  Setelah semua referensi resmi diupload, kembali ke Import Data
+                  Pegawai lalu jalankan validasi ulang batch.
                 </div>
               </div>
-            )}
+
+              <a href="/integrasi/import" className="btn btn-sm btn-light-info">
+                Buka Import Data Pegawai
+                <KTIcon iconName="arrow-right" className="fs-4 ms-2" />
+              </a>
+            </div>
           </div>
         </div>
       </div>
-
-      <div className="card shadow-sm">
-        <div className="card-body p-6">
-          <div className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-4">
-            <div>
-              <div className="fw-bold text-gray-900 fs-5 mb-1">
-                Alur kerja setelah import referensi
-              </div>
-              <div className="text-gray-600 fs-7">
-                Setelah semua referensi resmi diupload, kembali ke Import Data
-                Pegawai lalu jalankan validasi ulang batch.
-              </div>
-            </div>
-
-            <a href="/integrasi/import" className="btn btn-sm btn-light-primary">
-              Buka Import Data Pegawai
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   )
 }
