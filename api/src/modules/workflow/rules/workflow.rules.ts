@@ -10,35 +10,59 @@ export const WorkflowRules: Record<
 > = {
 
   DRAFT: [
-    LayananStatus.SUBMITTED
+    LayananStatus.SUBMITTED,
   ],
 
   SUBMITTED: [
+    LayananStatus.CHECKED,
     LayananStatus.VERIFIED,
     LayananStatus.RETURNED,
-    LayananStatus.REJECTED
+    LayananStatus.REJECTED,
+  ],
+
+  CHECKED: [
+    LayananStatus.VERIFIED,
+    LayananStatus.RETURNED,
   ],
 
   VERIFIED: [
+    LayananStatus.REVIEWED,
     LayananStatus.APPROVED,
-    LayananStatus.RETURNED
+    LayananStatus.RETURNED,
+    LayananStatus.REJECTED,
+  ],
+
+  REVIEWED: [
+    LayananStatus.RECOMMENDED,
+    LayananStatus.RETURNED,
+  ],
+
+  RECOMMENDED: [
+    LayananStatus.APPROVED,
+    LayananStatus.REJECTED,
   ],
 
   RETURNED: [
-    LayananStatus.SUBMITTED
+    LayananStatus.SUBMITTED,
   ],
 
   APPROVED: [
+    LayananStatus.COMPLETED,
     LayananStatus.SYNCED_SIASN,
-    LayananStatus.FAILED_SIASN
+    LayananStatus.FAILED_SIASN,
   ],
 
   REJECTED: [],
 
+  COMPLETED: [
+    LayananStatus.SYNCED_SIASN,
+    LayananStatus.FAILED_SIASN,
+  ],
+
   SYNCED_SIASN: [],
 
   FAILED_SIASN: [
-    LayananStatus.SYNCED_SIASN
-  ]
+    LayananStatus.SYNCED_SIASN,
+  ],
 
 }

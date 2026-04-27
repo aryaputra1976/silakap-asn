@@ -243,24 +243,67 @@ export class IntegrasiImportService {
     }
 
     if (referenceType === 'jabatan') {
-      const created = await this.repository.createJabatanReferences(
-        candidates.map((item) => ({
-          idSiasn: item.value,
-          kode: item.value,
-          nama: item.name as string,
-          jenisJabatanId: null,
-          eselonId: null,
-          jenjang: null,
-          bup: null,
-          unorNama: null,
-        })),
-      );
+      const rows = await this.repository.findRowsForValidation(batchId);
+
+      const jabatanMap = new Map<
+        string,
+        {
+          idSiasn: string;
+          nama: string;
+          jenisJabatanSiasnId: string | null;
+          jenisJabatanNama: string | null;
+        }
+      >();
+
+      for (const row of rows) {
+        const jabatanId = this.extractFirstValue(row.mappedData, row.rawData, [
+          'jabatanId',
+          'jabatan_id',
+          'JABATAN ID',
+          'JABATAN_ID',
+        ]);
+
+        const jabatanNama = this.extractFirstValue(row.mappedData, row.rawData, [
+          'jabatanNama',
+          'jabatan_nama',
+          'JABATAN NAMA',
+          'JABATAN_NAMA',
+        ]);
+
+        const jenisJabatanSiasnId = this.extractFirstValue(row.mappedData, row.rawData, [
+          'jenisJabatanId',
+          'jenis_jabatan_id',
+          'JENIS JABATAN ID',
+          'JENIS_JABATAN_ID',
+        ]);
+
+        const jenisJabatanNama = this.extractFirstValue(row.mappedData, row.rawData, [
+          'jenisJabatanNama',
+          'jenis_jabatan_nama',
+          'JENIS JABATAN NAMA',
+          'JENIS_JABATAN_NAMA',
+        ]);
+
+        if (!jabatanId || !jabatanNama) continue;
+        if (!references.jabatan.some((item) => item.value === jabatanId)) continue;
+
+        jabatanMap.set(jabatanId, {
+          idSiasn: jabatanId,
+          nama: jabatanNama,
+          jenisJabatanSiasnId,
+          jenisJabatanNama,
+        });
+      }
+
+      const created = await this.repository.createJabatanReferences([
+        ...jabatanMap.values(),
+      ]);
 
       return {
         batchId: batchId.toString(),
         referenceType,
         created,
-        skipped: references[referenceType].length - candidates.length,
+        skipped: references.jabatan.length - jabatanMap.size,
       };
     }
 
@@ -268,13 +311,7 @@ export class IntegrasiImportService {
       const created = await this.repository.createUnorReferences(
         candidates.map((item) => ({
           idSiasn: item.value,
-          kode: item.value,
-          nama: item.name as string,
-          parentId: null,
-          level: null,
-          formasiIdeal: null,
-          kecamatanId: null,
-          sortOrder: null,
+          nama: item.name ?? '',
         })),
       );
 
@@ -286,21 +323,70 @@ export class IntegrasiImportService {
       };
     }
 
-    const created = await this.repository.createPendidikanReferences(
-      candidates.map((item) => ({
-        idSiasn: item.value,
-        kode: item.value,
-        nama: item.name as string,
-        tingkatId: null,
-      })),
-    );
+    if (referenceType === 'pendidikan') {
+      const rows = await this.repository.findRowsForValidation(batchId);
 
-    return {
-      batchId: batchId.toString(),
-      referenceType,
-      created,
-      skipped: references[referenceType].length - candidates.length,
-    };
+      const pendidikanMap = new Map<
+        string,
+        {
+          idSiasn: string;
+          nama: string;
+          tingkatSiasnId: string | null;
+          tingkatNama: string | null;
+        }
+      >();
+
+      for (const row of rows) {
+        const pendidikanId = this.extractFirstValue(row.mappedData, row.rawData, [
+          'pendidikanId',
+          'pendidikan_id',
+          'PENDIDIKAN ID',
+          'PENDIDIKAN_ID',
+        ]);
+
+        const pendidikanNama = this.extractFirstValue(row.mappedData, row.rawData, [
+          'pendidikanNama',
+          'pendidikan_nama',
+          'PENDIDIKAN NAMA',
+          'PENDIDIKAN_NAMA',
+        ]);
+
+        const tingkatId = this.extractFirstValue(row.mappedData, row.rawData, [
+          'tingkatPendidikanId',
+          'tingkat_pendidikan_id',
+          'TINGKAT PENDIDIKAN ID',
+          'TINGKAT_PENDIDIKAN_ID',
+        ]);
+
+        const tingkatNama = this.extractFirstValue(row.mappedData, row.rawData, [
+          'tingkatPendidikanNama',
+          'tingkat_pendidikan_nama',
+          'TINGKAT PENDIDIKAN NAMA',
+          'TINGKAT_PENDIDIKAN_NAMA',
+        ]);
+
+        if (!pendidikanId || !pendidikanNama) continue;
+        if (!references.pendidikan.some((item) => item.value === pendidikanId)) continue;
+
+        pendidikanMap.set(pendidikanId, {
+          idSiasn: pendidikanId,
+          nama: pendidikanNama,
+          tingkatSiasnId: tingkatId,
+          tingkatNama,
+        });
+      }
+
+      const created = await this.repository.createPendidikanReferences([
+        ...pendidikanMap.values(),
+      ]);
+
+      return {
+        batchId: batchId.toString(),
+        referenceType,
+        created,
+        skipped: references.pendidikan.length - pendidikanMap.size,
+      };
+    }
   }
 
 async validateBatch(batchId: bigint) {
@@ -934,6 +1020,18 @@ private toParsedImportRow(
         'jabatan',
         'JABATAN',
       ]),
+      jenisJabatanId: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'JENIS JABATAN ID',
+        'JENIS_JABATAN_ID',
+        'jenisJabatanId',
+        'jenis_jabatan_id',
+      ]),
+      jenisJabatanNama: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'JENIS JABATAN NAMA',
+        'JENIS_JABATAN_NAMA',
+        'jenisJabatanNama',
+        'jenis_jabatan_nama',
+      ]),
       unorId: this.extractFirstValue(normalizedRecord, normalizedRecord, [
         'unorId',
         'unor_id',
@@ -983,6 +1081,18 @@ private toParsedImportRow(
         'pendidikan',
         'PENDIDIKAN',
       ]),
+      tingkatPendidikanId: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'TINGKAT PENDIDIKAN ID',
+        'TINGKAT_PENDIDIKAN_ID',
+        'tingkatPendidikanId',
+        'tingkat_pendidikan_id',
+      ]),
+      tingkatPendidikanNama: this.extractFirstValue(normalizedRecord, normalizedRecord, [
+        'TINGKAT PENDIDIKAN NAMA',
+        'TINGKAT_PENDIDIKAN_NAMA',
+        'tingkatPendidikanNama',
+        'tingkat_pendidikan_nama',
+      ]),
     },
     nip,
     nik,
@@ -1005,8 +1115,13 @@ private normalizeRecord(record: Record<string, unknown>): Prisma.JsonObject {
       continue;
     }
 
-    const cleanValue =
+    const rawValue =
       value instanceof Date ? value.toISOString() : String(value).trim();
+
+    // Strip leading apostrophe — Excel uses ' prefix to force text format
+    const cleanValue = rawValue.startsWith("'")
+      ? rawValue.slice(1).trim()
+      : rawValue;
 
     if (cleanValue.length === 0) {
       continue;

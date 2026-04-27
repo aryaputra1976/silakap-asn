@@ -116,6 +116,7 @@ export function uploadReferenceImportFile(
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: 120_000,
     },
   )
 }
@@ -268,6 +269,7 @@ export function uploadImportPegawaiFile(file: File) {
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      timeout: 120_000,
     },
   )
 }

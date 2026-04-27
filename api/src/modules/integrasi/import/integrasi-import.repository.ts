@@ -241,63 +241,214 @@ export class IntegrasiImportRepository {
   async createJabatanReferences(
     items: {
       idSiasn: string;
-      kode: string;
       nama: string;
-      jenisJabatanId: bigint | null;
-      eselonId: string | null;
-      jenjang: string | null;
-      bup: number | null;
-      unorNama: string | null;
+      jenisJabatanSiasnId: string | null;
+      jenisJabatanNama: string | null;
     }[],
   ) {
     if (items.length === 0) return 0;
 
-    const result = await this.prisma.refJabatan.createMany({
-      data: items,
-      skipDuplicates: true,
+    let created = 0;
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const existing = await tx.refJabatan.findFirst({
+          where: { idSiasn: item.idSiasn },
+          select: { id: true },
+        });
+
+        if (existing) continue;
+
+        const prefix = this.deriveJabatanKodePrefix(item.jenisJabatanNama);
+        const kode = await this.generateNextJabatanKode(tx, prefix);
+        const jenisJabatanId = this.deriveJenisJabatanId(item.jenisJabatanNama);
+
+        await tx.refJabatan.create({
+          data: {
+            idSiasn: item.idSiasn,
+            kode,
+            nama: item.nama,
+            jenisJabatanId,
+            eselonId: null,
+            jenjang: null,
+            bup: null,
+            unorNama: null,
+            isActive: true,
+          },
+        });
+
+        created++;
+      }
     });
 
-    return result.count;
+    return created;
+  }
+
+  private deriveJabatanKodePrefix(jenisNama: string | null): string {
+    if (!jenisNama) return 'JAB';
+    const lower = jenisNama.toLowerCase();
+    if (lower.includes('struktural')) return 'STR';
+    if (lower.includes('fungsional')) return 'FUNG';
+    if (lower.includes('pelaksana')) return 'PLK';
+    return 'JAB';
+  }
+
+  private deriveJenisJabatanId(jenisNama: string | null): bigint | null {
+    if (!jenisNama) return null;
+    const lower = jenisNama.toLowerCase();
+    if (lower.includes('struktural')) return BigInt(1);
+    if (lower.includes('fungsional')) return BigInt(2);
+    if (lower.includes('pelaksana')) return BigInt(3);
+    return null;
+  }
+
+  private async generateNextJabatanKode(
+    tx: Prisma.TransactionClient,
+    prefix: string,
+  ) {
+    const last = await tx.refJabatan.findFirst({
+      where: { kode: { startsWith: `${prefix}-` } },
+      orderBy: { id: 'desc' },
+      select: { kode: true },
+    });
+
+    const lastNumber = last?.kode
+      ? Number(last.kode.replace(`${prefix}-`, ''))
+      : 0;
+    const nextNumber = Number.isFinite(lastNumber) ? lastNumber + 1 : 1;
+
+    return `${prefix}-${String(nextNumber).padStart(4, '0')}`;
   }
 
   async createUnorReferences(
     items: {
       idSiasn: string;
-      kode: string;
       nama: string;
-      parentId: bigint | null;
-      level: number | null;
-      formasiIdeal: number | null;
-      kecamatanId: bigint | null;
-      sortOrder: number | null;
     }[],
   ) {
     if (items.length === 0) return 0;
 
-    const result = await this.prisma.refUnor.createMany({
-      data: items,
-      skipDuplicates: true,
+    let created = 0;
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const existing = await tx.refUnor.findFirst({
+          where: { idSiasn: item.idSiasn },
+          select: { id: true },
+        });
+
+        if (existing) continue;
+
+        const kode = await this.generateNextUnorKode(tx);
+
+        await tx.refUnor.create({
+          data: {
+            idSiasn: item.idSiasn,
+            kode,
+            nama: item.nama || '(belum diisi)',
+            parentId: null,
+            level: null,
+            formasiIdeal: null,
+            kecamatanId: null,
+            sortOrder: null,
+            isActive: true,
+          },
+        });
+
+        created++;
+      }
     });
 
-    return result.count;
+    return created;
+  }
+
+  private async generateNextUnorKode(tx: Prisma.TransactionClient) {
+    const last = await tx.refUnor.findFirst({
+      where: { kode: { startsWith: 'UNOR-' } },
+      orderBy: { id: 'desc' },
+      select: { kode: true },
+    });
+
+    const lastNumber = last?.kode ? Number(last.kode.replace('UNOR-', '')) : 0;
+    const nextNumber = Number.isFinite(lastNumber) ? lastNumber + 1 : 1;
+
+    return `UNOR-${String(nextNumber).padStart(4, '0')}`;
   }
 
   async createPendidikanReferences(
     items: {
-      idSiasn: string;
-      kode: string;
-      nama: string;
-      tingkatId: bigint | null;
+      idSiasn: string
+      nama: string
+      tingkatSiasnId: string | null
+      tingkatNama: string | null
     }[],
   ) {
-    if (items.length === 0) return 0;
+    if (items.length === 0) return 0
 
-    const result = await this.prisma.refPendidikan.createMany({
-      data: items,
-      skipDuplicates: true,
-    });
+    let created = 0
 
-    return result.count;
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const existing = await tx.refPendidikan.findFirst({
+          where: { idSiasn: item.idSiasn },
+          select: { id: true },
+        })
+
+        if (existing) continue
+
+        let tingkatId: bigint | null = null
+
+        if (item.tingkatSiasnId) {
+          let tingkat = await tx.refPendidikanTingkat.findFirst({
+            where: { idSiasn: item.tingkatSiasnId },
+            select: { id: true },
+          })
+
+          if (!tingkat && item.tingkatNama) {
+            tingkat = await tx.refPendidikanTingkat.create({
+              data: {
+                kode: item.tingkatSiasnId,
+                nama: item.tingkatNama,
+                idSiasn: item.tingkatSiasnId,
+                isActive: true,
+              },
+              select: { id: true },
+            })
+          }
+
+          tingkatId = tingkat?.id ?? null
+        }
+
+        const kode = await this.generateNextPendidikanKode(tx)
+
+        await tx.refPendidikan.create({
+          data: {
+            idSiasn: item.idSiasn,
+            kode,
+            nama: item.nama,
+            tingkatId,
+            isActive: true,
+          },
+        })
+
+        created += 1
+      }
+    })
+
+    return created
+  }
+
+  private async generateNextPendidikanKode(tx: Prisma.TransactionClient) {
+    const last = await tx.refPendidikan.findFirst({
+      where: { kode: { startsWith: 'PD-' } },
+      orderBy: { id: 'desc' },
+      select: { kode: true },
+    })
+
+    const lastNumber = last?.kode ? Number(last.kode.replace('PD-', '')) : 0
+    const nextNumber = Number.isFinite(lastNumber) ? lastNumber + 1 : 1
+
+    return `PD-${String(nextNumber).padStart(4, '0')}`
   }
 
   async findValidRowsForCommit(batchId: bigint) {
