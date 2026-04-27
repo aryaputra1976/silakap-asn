@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
-import { IntegrasiImportModule } from './integrasi.module';
-import { PrismaService } from '../../prisma/prisma.service';
-import { INTEGRASI_IMPORT_STATUS } from './import/integrasi-import-status.constant';
+import request from 'supertest';
+import { IntegrasiModule } from '../integrasi.module';
+import { PrismaService } from '../../../prisma/prisma.service';
+import { INTEGRASI_IMPORT_STATUS } from './integrasi-import-status.constant';
 
 /**
  * Integration tests untuk batch import flow
@@ -17,7 +17,7 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [IntegrasiImportModule],
+      imports: [IntegrasiModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -72,7 +72,7 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
       // Create buffer larger than 15MB
       const largeBuffer = Buffer.alloc(20 * 1024 * 1024);
 
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/integrasi/import/pegawai/upload')
         .set('Authorization', `Bearer ${jwtToken}`)
         .attach('file', largeBuffer, 'large.xlsx')
@@ -104,7 +104,7 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
       }
 
       // 6th upload should be rate limited
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post('/integrasi/import/pegawai/upload')
         .set('Authorization', `Bearer ${jwtToken}`)
         .attach('file', excelBuffer, 'pegawai_extra.xlsx')
@@ -114,7 +114,6 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
 
   describe('GET /integrasi/import/pegawai/batches/:batchId', () => {
     it('should allow batch owner to view batch details', async () => {
-      // First, create a batch (would be done via upload in real scenario)
       const batch = await prisma.silakapPegawaiImportBatch.create({
         data: {
           batchCode: 'TEST_BATCH_001',
@@ -125,7 +124,6 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
           importedRows: 0,
           status: INTEGRASI_IMPORT_STATUS.DRAFT,
           createdBy: 'test-user-123',
-          errors: null,
         },
       });
 
@@ -150,7 +148,6 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
           importedRows: 0,
           status: INTEGRASI_IMPORT_STATUS.DRAFT,
           createdBy: 'other-user',
-          errors: null,
         },
       });
 
@@ -185,7 +182,6 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
           importedRows: 0,
           status: INTEGRASI_IMPORT_STATUS.DRAFT,
           createdBy: 'test-user',
-          errors: null,
         },
       });
 
@@ -201,7 +197,6 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
             siasnId: null,
             rawData: { NIP: '123456' },
             mappedData: { nip: '123456' },
-            errors: null,
             isValid: false,
             isImported: false,
           },
@@ -236,9 +231,8 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
           validRows: 10,
           invalidRows: 0,
           importedRows: 0,
-          status: INTEGRASI_IMPORT_STATUS.VALIDATED_READY,
+          status: INTEGRASI_IMPORT_STATUS.VALIDATED,
           createdBy: 'test-user',
-          errors: null,
         },
       });
 
@@ -249,7 +243,7 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
         .expect(200);
 
       expect(response.body).toHaveProperty('batchId');
-      expect(response.body.status).toBe(INTEGRASI_IMPORT_STATUS.SUCCESS);
+      expect(response.body.status).toBe(INTEGRASI_IMPORT_STATUS.IMPORTED);
     });
 
     it('should reject commit on batch with errors', async () => {
@@ -295,7 +289,6 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
             importedRows: 0,
             status: INTEGRASI_IMPORT_STATUS.DRAFT,
             createdBy: 'test-user',
-            errors: null,
           },
         });
       }
@@ -327,7 +320,6 @@ describe('Integrasi Import Integration Tests (e2e)', () => {
           importedRows: 0,
           status: INTEGRASI_IMPORT_STATUS.DRAFT,
           createdBy: 'user-1',
-          errors: null,
         },
       });
 

@@ -2,10 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { IntegrasiImportService } from './integrasi-import.service';
 import { IntegrasiImportRepository } from './integrasi-import.repository';
-import {
-  INTEGRASI_IMPORT_STATUS,
-  INTEGRASI_IMPORT_EVENT,
-} from './integrasi-import-status.constant';
+import { INTEGRASI_IMPORT_STATUS } from './integrasi-import-status.constant';
 
 describe('IntegrasiImportService', () => {
   let service: IntegrasiImportService;
@@ -97,7 +94,7 @@ describe('IntegrasiImportService', () => {
         invalidRows: 0,
         importedRows: 0,
         status: INTEGRASI_IMPORT_STATUS.DRAFT,
-        errors: { event: INTEGRASI_IMPORT_EVENT.IMPORT_FILE_UPLOADED },
+        errors: null,
         createdBy: 'user123',
         createdAt: new Date(),
         updatedAt: new Date(),
