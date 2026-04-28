@@ -5,25 +5,18 @@ import {
   Param,
   Post,
   Req,
-  UseGuards,
 } from '@nestjs/common'
 import type { Request } from 'express'
 
-import { JwtGuard } from '@/core/auth/jwt.guard'
 import { Public } from '@/core/decorators/public.decorator'
+import { AuthenticatedUser } from '@/modules/auth/strategies/jwt.strategy'
 
 import { ServicesDashboardService } from '../service/services.dashboard.service'
 import { ServicesQueryService } from '../service/services.query.service'
 import { ServicesService } from '../service/services.service'
 
-type OrchestratorUser = {
-  id?: bigint | string | null
-  role?: string | null
-  roles?: string[]
-}
-
 type ServicesRequest = Request & {
-  user?: OrchestratorUser
+  user?: AuthenticatedUser
 }
 
 type ServiceMutationBody = Record<string, unknown>
@@ -61,7 +54,6 @@ export class ServicesController {
   }
 
   @Post(':service/submit')
-  @UseGuards(JwtGuard)
   async submit(
     @Param('service') service: string,
     @Body() body: ServiceMutationBody,
@@ -71,7 +63,6 @@ export class ServicesController {
   }
 
   @Post(':service/workflow')
-  @UseGuards(JwtGuard)
   async workflow(
     @Param('service') service: string,
     @Body() body: ServiceMutationBody,

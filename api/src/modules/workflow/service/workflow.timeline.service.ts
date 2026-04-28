@@ -7,12 +7,11 @@ export class WorkflowTimelineService {
     usulId: bigint,
     fromStatus: LayananStatus,
     toStatus: LayananStatus,
-    actorRoleId?: bigint
+    actorUserId?: bigint,
   ) {
 
-    /**
-     * Prevent duplicate timeline
-     */
+    // Dedupe: satu record per (usul, fromStatus, toStatus).
+    // Mencegah duplikat jika aksi yang sama diulang dalam transaksi SERIALIZABLE.
     const existing =
       await tx.silakapWorkflowTimeline.findFirst({
 
@@ -34,7 +33,7 @@ export class WorkflowTimelineService {
         usulId,
         fromStatus,
         toStatus,
-        actorId: actorRoleId
+        actorId: actorUserId,
       }
 
     })

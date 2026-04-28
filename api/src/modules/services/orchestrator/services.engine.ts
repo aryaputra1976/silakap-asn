@@ -54,15 +54,15 @@ export class ServicesEngine {
       pegawaiId: bigint
       jenisLayananId: bigint
       actionCode: string
-      actorRoleId?: bigint
+      actorRoleIds?: bigint[]
       actorUserId?: bigint
+      jenisKode?: string
     },
   ) {
     const {
       usulId,
       pegawaiId,
       jenisLayananId,
-      actorRoleId,
     } = params
 
     const action = params.actionCode.toUpperCase()
@@ -86,9 +86,13 @@ export class ServicesEngine {
 
       const usul = rows[0]
 
+      const handler = params.jenisKode
+        ? ServicesRegistry.tryResolve(params.jenisKode)
+        : null
+
       await this.dependencyService.validateDependencies(tx, usulId)
 
-      await this.workflowGuard.validateForExecution(tx, {
+      const validated = await this.workflowGuard.validateForExecution(tx, {
         ...params,
         actionCode: action,
       })
@@ -107,7 +111,15 @@ export class ServicesEngine {
         )
       }
 
-      return await this.workflowService.transition(tx, {
+      if (action === 'SUBMIT' && handler?.validateSubmit) {
+        await handler.validateSubmit(tx, usulId)
+      }
+
+      // matchedRoleId hanya terisi pada transisi yang memerlukan role tertentu.
+      // Pada transisi bebas-role, roleId log dikosongkan agar tidak menyimpan nilai acak.
+      const actorRoleId = validated.matchedRoleId ?? undefined
+
+      const result = await this.workflowService.transition(tx, {
         usulId,
         currentStatus: usul.status,
         actionCode: action,
@@ -115,6 +127,16 @@ export class ServicesEngine {
         actorRoleId,
         jenisLayananId,
       })
+
+      if (action === 'SUBMIT' && handler?.afterSubmit) {
+        await handler.afterSubmit(tx, usulId)
+      }
+
+      if (handler?.afterTransition) {
+        await handler.afterTransition(tx, usulId, action)
+      }
+
+      return result
     } catch (error: unknown) {
       if (error instanceof BusinessError) {
         throw error

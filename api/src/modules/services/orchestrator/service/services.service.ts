@@ -118,9 +118,16 @@ export class ServicesService {
     }
 
     const usulId = BigInt(String(usulIdRaw))
-    const actorRoleId = await this.resolveActorRoleId(user)
+    const actorRoleIds = await this.resolveActorRoleIds(user)
     const usulContext = await this.resolveUsulContext(usulId)
     const jenisLayananId = await this.resolveJenisLayananId(service)
+
+    if (usulContext.jenisLayananId !== jenisLayananId) {
+      throw new BusinessError(
+        'USUL_SERVICE_MISMATCH',
+        `Usul ini bukan milik layanan ${service}`,
+      )
+    }
 
     return this.prisma.$transaction(
       async (tx) =>
@@ -130,8 +137,9 @@ export class ServicesService {
             ? BigInt(String(body.pegawaiId))
             : usulContext.pegawaiId,
           jenisLayananId,
+          jenisKode: service,
           actionCode: 'SUBMIT',
-          actorRoleId,
+          actorRoleIds,
           actorUserId: user?.id
             ? BigInt(String(user.id))
             : undefined,
@@ -166,12 +174,19 @@ export class ServicesService {
     }
 
     const usulId = BigInt(String(usulIdRaw))
-    const actorRoleId = await this.resolveActorRoleId(user)
+    const actorRoleIds = await this.resolveActorRoleIds(user)
     const usulContext = await this.resolveUsulContext(usulId)
 
     const jenisLayananId = body?.jenisLayananId
       ? BigInt(String(body.jenisLayananId))
       : await this.resolveJenisLayananId(service)
+
+    if (usulContext.jenisLayananId !== jenisLayananId) {
+      throw new BusinessError(
+        'USUL_SERVICE_MISMATCH',
+        `Usul ini bukan milik layanan ${service}`,
+      )
+    }
 
     return this.prisma.$transaction(
       async (tx) =>
@@ -181,8 +196,9 @@ export class ServicesService {
             ? BigInt(String(body.pegawaiId))
             : usulContext.pegawaiId,
           jenisLayananId,
+          jenisKode: service,
           actionCode: String(actionCodeRaw),
-          actorRoleId,
+          actorRoleIds,
           actorUserId: user?.id
             ? BigInt(String(user.id))
             : undefined,
@@ -231,34 +247,41 @@ export class ServicesService {
     return usul
   }
 
-  async resolveActorRoleId(user: OrchestratorUser): Promise<bigint> {
-    const roleName =
-      typeof user?.role === 'string' && user.role
-        ? user.role
-        : Array.isArray(user?.roles) && user.roles.length > 0
-          ? user.roles[0]
-          : null
+  async resolveActorRoleIds(user: OrchestratorUser): Promise<bigint[]> {
+    const candidates: string[] = []
 
-    if (!roleName) {
+    if (typeof user?.role === 'string' && user.role) {
+      candidates.push(user.role)
+    }
+
+    if (Array.isArray(user?.roles)) {
+      for (const r of user.roles) {
+        if (typeof r === 'string' && r && !candidates.includes(r)) {
+          candidates.push(r)
+        }
+      }
+    }
+
+    if (!candidates.length) {
       throw new BusinessError(
         'ROLE_REQUIRED',
         'Role user tidak ditemukan',
       )
     }
 
-    const role = await this.prisma.silakapRole.findFirst({
-      where: { name: roleName },
+    const roles = await this.prisma.silakapRole.findMany({
+      where: { name: { in: candidates } },
       select: { id: true },
     })
 
-    if (!role) {
+    if (!roles.length) {
       throw new BusinessError(
         'ROLE_NOT_FOUND',
-        `Role ${roleName} tidak ditemukan`,
+        `Role ${candidates.join('/')} tidak ditemukan`,
       )
     }
 
-    return role.id
+    return roles.map((r) => r.id)
   }
 
   async normalizeCreateInput(

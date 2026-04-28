@@ -9,8 +9,14 @@ export class ServicesWorkflowGuard {
     tx: Prisma.TransactionClient,
     usulId: bigint,
     actionCode: string,
-    actorRoleId?: bigint,
-  ) {
+    actorRoleIds?: bigint[],
+  ): Promise<{
+    id: bigint
+    fromState: LayananStatus
+    toState: LayananStatus
+    role: string | null
+    matchedRoleId?: bigint
+  }> {
     const normalizedAction = actionCode.toUpperCase()
 
     const usul = await tx.silakapUsulLayanan.findUnique({
@@ -51,38 +57,39 @@ export class ServicesWorkflowGuard {
       )
     }
 
+    let matchedRoleId: bigint | undefined
+
     if (transition.role) {
-      if (!actorRoleId) {
+      if (!actorRoleIds?.length) {
         throw new BusinessError(
           'ROLE_REQUIRED',
           'Role diperlukan untuk aksi ini',
         )
       }
 
-      const role = await tx.silakapRole.findUnique({
-        where: { id: actorRoleId },
-        select: { name: true },
+      const roles = await tx.silakapRole.findMany({
+        where: { id: { in: actorRoleIds } },
+        select: { id: true, name: true },
       })
 
-      if (!role) {
-        throw new BusinessError(
-          'ROLE_NOT_FOUND',
-          'Role tidak ditemukan',
-        )
-      }
+      const matched = roles.find(
+        (r) =>
+          r.name.toUpperCase() ===
+          transition.role!.toUpperCase(),
+      )
 
-      if (
-        role.name.toUpperCase() !==
-        transition.role.toUpperCase()
-      ) {
+      if (!matched) {
+        const names = roles.map((r) => r.name).join(', ')
         throw new BusinessError(
           'FORBIDDEN',
-          `Role ${role.name} tidak diizinkan`,
+          `Role [${names}] tidak diizinkan untuk aksi ${normalizedAction}`,
         )
       }
+
+      matchedRoleId = matched.id
     }
 
-    return transition
+    return { ...transition, matchedRoleId }
   }
 
   async validateTransition(
@@ -117,14 +124,14 @@ export class ServicesWorkflowGuard {
       pegawaiId: bigint
       jenisLayananId: bigint
       actionCode: string
-      actorRoleId?: bigint
+      actorRoleIds?: bigint[]
     },
   ) {
     const transition = await this.validate(
       tx,
       params.usulId,
       params.actionCode,
-      params.actorRoleId,
+      params.actorRoleIds,
     )
 
     await this.validateTransition(
