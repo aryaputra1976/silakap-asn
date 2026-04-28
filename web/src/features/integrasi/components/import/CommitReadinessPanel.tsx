@@ -100,7 +100,7 @@ export function CommitReadinessPanel({
                   <div className="flex-grow-1">
                     <div className="fw-semibold text-gray-900 fs-7">{reason.label}</div>
                     <div className="text-gray-600 fs-8 mt-1">{reason.detail}</div>
-                    {reason.key === "invalid-rows" && onGoToValidation ? (
+                    {reason.key === "invalidRows" && onGoToValidation ? (
                       <button
                         type="button"
                         onClick={onGoToValidation}
@@ -109,7 +109,7 @@ export function CommitReadinessPanel({
                         Lihat Baris Error →
                       </button>
                     ) : null}
-                    {(reason.key === "missing-jabatan" || reason.key === "missing-unor") && onGoToReference ? (
+                    {(reason.key === "jabatan" || reason.key === "unor") && onGoToReference ? (
                       <button
                         type="button"
                         onClick={onGoToReference}
@@ -122,7 +122,7 @@ export function CommitReadinessPanel({
                 </div>
               ))}
 
-              {missingPendidikan > 0 && !blockingReasons.some((r) => r.key === "missing-pendidikan") ? (
+              {missingPendidikan > 0 && !blockingReasons.some((r) => r.key === "pendidikan") ? (
                 <div className="d-flex align-items-start gap-3 opacity-75">
                   <span className="badge badge-circle badge-light-info mt-1 flex-shrink-0">i</span>
                   <div>

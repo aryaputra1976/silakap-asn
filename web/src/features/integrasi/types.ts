@@ -70,9 +70,42 @@ export type MissingReferencesResponse = {
   pendidikan: MissingReferenceItem[]
 }
 
-export type MissingReferenceKindWajib = "jabatan" | "unor"
+// ─── Reference kind classification ───────────────────────────────────────────
+
+/** Referensi yang memblok commit jika belum terpenuhi. */
+export type MissingReferenceKindWajib = "jabatan" | "unor" | "jenisJabatan"
+
+/** Referensi yang tidak memblok commit. */
 export type MissingReferenceKindOpsional = "pendidikan"
-export type MissingReferenceKind = MissingReferenceKindWajib | MissingReferenceKindOpsional
+
+export type MissingReferenceKind =
+  | MissingReferenceKindWajib
+  | MissingReferenceKindOpsional
+
+// ─── Commit readiness ─────────────────────────────────────────────────────────
+
+export type BlockingReason = {
+  key: MissingReferenceKind | "invalidRows"
+  /** true  = memblok commit, false = peringatan saja */
+  required: boolean
+  label: string
+  detail: string
+}
+
+export type CommitReadiness = {
+  /** true hanya jika SEMUA syarat wajib terpenuhi dan invalidRows === 0 */
+  isReady: boolean
+  invalidRows: number
+  missingJabatan: number
+  missingUnor: number
+  /** jenisJabatan divalidasi via jabatan — count baris yang jabatan-nya tidak punya jenisJabatan */
+  missingJenisJabatan: number
+  missingPendidikan: number
+  /** Semua alasan blokir (required=true) maupun peringatan (required=false) */
+  blockingReasons: BlockingReason[]
+}
+
+// ─── REST types (tidak berubah) ───────────────────────────────────────────────
 
 export type ValidateBatchResponse = {
   batchId: string
@@ -114,7 +147,7 @@ export type IntegrasiLogItem = {
 }
 
 export type IntegrasiLogDetail = IntegrasiLogItem & {
-  errors: unknown
+  errors: string[] | null
   availableRowEndpoint?: string
 }
 
@@ -148,7 +181,7 @@ export type IntegrasiJobItem = {
 }
 
 export type IntegrasiJobDetail = IntegrasiJobItem & {
-  errors: unknown
+  errors: string[] | null
   availableActions: string[]
 }
 
@@ -268,21 +301,6 @@ export type ValidationSummary = {
   validRows: number
   invalidRows: number
   status: string
-}
-
-export type BlockingReason = {
-  key: string
-  label: string
-  detail: string
-}
-
-export type CommitReadiness = {
-  isReady: boolean
-  invalidRows: number
-  missingJabatan: number
-  missingUnor: number
-  missingPendidikan: number
-  blockingReasons: BlockingReason[]
 }
 
 export type CommitResult = {

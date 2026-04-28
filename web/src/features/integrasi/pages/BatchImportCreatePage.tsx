@@ -102,6 +102,22 @@ export function BatchImportCreatePage({ batchId, onBack, onNewUpload }: BatchImp
   }
 
   async function handleCommit() {
+    // Guard: tolak commit jika readiness belum siap.
+    // readiness dihitung dari getCommitReadiness — sumber kebenaran tunggal.
+    if (!readiness?.isReady) {
+      const reason = readiness?.blockingReasons
+        .filter((r) => r.required)
+        .map((r) => r.label)
+        .join(", ")
+      setNotice({
+        type: "error",
+        message: reason
+          ? `Commit diblok: ${reason} belum terpenuhi.`
+          : "Referensi wajib belum lengkap. Selesaikan terlebih dahulu.",
+      })
+      return
+    }
+
     try {
       setNotice(null)
       await commitMutation.mutateAsync(batchId)
