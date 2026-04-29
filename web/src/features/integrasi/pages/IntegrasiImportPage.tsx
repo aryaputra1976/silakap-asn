@@ -1,5 +1,10 @@
 import { useCallback, useMemo, useState, type ChangeEvent } from "react"
-import { uploadImportPegawaiFile } from "../api/integrasi.api"
+import { useSearchParams } from "react-router-dom"
+import {
+  exportImportBatchesCsv,
+  uploadImportPegawaiFile,
+} from "../api/integrasi.api"
+import { useDebouncedValue } from "../hooks/useDebouncedValue"
 import { useIntegrasiImportBatches } from "../hooks/useIntegrasiImport"
 import type { ImportBatchQuery } from "../types"
 import { ImportPageHeader } from "../components/import/ImportPageHeader"
@@ -23,22 +28,66 @@ function getErrorMessage(error: unknown): string {
   return "Terjadi kesalahan. Silakan coba lagi."
 }
 
+function parsePositiveInt(value: string | null, fallback: number) {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
+}
+
 export default function IntegrasiImportPage() {
-  // ─── List state ─────────────────────────────────────────────────────────────
-  const [page, setPage] = useState(1)
-  const [q, setQ] = useState("")
-  const [status, setStatus] = useState("")
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parsePositiveInt(searchParams.get("page"), 1)
+  const q = searchParams.get("q") ?? ""
+  const status = searchParams.get("status") ?? ""
+  const wizardBatchId = searchParams.get("batchId")
+  const debouncedQ = useDebouncedValue(q, 300)
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [notice, setNotice] = useState<{ type: "success" | "error"; message: string } | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [notice, setNotice] = useState<{
+    type: "success" | "error"
+    message: string
+  } | null>(null)
 
-  // ─── Wizard state (query-param style, but in local state) ─────────────────
-  // wizardBatchId = null → list view; string → wizard view
-  const [wizardBatchId, setWizardBatchId] = useState<string | null>(null)
+  const updateQuery = useCallback(
+    (patch: Record<string, string | number | null | undefined>) => {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current)
+
+        Object.entries(patch).forEach(([key, value]) => {
+          if (
+            value === undefined ||
+            value === null ||
+            String(value).length === 0
+          ) {
+            next.delete(key)
+          } else {
+            next.set(key, String(value))
+          }
+        })
+
+        return next
+      })
+    },
+    [setSearchParams],
+  )
 
   const query: ImportBatchQuery = useMemo(
-    () => ({ page, limit: 10, q: q.trim() || undefined, status: status || undefined }),
-    [page, q, status],
+    () => ({
+      page,
+      limit: 10,
+      q: debouncedQ.trim() || undefined,
+      status: status || undefined,
+    }),
+    [debouncedQ, page, status],
+  )
+
+  const exportQuery: ImportBatchQuery = useMemo(
+    () => ({
+      q: debouncedQ.trim() || undefined,
+      status: status || undefined,
+    }),
+    [debouncedQ, status],
   )
 
   const batchesQuery = useIntegrasiImportBatches(query)
@@ -48,11 +97,11 @@ export default function IntegrasiImportPage() {
   const summary = useMemo(
     () =>
       batches.reduce(
-        (acc, b) => ({
-          totalRows: acc.totalRows + b.totalRows,
-          validRows: acc.validRows + b.validRows,
-          invalidRows: acc.invalidRows + b.invalidRows,
-          importedRows: acc.importedRows + b.importedRows,
+        (acc, batch) => ({
+          totalRows: acc.totalRows + batch.totalRows,
+          validRows: acc.validRows + batch.validRows,
+          invalidRows: acc.invalidRows + batch.invalidRows,
+          importedRows: acc.importedRows + batch.importedRows,
         }),
         { totalRows: 0, validRows: 0, invalidRows: 0, importedRows: 0 },
       ),
@@ -62,13 +111,22 @@ export default function IntegrasiImportPage() {
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0] ?? null
     setNotice(null)
-    if (!file) { setSelectedFile(null); return }
+
+    if (!file) {
+      setSelectedFile(null)
+      return
+    }
+
     if (!isValidFile(file)) {
       event.target.value = ""
       setSelectedFile(null)
-      setNotice({ type: "error", message: "Format file tidak valid. Gunakan .xlsx, .xls, atau .csv." })
+      setNotice({
+        type: "error",
+        message: "Format file tidak valid. Gunakan .xlsx, .xls, atau .csv.",
+      })
       return
     }
+
     setSelectedFile(file)
   }
 
@@ -77,14 +135,18 @@ export default function IntegrasiImportPage() {
       setNotice({ type: "error", message: "Pilih file terlebih dahulu." })
       return
     }
+
     try {
       setUploading(true)
       setNotice(null)
       const response = await uploadImportPegawaiFile(selectedFile)
       await batchesQuery.refetch()
       setSelectedFile(null)
-      setWizardBatchId(response.batchId)
-      setNotice({ type: "success", message: response.message || "File berhasil diupload." })
+      updateQuery({ batchId: response.batchId })
+      setNotice({
+        type: "success",
+        message: response.message || "File berhasil diupload.",
+      })
     } catch (error) {
       setNotice({ type: "error", message: getErrorMessage(error) })
     } finally {
@@ -92,22 +154,45 @@ export default function IntegrasiImportPage() {
     }
   }
 
-  const handleOpenWizard = useCallback((batchId: string) => {
-    setNotice(null)
-    setWizardBatchId(batchId)
-  }, [])
+  async function handleExport() {
+    try {
+      setExporting(true)
+      setNotice(null)
+      const blob = await exportImportBatchesCsv(exportQuery)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+
+      link.href = url
+      link.download = "integrasi-import-batches.csv"
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error) {
+      setNotice({ type: "error", message: getErrorMessage(error) })
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const handleOpenWizard = useCallback(
+    (batchId: string) => {
+      setNotice(null)
+      updateQuery({ batchId })
+    },
+    [updateQuery],
+  )
 
   const handleBack = useCallback(() => {
-    setWizardBatchId(null)
+    updateQuery({ batchId: null })
     void batchesQuery.refetch()
-  }, [batchesQuery])
+  }, [batchesQuery, updateQuery])
 
   const handleNewUpload = useCallback(() => {
-    setWizardBatchId(null)
+    updateQuery({ batchId: null })
     void batchesQuery.refetch()
-  }, [batchesQuery])
+  }, [batchesQuery, updateQuery])
 
-  // ─── Wizard view ─────────────────────────────────────────────────────────────
   if (wizardBatchId) {
     return (
       <div className="space-y-6 p-6">
@@ -121,7 +206,6 @@ export default function IntegrasiImportPage() {
     )
   }
 
-  // ─── List view ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6 p-6">
       <ImportPageHeader />
@@ -147,10 +231,40 @@ export default function IntegrasiImportPage() {
       />
 
       <div className="grid gap-4 md:grid-cols-4">
-        <ImportStatCard label="Total Rows" value={summary.totalRows} helper="Akumulasi semua batch" />
-        <ImportStatCard label="Valid" value={summary.validRows} helper="Lolos validasi" tone="success" />
-        <ImportStatCard label="Invalid" value={summary.invalidRows} helper="Perlu perbaikan" tone="danger" />
-        <ImportStatCard label="Imported" value={summary.importedRows} helper="Sudah masuk master" tone="info" />
+        <ImportStatCard
+          label="Total Rows"
+          value={summary.totalRows}
+          helper="Akumulasi semua batch"
+        />
+        <ImportStatCard
+          label="Valid"
+          value={summary.validRows}
+          helper="Lolos validasi"
+          tone="success"
+        />
+        <ImportStatCard
+          label="Invalid"
+          value={summary.invalidRows}
+          helper="Perlu perbaikan"
+          tone="danger"
+        />
+        <ImportStatCard
+          label="Imported"
+          value={summary.importedRows}
+          helper="Sudah masuk master"
+          tone="info"
+        />
+      </div>
+
+      <div className="d-flex justify-content-end">
+        <button
+          type="button"
+          className="btn btn-sm btn-light-primary"
+          disabled={exporting}
+          onClick={() => void handleExport()}
+        >
+          {exporting ? "Mengexport..." : "Export CSV"}
+        </button>
       </div>
 
       <ImportBatchTable
@@ -160,10 +274,10 @@ export default function IntegrasiImportPage() {
         page={page}
         q={q}
         status={status}
-        selectedBatchId={null}
-        onPageChange={setPage}
-        onSearchChange={(v) => { setQ(v); setPage(1) }}
-        onStatusChange={(v) => { setStatus(v); setPage(1) }}
+        selectedBatchId={wizardBatchId}
+        onPageChange={(nextPage) => updateQuery({ page: nextPage })}
+        onSearchChange={(value) => updateQuery({ q: value, page: 1 })}
+        onStatusChange={(value) => updateQuery({ status: value, page: 1 })}
         onSelectBatch={handleOpenWizard}
       />
     </div>

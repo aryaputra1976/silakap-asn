@@ -4,9 +4,14 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Roles } from '../../../core/decorators/roles.decorator';
+import { Role } from '../../../core/enums/roles.enum';
+import { RolesGuard } from '../../../core/guards/roles.guard';
 import {
   QueryIntegrasiLogRowsDto,
   QueryIntegrasiLogsDto,
@@ -14,7 +19,8 @@ import {
 import { IntegrasiLogsService } from './integrasi-logs.service';
 
 @Controller('integrasi/logs')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN_BKPSDM, Role.SUPER_ADMIN)
 export class IntegrasiLogsController {
   constructor(private readonly service: IntegrasiLogsService) {}
 
@@ -26,6 +32,21 @@ export class IntegrasiLogsController {
   @Get('summary')
   getSummary() {
     return this.service.getSummary();
+  }
+
+  @Get('export')
+  async exportLogs(
+    @Query() query: QueryIntegrasiLogsDto,
+    @Res() response: Response,
+  ) {
+    const result = await this.service.exportLogsCsv(query);
+
+    response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
+    response.send(result.csv);
   }
 
   @Get(':id')

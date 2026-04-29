@@ -13,7 +13,7 @@ import type { ImportBatchQuery } from "../types"
 export function useIntegrasiImportBatchDetail(batchId: string | null) {
   return useQuery({
     queryKey: ["integrasi", "import-batch-detail", batchId],
-    queryFn: () => getImportBatchDetail(batchId ?? ""),
+    queryFn: ({ signal }) => getImportBatchDetail(batchId ?? "", { signal }),
     enabled: Boolean(batchId),
     refetchInterval: (query) => {
       const status = query.state.data?.status?.toUpperCase()
@@ -25,7 +25,7 @@ export function useIntegrasiImportBatchDetail(batchId: string | null) {
 export function useIntegrasiImportBatches(query: ImportBatchQuery) {
   return useQuery({
     queryKey: ["integrasi", "import-batches", query],
-    queryFn: () => getImportBatches(query),
+    queryFn: ({ signal }) => getImportBatches(query, { signal }),
   })
 }
 
@@ -35,7 +35,8 @@ export function useIntegrasiImportErrors(
 ) {
   return useQuery({
     queryKey: ["integrasi", "import-errors", batchId, query],
-    queryFn: () => getImportBatchErrors(batchId ?? "", query),
+    queryFn: ({ signal }) =>
+      getImportBatchErrors(batchId ?? "", query, { signal }),
     enabled: Boolean(batchId),
   })
 }
@@ -43,7 +44,7 @@ export function useIntegrasiImportErrors(
 export function useIntegrasiMissingReferences(batchId: string | null) {
   return useQuery({
     queryKey: ["integrasi", "missing-references", batchId],
-    queryFn: () => getMissingReferences(batchId ?? ""),
+    queryFn: ({ signal }) => getMissingReferences(batchId ?? "", { signal }),
     enabled: Boolean(batchId),
   })
 }

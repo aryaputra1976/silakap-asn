@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { SecurityModule } from '../../core/security/security.module';
+import { RolesGuard } from '../../core/guards/roles.guard';
 import { IntegrasiImportController } from './import/integrasi-import.controller';
 import { IntegrasiImportRepository } from './import/integrasi-import.repository';
 import { IntegrasiImportService } from './import/integrasi-import.service';
@@ -19,7 +21,7 @@ import { IntegrasiReferenceImportService } from './reference-import/integrasi-re
 
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, SecurityModule],
   controllers: [
     IntegrasiImportController,
     IntegrasiLogsController,
@@ -38,6 +40,7 @@ import { IntegrasiReferenceImportService } from './reference-import/integrasi-re
     IntegrasiSiasnRepository,
     IntegrasiReferenceImportService,
     IntegrasiReferenceImportRepository,
+    RolesGuard,
   ],
 })
 export class IntegrasiModule {}

@@ -46,7 +46,7 @@ export function BatchImportCommitResultStep({
                 {" "}dari {formatNumber(batch.totalRows)} baris berhasil diimport ke master pegawai.
               </div>
               <div className="text-gray-500 fs-7 mb-6">
-                Batch <span className="fw-bold text-gray-800">{batch.batchCode}</span> · {formatDate(batch.updatedAt)}
+                Batch <span className="fw-bold text-gray-800">{batch.batchCode}</span> - {formatDate(batch.updatedAt)}
               </div>
               <button
                 type="button"

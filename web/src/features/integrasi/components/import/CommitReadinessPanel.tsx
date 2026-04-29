@@ -62,7 +62,7 @@ export function CommitReadinessPanel({
                 {formatNumber(totalMissing)}
               </div>
               <div className="text-gray-500 fs-8 mt-1">
-                Jabatan {formatNumber(missingJabatan)} · UNOR {formatNumber(missingUnor)} · Pendidikan {formatNumber(missingPendidikan)}
+                Jabatan {formatNumber(missingJabatan)} - UNOR {formatNumber(missingUnor)} - Pendidikan {formatNumber(missingPendidikan)}
               </div>
             </div>
           </div>
@@ -106,7 +106,7 @@ export function CommitReadinessPanel({
                         onClick={onGoToValidation}
                         className="btn btn-xs btn-light-danger mt-2"
                       >
-                        Lihat Baris Error →
+                        Lihat Baris Error -&gt;
                       </button>
                     ) : null}
                     {(reason.key === "jabatan" || reason.key === "unor") && onGoToReference ? (
@@ -115,7 +115,7 @@ export function CommitReadinessPanel({
                         onClick={onGoToReference}
                         className="btn btn-xs btn-light-warning mt-2"
                       >
-                        Ke Halaman Referensi →
+                        Ke Halaman Referensi -&gt;
                       </button>
                     ) : null}
                   </div>

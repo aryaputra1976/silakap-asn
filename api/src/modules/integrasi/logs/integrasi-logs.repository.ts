@@ -41,6 +41,25 @@ export class IntegrasiLogsRepository {
     return { items, total, page, limit };
   }
 
+  async findLogsForExport(query: QueryIntegrasiLogsDto) {
+    const where: Prisma.SilakapPegawaiImportBatchWhereInput = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.q
+        ? {
+            OR: [
+              { batchCode: { contains: query.q } },
+              { fileName: { contains: query.q } },
+            ],
+          }
+        : {}),
+    };
+
+    return this.prisma.silakapPegawaiImportBatch.findMany({
+      where,
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
   async findLogById(id: bigint) {
     return this.prisma.silakapPegawaiImportBatch.findUnique({
       where: { id },

@@ -117,8 +117,8 @@ export function ImportEditRowModal({
                   Data saat ini
                 </div>
                 <div className="text-gray-600 fs-7">
-                  NIP: {row.nip ?? "-"} · NIK: {row.nik ?? "-"} · Nama:{" "}
-                  {row.nama ?? "-"} · SIASN ID: {row.siasnId ?? "-"}
+                  NIP: {row.nip ?? "-"} - NIK: {row.nik ?? "-"} - Nama:{" "}
+                  {row.nama ?? "-"} - SIASN ID: {row.siasnId ?? "-"}
                 </div>
               </div>
 

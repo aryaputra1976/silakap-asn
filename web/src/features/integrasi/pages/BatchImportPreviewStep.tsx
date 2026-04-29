@@ -79,7 +79,7 @@ export function BatchImportPreviewStep({
                   Memvalidasi...
                 </>
               ) : (
-                "Jalankan Validasi →"
+                "Jalankan Validasi ->"
               )}
             </button>
           </div>

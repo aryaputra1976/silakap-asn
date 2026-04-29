@@ -1,14 +1,23 @@
-import { useMemo, useState } from "react"
+import { useCallback, useMemo } from "react"
+import { useSearchParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
+import toast from "react-hot-toast"
 import {
+  exportIntegrasiLogsCsv,
   getIntegrasiLogDetail,
   getIntegrasiLogRows,
   getIntegrasiLogs,
   getIntegrasiLogsSummary,
 } from "../api/integrasi.api"
-import type { ImportErrorRow, IntegrasiLogItem } from "../types"
+import { useDebouncedValue } from "../hooks/useDebouncedValue"
+import type { ImportErrorRow } from "../types"
 import { ImportStatusBadge } from "../components/import/ImportStatusBadge"
 import { formatDate, formatNumber } from "../components/import/import-ui"
+
+function parsePositiveInt(value: string | null, fallback: number) {
+  const parsed = Number(value)
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback
+}
 
 function SummaryCard({
   label,
@@ -49,7 +58,6 @@ function SummaryCard({
 
 function formatError(errors: unknown): string {
   if (!errors) return "-"
-
   if (typeof errors === "string") return errors
 
   try {
@@ -59,49 +67,148 @@ function formatError(errors: unknown): string {
   }
 }
 
+function PaginationControls({
+  page,
+  totalPages,
+  total,
+  onPageChange,
+}: {
+  page: number
+  totalPages: number
+  total: number
+  onPageChange: (page: number) => void
+}) {
+  return (
+    <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pt-4">
+      <div className="text-gray-600 fs-7">
+        Total: <span className="fw-bold text-gray-900">{formatNumber(total)}</span>
+      </div>
+
+      <div className="d-flex align-items-center gap-2">
+        <button
+          type="button"
+          disabled={page <= 1}
+          onClick={() => onPageChange(Math.max(1, page - 1))}
+          className="btn btn-sm btn-light"
+        >
+          Prev
+        </button>
+        <div className="text-gray-600 fs-7">
+          Page {page} / {Math.max(1, totalPages)}
+        </div>
+        <button
+          type="button"
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(page + 1)}
+          className="btn btn-sm btn-light"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function IntegrasiLogsPage() {
-  const [q, setQ] = useState("")
-  const [status, setStatus] = useState("")
-  const [selectedLog, setSelectedLog] = useState<IntegrasiLogItem | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const page = parsePositiveInt(searchParams.get("page"), 1)
+  const q = searchParams.get("q") ?? ""
+  const status = searchParams.get("status") ?? ""
+  const selectedLogId = searchParams.get("logId")
+  const debouncedQ = useDebouncedValue(q, 300)
+
+  const updateQuery = useCallback(
+    (patch: Record<string, string | number | null | undefined>) => {
+      setSearchParams((current) => {
+        const next = new URLSearchParams(current)
+
+        Object.entries(patch).forEach(([key, value]) => {
+          if (
+            value === undefined ||
+            value === null ||
+            String(value).length === 0
+          ) {
+            next.delete(key)
+          } else {
+            next.set(key, String(value))
+          }
+        })
+
+        return next
+      })
+    },
+    [setSearchParams],
+  )
 
   const query = useMemo(
     () => ({
-      page: 1,
+      page,
       limit: 20,
-      q: q.trim() || undefined,
+      q: debouncedQ.trim() || undefined,
       status: status || undefined,
     }),
-    [q, status],
+    [debouncedQ, page, status],
   )
+
+  const exportQuery = useMemo(
+    () => ({
+      q: debouncedQ.trim() || undefined,
+      status: status || undefined,
+    }),
+    [debouncedQ, status],
+  )
+
+  async function handleExport() {
+    try {
+      const blob = await exportIntegrasiLogsCsv(exportQuery)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+
+      link.href = url
+      link.download = "integrasi-logs.csv"
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch {
+      toast.error("Export riwayat sinkronisasi gagal")
+    }
+  }
 
   const summary = useQuery({
     queryKey: ["integrasi", "logs-summary"],
-    queryFn: getIntegrasiLogsSummary,
+    queryFn: ({ signal }) => getIntegrasiLogsSummary({ signal }),
   })
 
   const logs = useQuery({
     queryKey: ["integrasi", "logs", query],
-    queryFn: () => getIntegrasiLogs(query),
+    queryFn: ({ signal }) => getIntegrasiLogs(query, { signal }),
   })
 
   const detail = useQuery({
-    queryKey: ["integrasi", "logs-detail", selectedLog?.id],
-    queryFn: () => getIntegrasiLogDetail(selectedLog?.id ?? ""),
-    enabled: Boolean(selectedLog),
+    queryKey: ["integrasi", "logs-detail", selectedLogId],
+    queryFn: ({ signal }) => getIntegrasiLogDetail(selectedLogId ?? "", { signal }),
+    enabled: Boolean(selectedLogId),
   })
 
   const rows = useQuery({
-    queryKey: ["integrasi", "logs-detail-rows", selectedLog?.id],
-    queryFn: () =>
-      getIntegrasiLogRows(selectedLog?.id ?? "", {
-        page: 1,
-        limit: 25,
-        rowStatus: "ALL",
-      }),
-    enabled: Boolean(selectedLog),
+    queryKey: ["integrasi", "logs-detail-rows", selectedLogId],
+    queryFn: ({ signal }) =>
+      getIntegrasiLogRows(
+        selectedLogId ?? "",
+        {
+          page: 1,
+          limit: 25,
+          rowStatus: "ALL",
+        },
+        { signal },
+      ),
+    enabled: Boolean(selectedLogId),
   })
 
   const selectedRows = rows.data?.data ?? []
+  const meta = logs.data?.meta
+  const totalPages = meta?.totalPages ?? 1
 
   return (
     <div className="container-fluid">
@@ -122,7 +229,6 @@ export default function IntegrasiLogsPage() {
                 Pantau riwayat import staging, validasi, error, dan commit data
                 pegawai dari modul Integrasi Eksternal.
               </div>
-
               <div className="d-flex flex-wrap gap-2 mt-4">
                 <span className="badge badge-light-primary">Import Log</span>
                 <span className="badge badge-light-warning">Error Tracking</span>
@@ -163,7 +269,6 @@ export default function IntegrasiLogsPage() {
             label="Rows Imported"
             value={summary.data?.importedRows ?? 0}
             hint="Sudah masuk master"
-            tone="dark"
           />
         </div>
       </div>
@@ -173,9 +278,7 @@ export default function IntegrasiLogsPage() {
           <div className="card shadow-sm h-100">
             <div className="card-header border-0 pt-6">
               <div className="card-title flex-column align-items-start">
-                <h3 className="fw-bold text-gray-900 mb-1">
-                  Daftar Riwayat
-                </h3>
+                <h3 className="fw-bold text-gray-900 mb-1">Daftar Riwayat</h3>
                 <div className="text-gray-600 fs-7">
                   Pilih log untuk melihat detail batch dan sample rows.
                 </div>
@@ -183,16 +286,28 @@ export default function IntegrasiLogsPage() {
 
               <div className="card-toolbar">
                 <div className="d-flex flex-column flex-md-row gap-3">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light-primary"
+                    onClick={() => void handleExport()}
+                  >
+                    Export CSV
+                  </button>
+
                   <input
                     value={q}
-                    onChange={(event) => setQ(event.target.value)}
+                    onChange={(event) =>
+                      updateQuery({ q: event.target.value, page: 1 })
+                    }
                     placeholder="Cari batch / file..."
                     className="form-control form-control-sm w-200px"
                   />
 
                   <select
                     value={status}
-                    onChange={(event) => setStatus(event.target.value)}
+                    onChange={(event) =>
+                      updateQuery({ status: event.target.value, page: 1 })
+                    }
                     className="form-select form-select-sm w-200px"
                   >
                     <option value="">Semua Status</option>
@@ -223,47 +338,30 @@ export default function IntegrasiLogsPage() {
                   <tbody className="fw-semibold text-gray-700">
                     {logs.isLoading ? (
                       <tr>
-                        <td
-                          colSpan={5}
-                          className="text-center py-10 text-gray-500"
-                        >
+                        <td colSpan={5} className="text-center py-10 text-gray-500">
                           Memuat riwayat...
                         </td>
                       </tr>
                     ) : (logs.data?.data ?? []).length === 0 ? (
                       <tr>
-                        <td
-                          colSpan={5}
-                          className="text-center py-10 text-gray-500"
-                        >
+                        <td colSpan={5} className="text-center py-10 text-gray-500">
                           Belum ada riwayat sinkronisasi.
                         </td>
                       </tr>
                     ) : (
                       (logs.data?.data ?? []).map((item) => {
-                        const isSelected = selectedLog?.id === item.id
+                        const isSelected = selectedLogId === item.id
 
                         return (
-                          <tr
-                            key={item.id}
-                            className={isSelected ? "bg-light-primary" : ""}
-                          >
+                          <tr key={item.id} className={isSelected ? "bg-light-primary" : ""}>
                             <td>
-                              <div className="fw-bold text-gray-900">
-                                {item.title}
-                              </div>
-                              <div className="fs-8 text-gray-500">
-                                {item.batchCode}
-                              </div>
-                              <div className="fs-8 text-gray-500">
-                                {item.fileName}
-                              </div>
+                              <div className="fw-bold text-gray-900">{item.title}</div>
+                              <div className="fs-8 text-gray-500">{item.batchCode}</div>
+                              <div className="fs-8 text-gray-500">{item.fileName}</div>
                             </td>
-
                             <td>
                               <ImportStatusBadge status={item.status} />
                             </td>
-
                             <td>
                               <div>Total: {formatNumber(item.totalRows)}</div>
                               <div className="fs-8 text-success">
@@ -276,15 +374,13 @@ export default function IntegrasiLogsPage() {
                                 Imported: {formatNumber(item.importedRows)}
                               </div>
                             </td>
-
                             <td className="fs-8 text-gray-500">
                               {formatDate(item.updatedAt)}
                             </td>
-
                             <td className="text-end">
                               <button
                                 type="button"
-                                onClick={() => setSelectedLog(item)}
+                                onClick={() => updateQuery({ logId: item.id })}
                                 className={
                                   isSelected
                                     ? "btn btn-sm btn-primary"
@@ -301,6 +397,13 @@ export default function IntegrasiLogsPage() {
                   </tbody>
                 </table>
               </div>
+
+              <PaginationControls
+                page={page}
+                totalPages={totalPages}
+                total={meta?.total ?? 0}
+                onPageChange={(nextPage) => updateQuery({ page: nextPage })}
+              />
             </div>
           </div>
         </div>
@@ -309,9 +412,7 @@ export default function IntegrasiLogsPage() {
           <div className="card shadow-sm h-100">
             <div className="card-header border-0 pt-6">
               <div className="card-title flex-column align-items-start">
-                <h3 className="fw-bold text-gray-900 mb-1">
-                  Detail Riwayat
-                </h3>
+                <h3 className="fw-bold text-gray-900 mb-1">Detail Riwayat</h3>
                 <div className="text-gray-600 fs-7">
                   Detail batch, error, dan sample rows.
                 </div>
@@ -325,7 +426,7 @@ export default function IntegrasiLogsPage() {
             </div>
 
             <div className="card-body pt-2">
-              {!selectedLog ? (
+              {!selectedLogId ? (
                 <div className="rounded border border-gray-300 border-dashed px-5 py-10 text-center">
                   <div className="fw-bold text-gray-900 fs-5 mb-1">
                     Pilih riwayat
@@ -336,11 +437,11 @@ export default function IntegrasiLogsPage() {
                 </div>
               ) : null}
 
-              {selectedLog && detail.isLoading ? (
+              {selectedLogId && detail.isLoading ? (
                 <div className="text-gray-500 fs-7">Memuat detail...</div>
               ) : null}
 
-              {selectedLog && detail.data ? (
+              {selectedLogId && detail.data ? (
                 <div className="d-flex flex-column gap-5">
                   <div className="rounded border border-gray-300 border-dashed px-5 py-4">
                     <div className="fw-bold text-gray-900 fs-5">
@@ -363,7 +464,6 @@ export default function IntegrasiLogsPage() {
                         <div className="text-gray-600 fs-8">Total</div>
                       </div>
                     </div>
-
                     <div className="col-6">
                       <div className="rounded bg-light px-4 py-4">
                         <div className="fw-bolder fs-2 text-success">
@@ -387,9 +487,7 @@ export default function IntegrasiLogsPage() {
 
                   <div>
                     <div className="d-flex justify-content-between align-items-center mb-3">
-                      <div className="fw-bold text-gray-900 fs-6">
-                        Sample Rows
-                      </div>
+                      <div className="fw-bold text-gray-900 fs-6">Sample Rows</div>
                       <span className="badge badge-light-dark">
                         {formatNumber(selectedRows.length)} rows
                       </span>
@@ -397,9 +495,7 @@ export default function IntegrasiLogsPage() {
 
                     <div className="mh-400px overflow-auto d-flex flex-column gap-3 pe-2">
                       {rows.isLoading ? (
-                        <div className="text-gray-500 fs-7">
-                          Memuat rows...
-                        </div>
+                        <div className="text-gray-500 fs-7">Memuat rows...</div>
                       ) : selectedRows.length === 0 ? (
                         <div className="rounded bg-light px-4 py-4 text-gray-500 fs-7">
                           Tidak ada rows.
@@ -411,11 +507,10 @@ export default function IntegrasiLogsPage() {
                             className="rounded border border-gray-200 bg-white px-4 py-3"
                           >
                             <div className="fw-bold text-gray-900 fs-7">
-                              Row {formatNumber(row.rowNumber)} —{" "}
-                              {row.nama ?? "-"}
+                              Row {formatNumber(row.rowNumber)} - {row.nama ?? "-"}
                             </div>
                             <div className="text-gray-600 fs-8 mt-1">
-                              NIP: {row.nip ?? "-"} · Imported:{" "}
+                              NIP: {row.nip ?? "-"} - Imported:{" "}
                               {row.isImported ? "Ya" : "Tidak"}
                             </div>
 

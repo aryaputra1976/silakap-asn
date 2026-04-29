@@ -145,7 +145,7 @@ export function BatchImportReferenceResolveStep({
               href="/integrasi/import-referensi"
               className="btn btn-sm btn-warning"
             >
-              Import Referensi Jabatan →
+              Import Referensi Jabatan -&gt;
             </a>
           ) : null
         }
@@ -167,7 +167,7 @@ export function BatchImportReferenceResolveStep({
               href="/integrasi/import-referensi"
               className="btn btn-sm btn-warning"
             >
-              Import Referensi UNOR →
+              Import Referensi UNOR -&gt;
             </a>
           ) : null
         }
@@ -218,7 +218,7 @@ export function BatchImportReferenceResolveStep({
               onClick={onNext}
               className={canProceed ? "btn btn-primary" : "btn btn-light-secondary"}
             >
-              {canProceed ? "Lanjut ke Review →" : "Selesaikan Referensi Dahulu"}
+              {canProceed ? "Lanjut ke Review ->" : "Selesaikan Referensi Dahulu"}
             </button>
           </div>
         </div>

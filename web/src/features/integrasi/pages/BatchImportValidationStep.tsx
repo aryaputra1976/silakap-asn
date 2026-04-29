@@ -103,7 +103,7 @@ export function BatchImportValidationStep({
                     onClick={onNext}
                     className="btn btn-sm btn-primary"
                   >
-                    Lanjut ke Referensi →
+                    Lanjut ke Referensi -&gt;
                   </button>
                 ) : null}
               </div>

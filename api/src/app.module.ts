@@ -32,7 +32,6 @@ import { RiwayatModule } from './modules/riwayat/riwayat.module'
 import { AuditModule } from './modules/audit/audit.module'
 import { HealthModule } from './modules/health/health.module'
 import { DashboardModule } from './modules/dashboard/dashboard.module'
-import { SiasnImportModule } from './modules/siasn-import/siasn-import.module'
 import { AsnModule } from "./modules/asn/asn.module"
 import { RefUnorModule } from "@/modules/ref-unor/ref-unor.module"
 import { DmsMonitoringModule } from './modules/dms-monitoring/dms-monitoring.module'
@@ -79,7 +78,6 @@ import { IntegrasiModule } from './modules/integrasi/integrasi.module'
     AuditModule,
     HealthModule,
     DashboardModule,
-    SiasnImportModule,
     AsnModule,
     RefUnorModule,
     DmsMonitoringModule,

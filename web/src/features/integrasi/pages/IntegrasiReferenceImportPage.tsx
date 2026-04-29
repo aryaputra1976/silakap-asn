@@ -441,7 +441,7 @@ export default function IntegrasiReferenceImportPage() {
                             {activeResult.fileName}
                           </div>
                           <div className="text-muted fw-semibold fs-7">
-                            Total row: {formatNumber(activeResult.totalRows)} ·
+                            Total row: {formatNumber(activeResult.totalRows)} -
                             Valid: {formatNumber(activeResult.validRows)}
                           </div>
                         </div>

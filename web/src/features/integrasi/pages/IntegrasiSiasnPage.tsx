@@ -78,12 +78,12 @@ function SummaryCard({
 export default function IntegrasiSiasnPage() {
   const summary = useQuery({
     queryKey: ["integrasi", "siasn-summary"],
-    queryFn: getIntegrasiSiasnSummary,
+    queryFn: ({ signal }) => getIntegrasiSiasnSummary({ signal }),
   })
 
   const status = useQuery({
     queryKey: ["integrasi", "siasn-status"],
-    queryFn: getIntegrasiSiasnStatus,
+    queryFn: ({ signal }) => getIntegrasiSiasnStatus({ signal }),
   })
 
   const coverage = summary.data?.pegawai.siasnCoveragePercent ?? 0

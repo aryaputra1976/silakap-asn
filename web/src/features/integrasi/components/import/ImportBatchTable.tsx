@@ -45,20 +45,14 @@ export function ImportBatchTable({
           <div className="d-flex flex-column flex-md-row gap-3">
             <input
               value={q}
-              onChange={(event) => {
-                onSearchChange(event.target.value)
-                onPageChange(1)
-              }}
+              onChange={(event) => onSearchChange(event.target.value)}
               placeholder="Cari batch / file..."
               className="form-control form-control-sm w-200px"
             />
 
             <select
               value={status}
-              onChange={(event) => {
-                onStatusChange(event.target.value)
-                onPageChange(1)
-              }}
+              onChange={(event) => onStatusChange(event.target.value)}
               className="form-select form-select-sm w-200px"
             >
               <option value="">Semua Status</option>
@@ -106,41 +100,67 @@ export function ImportBatchTable({
                   </td>
                 </tr>
               ) : (
-                batches.map((batch) => (
-                  <tr key={batch.id} className="cursor-pointer" onClick={() => onSelectBatch(batch.id)}>
-                    <td>
-                      <div className="fw-bold text-gray-900">{batch.batchCode}</div>
-                    </td>
-                    <td>
-                      <div className="text-gray-700 text-break" style={{ maxWidth: 200 }}>{batch.fileName}</div>
-                    </td>
-                    <td className="text-end">{formatNumber(batch.totalRows)}</td>
-                    <td className="text-end text-success">
-                      {formatNumber(batch.validRows)}
-                    </td>
-                    <td className="text-end text-danger">
-                      {formatNumber(batch.invalidRows)}
-                    </td>
-                    <td className="text-end text-primary">
-                      {formatNumber(batch.importedRows)}
-                    </td>
-                    <td>
-                      <ImportStatusBadge status={batch.status} />
-                    </td>
-                    <td className="text-gray-500 fs-7">
-                      {formatDate(batch.updatedAt)}
-                    </td>
-                    <td className="text-end">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onSelectBatch(batch.id) }}
-                        className="btn btn-sm btn-light-primary"
-                      >
-                        Buka Detail →
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                batches.map((batch) => {
+                  const isSelected = selectedBatchId === batch.id
+
+                  return (
+                    <tr
+                      key={batch.id}
+                      className={
+                        isSelected
+                          ? "cursor-pointer bg-light-primary"
+                          : "cursor-pointer"
+                      }
+                      onClick={() => onSelectBatch(batch.id)}
+                    >
+                      <td>
+                        <div className="fw-bold text-gray-900">
+                          {batch.batchCode}
+                        </div>
+                      </td>
+                      <td>
+                        <div
+                          className="text-gray-700 text-break"
+                          style={{ maxWidth: 200 }}
+                        >
+                          {batch.fileName}
+                        </div>
+                      </td>
+                      <td className="text-end">{formatNumber(batch.totalRows)}</td>
+                      <td className="text-end text-success">
+                        {formatNumber(batch.validRows)}
+                      </td>
+                      <td className="text-end text-danger">
+                        {formatNumber(batch.invalidRows)}
+                      </td>
+                      <td className="text-end text-primary">
+                        {formatNumber(batch.importedRows)}
+                      </td>
+                      <td>
+                        <ImportStatusBadge status={batch.status} />
+                      </td>
+                      <td className="text-gray-500 fs-7">
+                        {formatDate(batch.updatedAt)}
+                      </td>
+                      <td className="text-end">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onSelectBatch(batch.id)
+                          }}
+                          className={
+                            isSelected
+                              ? "btn btn-sm btn-primary"
+                              : "btn btn-sm btn-light-primary"
+                          }
+                        >
+                          {isSelected ? "Aktif" : "Buka Detail"}
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
@@ -148,7 +168,10 @@ export function ImportBatchTable({
 
         <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 pt-4">
           <div className="text-gray-600 fs-7">
-            Total: <span className="fw-bold text-gray-900">{formatNumber(meta?.total ?? 0)}</span>
+            Total:{" "}
+            <span className="fw-bold text-gray-900">
+              {formatNumber(meta?.total ?? 0)}
+            </span>
           </div>
 
           <div className="d-flex align-items-center gap-2">

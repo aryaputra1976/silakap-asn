@@ -159,7 +159,7 @@ export function BatchImportCreatePage({ batchId, onBack, onNewUpload }: BatchImp
     try {
       setUpdateRowLoading(true)
       setUpdateRowError(null)
-      await updateImportRow(rowId, payload)
+      await updateImportRow(batchId, rowId, payload)
       await errorsQuery.refetch()
       await batchQuery.refetch()
       await missingQuery.refetch()

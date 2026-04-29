@@ -40,6 +40,25 @@ export class IntegrasiImportRepository {
     return { items, total, page, limit };
   }
 
+  async findBatchesForExport(query: QueryImportBatchDto) {
+    const where: Prisma.SilakapPegawaiImportBatchWhereInput = {
+      ...(query.status ? { status: query.status } : {}),
+      ...(query.q
+        ? {
+            OR: [
+              { batchCode: { contains: query.q } },
+              { fileName: { contains: query.q } },
+            ],
+          }
+        : {}),
+    };
+
+    return this.prisma.silakapPegawaiImportBatch.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findBatchById(batchId: bigint) {
     return this.prisma.silakapPegawaiImportBatch.findUnique({
       where: { id: batchId },

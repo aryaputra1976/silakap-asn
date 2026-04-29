@@ -93,6 +93,39 @@ export class IntegrasiImportService {
     };
   }
 
+  async exportBatchesCsv(query: QueryImportBatchDto) {
+    const rows = await this.repository.findBatchesForExport(query);
+    const csv = this.toCsv(
+      [
+        'batch_code',
+        'file_name',
+        'status',
+        'total_rows',
+        'valid_rows',
+        'invalid_rows',
+        'imported_rows',
+        'created_at',
+        'updated_at',
+      ],
+      rows.map((row) => [
+        row.batchCode,
+        row.fileName,
+        row.status,
+        row.totalRows,
+        row.validRows,
+        row.invalidRows,
+        row.importedRows,
+        row.createdAt.toISOString(),
+        row.updatedAt.toISOString(),
+      ]),
+    );
+
+    return {
+      filename: `integrasi-import-batches-${this.formatExportDate()}.csv`,
+      csv,
+    };
+  }
+
   async findBatchDetail(batchId: bigint) {
     const batch = await this.repository.findBatchById(batchId);
 
@@ -119,11 +152,21 @@ export class IntegrasiImportService {
     };
   }
 
-  async updateImportRow(rowId: bigint, dto: UpdateImportRowDto) {
+  async updateImportRowInBatch(
+    batchId: bigint,
+    rowId: bigint,
+    dto: UpdateImportRowDto,
+  ) {
     const row = await this.repository.findStagingRowById(rowId);
 
     if (!row) {
       throw new NotFoundException('Row import tidak ditemukan');
+    }
+
+    if (row.batchId !== batchId) {
+      throw new BadRequestException(
+        'Row import tidak terdaftar pada batch yang diminta',
+      );
     }
 
     if (row.isImported) {
@@ -1557,6 +1600,35 @@ private toSafeJsonObject(value: unknown): Prisma.JsonObject {
   }
 
   return result;
+}
+
+private toCsv(headers: string[], rows: unknown[][]): string {
+  const lines = [
+    headers.map((header) => this.escapeCsvValue(header)).join(','),
+    ...rows.map((row) =>
+      row.map((value) => this.escapeCsvValue(value)).join(','),
+    ),
+  ];
+
+  return `${lines.join('\r\n')}\r\n`;
+}
+
+private escapeCsvValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  const text = String(value);
+
+  if (/[",\r\n]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+
+  return text;
+}
+
+private formatExportDate(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 }

@@ -55,8 +55,14 @@ export class BatchOwnershipGuard implements CanActivate {
     }
 
     // Check if user owns the batch or is admin
-    const isOwner = batch.createdBy === user.id;
-    const isAdmin = user.roles?.includes('SUPER_ADMIN') || user.isAdmin;
+    const userId = user.id === undefined || user.id === null
+      ? null
+      : String(user.id);
+    const isOwner = Boolean(batch.createdBy && userId === batch.createdBy);
+    const isAdmin =
+      user.roles?.includes('SUPER_ADMIN') ||
+      user.roles?.includes('ADMIN_BKPSDM') ||
+      user.isAdmin;
 
     if (!isOwner && !isAdmin) {
       throw new ForbiddenException(

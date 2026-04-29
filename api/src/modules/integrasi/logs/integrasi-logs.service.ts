@@ -55,6 +55,49 @@ export class IntegrasiLogsService {
     };
   }
 
+  async exportLogsCsv(query: QueryIntegrasiLogsDto) {
+    const rows = await this.repository.findLogsForExport(query);
+    const csv = this.toCsv(
+      [
+        'type',
+        'title',
+        'batch_code',
+        'file_name',
+        'status',
+        'total_rows',
+        'valid_rows',
+        'invalid_rows',
+        'imported_rows',
+        'has_error',
+        'created_at',
+        'updated_at',
+      ],
+      rows.map((row) => {
+        const item = this.toLogListItem(row);
+
+        return [
+          item.type,
+          item.title,
+          item.batchCode,
+          item.fileName,
+          item.status,
+          item.totalRows,
+          item.validRows,
+          item.invalidRows,
+          item.importedRows,
+          item.hasError ? 'true' : 'false',
+          row.createdAt.toISOString(),
+          row.updatedAt.toISOString(),
+        ];
+      }),
+    );
+
+    return {
+      filename: `integrasi-logs-${this.formatExportDate()}.csv`,
+      csv,
+    };
+  }
+
   async findLogDetail(id: bigint) {
     const log = await this.repository.findLogById(id);
 
@@ -200,5 +243,34 @@ export class IntegrasiLogsService {
     }
 
     return Number(((value / total) * 100).toFixed(2));
+  }
+
+  private toCsv(headers: string[], rows: unknown[][]): string {
+    const lines = [
+      headers.map((header) => this.escapeCsvValue(header)).join(','),
+      ...rows.map((row) =>
+        row.map((value) => this.escapeCsvValue(value)).join(','),
+      ),
+    ];
+
+    return `${lines.join('\r\n')}\r\n`;
+  }
+
+  private escapeCsvValue(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '';
+    }
+
+    const text = String(value);
+
+    if (/[",\r\n]/.test(text)) {
+      return `"${text.replace(/"/g, '""')}"`;
+    }
+
+    return text;
+  }
+
+  private formatExportDate(): string {
+    return new Date().toISOString().slice(0, 10);
   }
 }

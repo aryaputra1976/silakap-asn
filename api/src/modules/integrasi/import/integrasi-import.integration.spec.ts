@@ -7,7 +7,7 @@ import { INTEGRASI_IMPORT_STATUS } from './integrasi-import-status.constant';
 
 /**
  * Integration tests untuk batch import flow
- * Tests the full E2E flow: upload → validate → commit
+ * Tests the full E2E flow: upload -> validate -> commit
  * Uses test database (should be sanitized, not real DB)
  */
 describe('Integrasi Import Integration Tests (e2e)', () => {

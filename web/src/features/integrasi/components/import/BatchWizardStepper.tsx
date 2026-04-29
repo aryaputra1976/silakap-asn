@@ -53,7 +53,7 @@ export function BatchWizardStepper({
             </button>
             <div>
               <div className="fw-bold text-gray-900 fs-5">{batch.batchCode}</div>
-              <div className="text-gray-500 fs-8">{batch.fileName} · {formatDate(batch.updatedAt)}</div>
+              <div className="text-gray-500 fs-8">{batch.fileName} - {formatDate(batch.updatedAt)}</div>
             </div>
           </div>
           <ImportStatusBadge status={batch.status} />

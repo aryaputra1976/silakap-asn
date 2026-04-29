@@ -9,15 +9,19 @@ import {
   Post,
   Query,
   Request,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
-import type { Express } from 'express';
+import type { Express, Response } from 'express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Roles } from '../../../core/decorators/roles.decorator';
+import { Role } from '../../../core/enums/roles.enum';
+import { RolesGuard } from '../../../core/guards/roles.guard';
 import { BatchOwnershipGuard } from '../../../shared/guards/batch-ownership.guard';
 import { ValidateFileContentPipe } from '../../../shared/decorators/validate-file-content.decorator';
 import {
@@ -37,7 +41,8 @@ const ALLOWED_EXCEL_MIME_TYPES = new Set([
 ]);
 
 @Controller('integrasi/import/pegawai')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN_BKPSDM, Role.SUPER_ADMIN)
 export class IntegrasiImportController {
   constructor(private readonly service: IntegrasiImportService) {}
 
@@ -88,13 +93,28 @@ export class IntegrasiImportController {
       throw new BadRequestException('File import wajib diunggah');
     }
 
-    return this.service.uploadPegawaiImport(file, req.user.id);
+    return this.service.uploadPegawaiImport(file, String(req.user.id));
   }
 
   @Get('batches')
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   findBatches(@Query() query: QueryImportBatchDto) {
     return this.service.findBatches(query);
+  }
+
+  @Get('batches/export')
+  async exportBatches(
+    @Query() query: QueryImportBatchDto,
+    @Res() response: Response,
+  ) {
+    const result = await this.service.exportBatchesCsv(query);
+
+    response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    response.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
+    response.send(result.csv);
   }
 
   @Get('batches/:batchId')
@@ -112,12 +132,18 @@ export class IntegrasiImportController {
     return this.service.findErrorRows(BigInt(batchId), query);
   }
 
-  @Patch('rows/:rowId')
+  @Patch('batches/:batchId/rows/:rowId')
+  @UseGuards(BatchOwnershipGuard)
   updateImportRow(
+    @Param('batchId', ParseIntPipe) batchId: number,
     @Param('rowId', ParseIntPipe) rowId: number,
     @Body() dto: UpdateImportRowDto,
   ) {
-    return this.service.updateImportRow(BigInt(rowId), dto);
+    return this.service.updateImportRowInBatch(
+      BigInt(batchId),
+      BigInt(rowId),
+      dto,
+    );
   }
     
   @Get('batches/:batchId/missing-references')

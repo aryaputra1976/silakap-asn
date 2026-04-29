@@ -11,6 +11,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Express } from 'express';
 import { memoryStorage } from 'multer';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { Roles } from '../../../core/decorators/roles.decorator';
+import { Role } from '../../../core/enums/roles.enum';
+import { RolesGuard } from '../../../core/guards/roles.guard';
 import { IntegrasiReferenceImportService } from './integrasi-reference-import.service';
 
 const MAX_UPLOAD_SIZE_BYTES = 15 * 1024 * 1024;
@@ -24,7 +27,8 @@ const ALLOWED_EXCEL_MIME_TYPES = new Set([
 type JabatanJenisParam = 'fungsional' | 'pelaksana' | 'struktural';
 
 @Controller('integrasi/import/referensi')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMIN_BKPSDM, Role.SUPER_ADMIN)
 export class IntegrasiReferenceImportController {
   constructor(private readonly service: IntegrasiReferenceImportService) {}
 

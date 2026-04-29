@@ -74,7 +74,7 @@ export function BatchImportReviewStep({
                     Commit Berjalan...
                   </>
                 ) : (
-                  "Commit ke Master →"
+                  "Commit ke Master ->"
                 )}
               </button>
             </div>

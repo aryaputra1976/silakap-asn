@@ -1,4 +1,8 @@
-import { getRequest, patchRequest, postRequest } from "@/core/http/httpClient"
+import http, {
+  getRequest,
+  patchRequest,
+  postRequest,
+} from "@/core/http/httpClient"
 import type {
   CommitBatchResponse,
   CreateReferenceResponse,
@@ -20,6 +24,10 @@ import type {
   IntegrasiLogRowsQuery,
   ValidateBatchResponse,
 } from "../types"
+
+type IntegrasiRequestConfig = {
+  signal?: AbortSignal
+}
 
 export type UpdateImportRowPayload = {
   nip: string
@@ -136,27 +144,59 @@ function toQueryString(query: ImportBatchQuery) {
   return qs ? `?${qs}` : ""
 }
 
-export function getImportBatches(query: ImportBatchQuery) {
+export function getImportBatches(
+  query: ImportBatchQuery,
+  config?: IntegrasiRequestConfig,
+) {
   return getRequest<PaginatedResponse<ImportBatchItem>>(
     `/integrasi/import/pegawai/batches${toQueryString(query)}`,
+    config,
   )
 }
 
-export function getImportBatchDetail(batchId: string) {
+export async function exportImportBatchesCsv(
+  query: ImportBatchQuery,
+  config?: IntegrasiRequestConfig,
+) {
+  const response = await http.get<Blob>(
+    `/integrasi/import/pegawai/batches/export${toQueryString(query)}`,
+    {
+      signal: config?.signal,
+      responseType: "blob",
+    },
+  )
+
+  return response.data
+}
+
+export function getImportBatchDetail(
+  batchId: string,
+  config?: IntegrasiRequestConfig,
+) {
   return getRequest<ImportBatchItem>(
     `/integrasi/import/pegawai/batches/${batchId}`,
+    config,
   )
 }
 
-export function getImportBatchErrors(batchId: string, query: ImportBatchQuery) {
+export function getImportBatchErrors(
+  batchId: string,
+  query: ImportBatchQuery,
+  config?: IntegrasiRequestConfig,
+) {
   return getRequest<PaginatedResponse<ImportErrorRow>>(
     `/integrasi/import/pegawai/batches/${batchId}/errors${toQueryString(query)}`,
+    config,
   )
 }
 
-export function getMissingReferences(batchId: string) {
+export function getMissingReferences(
+  batchId: string,
+  config?: IntegrasiRequestConfig,
+) {
   return getRequest<MissingReferencesResponse>(
     `/integrasi/import/pegawai/batches/${batchId}/missing-references`,
+    config,
   )
 }
 
@@ -174,30 +214,6 @@ export function commitImportBatch(batchId: string) {
   )
 }
 
-/**
- * @deprecated Non-default path. Jabatan references must be imported via the
- * Reference Import page (/integrasi/import-referensi) using official master data.
- * Auto-generating jabatan from batch data creates unverified stubs in the master.
- */
-export function createMissingJabatanReferences(batchId: string) {
-  return postRequest<CreateReferenceResponse, EmptyBody>(
-    `/integrasi/import/pegawai/batches/${batchId}/references/jabatan`,
-    {},
-  )
-}
-
-/**
- * @deprecated Non-default path. UNOR references must be imported via the
- * Reference Import page (/integrasi/import-referensi) using official master data.
- * Auto-generating UNOR from batch data creates unverified stubs with temporary kode.
- */
-export function createMissingUnorReferences(batchId: string) {
-  return postRequest<CreateReferenceResponse, EmptyBody>(
-    `/integrasi/import/pegawai/batches/${batchId}/references/unor`,
-    {},
-  )
-}
-
 export function createMissingPendidikanReferences(batchId: string) {
   return postRequest<CreateReferenceResponse, EmptyBody>(
     `/integrasi/import/pegawai/batches/${batchId}/references/pendidikan`,
@@ -205,32 +221,61 @@ export function createMissingPendidikanReferences(batchId: string) {
   )
 }
 
-export function getIntegrasiLogs(query: ImportBatchQuery) {
+export function getIntegrasiLogs(
+  query: ImportBatchQuery,
+  config?: IntegrasiRequestConfig,
+) {
   return getRequest<PaginatedResponse<IntegrasiLogItem>>(
     `/integrasi/logs${toQueryString(query)}`,
+    config,
   )
 }
 
-export function getIntegrasiLogsSummary() {
-  return getRequest<IntegrasiLogsSummary>("/integrasi/logs/summary")
+export async function exportIntegrasiLogsCsv(
+  query: ImportBatchQuery,
+  config?: IntegrasiRequestConfig,
+) {
+  const response = await http.get<Blob>(
+    `/integrasi/logs/export${toQueryString(query)}`,
+    {
+      signal: config?.signal,
+      responseType: "blob",
+    },
+  )
+
+  return response.data
 }
 
-export function getIntegrasiLogDetail(id: string) {
-  return getRequest<IntegrasiLogDetail>(`/integrasi/logs/${id}`)
+export function getIntegrasiLogsSummary(config?: IntegrasiRequestConfig) {
+  return getRequest<IntegrasiLogsSummary>("/integrasi/logs/summary", config)
 }
 
-export function getIntegrasiJobs(query: ImportBatchQuery) {
+export function getIntegrasiLogDetail(
+  id: string,
+  config?: IntegrasiRequestConfig,
+) {
+  return getRequest<IntegrasiLogDetail>(`/integrasi/logs/${id}`, config)
+}
+
+export function getIntegrasiJobs(
+  query: ImportBatchQuery,
+  config?: IntegrasiRequestConfig,
+) {
   return getRequest<PaginatedResponse<IntegrasiJobItem>>(
     `/integrasi/jobs${toQueryString(query)}`,
+    config,
   )
 }
 
-export function getIntegrasiJobsSummary() {
-  return getRequest<IntegrasiJobsSummary>("/integrasi/jobs/summary")
+export function getIntegrasiJobsSummary(config?: IntegrasiRequestConfig) {
+  return getRequest<IntegrasiJobsSummary>("/integrasi/jobs/summary", config)
 }
 
-export function getIntegrasiJobDetail(batchId: string) {
-  return getRequest<IntegrasiJobDetail>(`/integrasi/jobs/${batchId}`)
+export function getIntegrasiJobDetail(
+  batchId: string,
+  config?: IntegrasiRequestConfig,
+) {
+  return getRequest<IntegrasiJobDetail>(`/integrasi/jobs/${batchId}`, config)
 }
 
 export function runIntegrasiValidateJob(batchId: string) {
@@ -247,12 +292,12 @@ export function runIntegrasiCommitJob(batchId: string) {
   )
 }
 
-export function getIntegrasiSiasnSummary() {
-  return getRequest<IntegrasiSiasnSummary>("/integrasi/siasn/summary")
+export function getIntegrasiSiasnSummary(config?: IntegrasiRequestConfig) {
+  return getRequest<IntegrasiSiasnSummary>("/integrasi/siasn/summary", config)
 }
 
-export function getIntegrasiSiasnStatus() {
-  return getRequest<IntegrasiSiasnStatus>("/integrasi/siasn/status")
+export function getIntegrasiSiasnStatus(config?: IntegrasiRequestConfig) {
+  return getRequest<IntegrasiSiasnStatus>("/integrasi/siasn/status", config)
 }
 
 function toLogRowsQueryString(query: IntegrasiLogRowsQuery) {
@@ -291,9 +336,14 @@ export function cancelImportBatch(batchId: string) {
   )
 }
 
-export function getIntegrasiLogRows(id: string, query: IntegrasiLogRowsQuery) {
+export function getIntegrasiLogRows(
+  id: string,
+  query: IntegrasiLogRowsQuery,
+  config?: IntegrasiRequestConfig,
+) {
   return getRequest<PaginatedResponse<ImportErrorRow>>(
     `/integrasi/logs/${id}/rows${toLogRowsQueryString(query)}`,
+    config,
   )
 }
 
@@ -305,11 +355,12 @@ export function runIntegrasiCancelJob(batchId: string) {
 }
 
 export function updateImportRow(
+  batchId: string,
   rowId: string,
   payload: UpdateImportRowPayload,
 ) {
   return patchRequest<ImportErrorRow, UpdateImportRowPayload>(
-    `/integrasi/import/pegawai/rows/${rowId}`,
+    `/integrasi/import/pegawai/batches/${batchId}/rows/${rowId}`,
     payload,
   )
 }
