@@ -4,7 +4,7 @@ export type StatusAsn =
   | "PPPK_PARUH_WAKTU"
 
 export type AsnEntity = {
-  id: bigint
+  id: number
   isActive: boolean   // ← wajib untuk MasterTable
   nip: string
   nama: string

@@ -208,17 +208,92 @@ export class AsnRepository {
       },
 
       include: {
-
-        golonganAktif: true,
-        jabatan: true,
-        jenisJabatan: true,
-        unor: true,
-        satkerKerja: true
-
+        golonganAktif: { select: { nama: true } },
+        jabatan: { select: { nama: true } },
+        jenisJabatan: { select: { nama: true } },
+        unor: { select: { nama: true } },
+        satkerKerja: { select: { nama: true } },
+        jenisKelamin: { select: { nama: true } },
       }
 
     })
 
+  }
+
+  /* ======================================================
+     RIWAYAT JABATAN
+  ====================================================== */
+
+  async findRiwayatJabatan(pegawaiId: bigint) {
+    return this.prisma.silakapRiwayatJabatan.findMany({
+      where: { pegawaiId },
+      orderBy: { tmtJabatan: "desc" },
+      include: {
+        jabatan: { select: { nama: true } },
+        jenisJabatan: { select: { nama: true } },
+        unor: { select: { nama: true } },
+        instansi: { select: { nama: true } },
+      },
+    })
+  }
+
+  /* ======================================================
+     RIWAYAT PANGKAT
+  ====================================================== */
+
+  async findRiwayatPangkat(pegawaiId: bigint) {
+    return this.prisma.silakapRiwayatPangkat.findMany({
+      where: { pegawaiId },
+      orderBy: { tmtPangkat: "desc" },
+      include: {
+        golongan: { select: { nama: true } },
+      },
+    })
+  }
+
+  /* ======================================================
+     RIWAYAT PENDIDIKAN
+  ====================================================== */
+
+  async findRiwayatPendidikan(pegawaiId: bigint) {
+    return this.prisma.silakapRiwayatPendidikan.findMany({
+      where: { pegawaiId, deletedAt: null },
+      orderBy: { tahunLulus: "desc" },
+      include: {
+        pendidikanTingkat: { select: { nama: true } },
+        pendidikan: { select: { nama: true } },
+      },
+    })
+  }
+
+  /* ======================================================
+     RIWAYAT DIKLAT
+  ====================================================== */
+
+  async findRiwayatDiklat(pegawaiId: bigint) {
+    return this.prisma.silakapRiwayatDiklat.findMany({
+      where: { pegawaiId },
+      orderBy: { tahun: "desc" },
+    })
+  }
+
+  /* ======================================================
+     RIWAYAT KELUARGA
+  ====================================================== */
+
+  async findRiwayatKeluarga(pegawaiId: bigint) {
+    const [pasangan, anak] = await Promise.all([
+      this.prisma.silakapRiwayatPasangan.findMany({
+        where: { pegawaiId, deletedAt: null },
+        orderBy: { urutanPernikahan: "asc" },
+      }),
+      this.prisma.silakapRiwayatAnak.findMany({
+        where: { pegawaiId, deletedAt: null },
+        orderBy: { tanggalLahir: "asc" },
+      }),
+    ])
+
+    return { pasangan, anak }
   }
 
   /* ======================================================

@@ -1,9 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger"
 
 export class AsnDetailDto {
-
   @ApiProperty()
-  id!: bigint
+  id!: number
 
   @ApiProperty()
   nip!: string
@@ -11,11 +10,7 @@ export class AsnDetailDto {
   @ApiProperty()
   nama!: string
 
-  @ApiProperty({
-    enum: ["PNS", "PPPK", "PPPK_PARUH_WAKTU"],
-    nullable: true,
-    required: false,
-  })
+  @ApiProperty({ nullable: true, required: false })
   statusAsn?: string | null
 
   @ApiProperty({ nullable: true, required: false })
@@ -25,7 +20,7 @@ export class AsnDetailDto {
   tanggalLahir?: Date | null
 
   @ApiProperty({ nullable: true, required: false })
-  jenisKelamin?: string | null
+  jenisKelamin?: { nama: string } | null
 
   @ApiProperty({ nullable: true, required: false })
   agama?: string | null
@@ -42,4 +37,6 @@ export class AsnDetailDto {
   @ApiProperty({ nullable: true, required: false })
   unitKerja?: string | null
 
+  @ApiProperty({ nullable: true, required: false })
+  fotoUrl?: string | null
 }

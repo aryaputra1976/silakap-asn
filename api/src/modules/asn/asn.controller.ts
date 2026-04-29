@@ -45,4 +45,39 @@ export class AsnController {
     return this.service.findOne(user, id)
   }
 
+  /* ================= RIWAYAT JABATAN ================= */
+
+  @Get(":id(\\d+)/jabatan")
+  getRiwayatJabatan(@Param("id", ParseBigIntPipe) id: bigint) {
+    return this.service.getRiwayatJabatan(id)
+  }
+
+  /* ================= RIWAYAT PANGKAT ================= */
+
+  @Get(":id(\\d+)/pangkat")
+  getRiwayatPangkat(@Param("id", ParseBigIntPipe) id: bigint) {
+    return this.service.getRiwayatPangkat(id)
+  }
+
+  /* ================= RIWAYAT PENDIDIKAN ================= */
+
+  @Get(":id(\\d+)/pendidikan")
+  getRiwayatPendidikan(@Param("id", ParseBigIntPipe) id: bigint) {
+    return this.service.getRiwayatPendidikan(id)
+  }
+
+  /* ================= RIWAYAT DIKLAT ================= */
+
+  @Get(":id(\\d+)/diklat")
+  getRiwayatDiklat(@Param("id", ParseBigIntPipe) id: bigint) {
+    return this.service.getRiwayatDiklat(id)
+  }
+
+  /* ================= RIWAYAT KELUARGA ================= */
+
+  @Get(":id(\\d+)/keluarga")
+  getRiwayatKeluarga(@Param("id", ParseBigIntPipe) id: bigint) {
+    return this.service.getRiwayatKeluarga(id)
+  }
+
 }

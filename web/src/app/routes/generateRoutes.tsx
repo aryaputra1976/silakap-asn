@@ -1,6 +1,6 @@
+// web/src/app/routes/generateRoutes.tsx
 import React, { lazy } from "react"
 import type { RouteObject } from "react-router-dom"
-
 import type { MenuItemConfig } from "@/app/navigation/menu.config"
 import RouteGuard from "./RouteGuard"
 import EmployeeReportsPage from "@/features/reports/pages/EmployeeReportsPage"
@@ -25,38 +25,32 @@ import UserRegistrationPage from "@/features/security/users/pages/UserRegistrati
 /* =========================================================
  * STATIC PAGE MAP
  * ========================================================= */
-
 const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
-
   "/dashboard": lazy(
     () => import("@/features/dashboard/pages/DashboardPage")
   ),
 
   "/data-asn/profil": lazy(
-    () => import("@/features/profil-asn/pages/ProfilPage")
+    () => import("@/features/profil-asn/pages/ProfilPegawaiEntryPage")
   ),
-
   "/data-asn/pegawai": lazy(
     () => import("@/features/profil-asn/pages/ProfilPage")
   ),
 
   "/data-asn/riwayat": lazy(
-    () => import("@/features/data-asn/pages/DataAsnSupportPages").then((m) => ({
-      default: m.RiwayatAsnPage,
-    }))
+    () => import("@/features/data-asn/pages/RiwayatAsnPage")
   ),
 
   "/data-asn/kelengkapan": lazy(
-    () => import("@/features/data-asn/pages/DataAsnSupportPages").then((m) => ({
-      default: m.KelengkapanDataPage,
-    }))
+    () =>
+      import("@/features/data-asn/pages/DataAsnSupportPages").then((m) => ({
+        default: m.KelengkapanDataPage,
+      }))
   ),
 
   "/dashboard/workforce": lazy(
     () =>
-      import(
-        "@/features/statistics/workforce/pages/WorkforceDashboardPage"
-      )
+      import("@/features/statistics/workforce/pages/WorkforceDashboardPage")
   ),
 
   "/asn/explorer": lazy(
@@ -64,7 +58,7 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
   ),
 
   "/asn/profil": lazy(
-    () => import("@/features/profil-asn/pages/ProfilPage")
+    () => import("@/features/profil-asn/pages/ProfilPegawaiEntryPage")
   ),
 
   "/laporan/pegawai/jenis-kelamin": lazy(async () => ({
@@ -84,15 +78,21 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
   })),
 
   "/layanan/draft": lazy(
-    () => import("@/features/services/workspace/pages/ServiceWorkspacePages").then((m) => ({
-      default: m.DraftWorkspacePage,
-    }))
+    () =>
+      import("@/features/services/workspace/pages/ServiceWorkspacePages").then(
+        (m) => ({
+          default: m.DraftWorkspacePage,
+        })
+      )
   ),
 
   "/layanan/status": lazy(
-    () => import("@/features/services/workspace/pages/ServiceWorkspacePages").then((m) => ({
-      default: m.ServiceStatusWorkspacePage,
-    }))
+    () =>
+      import("@/features/services/workspace/pages/ServiceWorkspacePages").then(
+        (m) => ({
+          default: m.ServiceStatusWorkspacePage,
+        })
+      )
   ),
 
   "/referensi/asn": lazy(async () => ({
@@ -108,9 +108,8 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
   })),
 
   /* =========================
-     SERVICES (DYNAMIC)
-  ========================= */
-
+   SERVICES (DYNAMIC)
+   ========================= */
   "/layanan/:service": lazy(
     () => import("@/features/services/base/engine/pages/ServiceListPage")
   ),
@@ -124,9 +123,8 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
   ),
 
   /* =========================
-     WORKFLOW
-  ========================= */
-
+   WORKFLOW
+   ========================= */
   "/workflow/antrian": lazy(
     () => import("@/features/workflow/queue/pages/UniversalQueuePage")
   ),
@@ -188,9 +186,8 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
   })),
 
   /* =========================
-     STATISTICS
-  ========================= */
-
+   STATISTICS
+   ========================= */
   "/statistics/asn": lazy(
     () => import("@/features/statistics/pages/AsnStatisticsPage")
   ),
@@ -209,16 +206,11 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
 
   "/statistics/workforce": lazy(
     () =>
-      import(
-        "@/features/statistics/workforce/pages/WorkforceDashboardPage"
-      )
+      import("@/features/statistics/workforce/pages/WorkforceDashboardPage")
   ),
 
   "/statistics/workforce/opd": lazy(
-    () =>
-      import(
-        "@/features/statistics/workforce/pages/WorkforceOpdPage"
-      )
+    () => import("@/features/statistics/workforce/pages/WorkforceOpdPage")
   ),
 
   "/integrasi/import": lazy(
@@ -239,35 +231,27 @@ const staticPageMap: Record<string, React.LazyExoticComponent<any>> = {
 
   "/integrasi/import-referensi": lazy(
     () => import("@/features/integrasi/pages/IntegrasiReferenceImportPage")
-  ),    
+  ),
 }
 
 /* =========================================================
  * AUTO MASTER REGISTRY
  * ========================================================= */
-
-const masterModules = import.meta.glob(
-  "@/features/master/**/**Page.tsx"
-)
+const masterModules = import.meta.glob("@/features/master/**/**Page.tsx")
 
 function buildMasterPageMap() {
-
   const map: Record<string, React.LazyExoticComponent<any>> = {}
 
   Object.entries(masterModules).forEach(([path, loader]) => {
-
     const match = path.match(/master\/([^/]+)\/[^/]+Page\.tsx$/)
-
     if (!match) return
 
     const folder = match[1]
-
     const routePath = `/master/${folder}`
     const legacyRoutePath = `/settings/master/${folder}`
 
     map[routePath] = lazy(loader as any)
     map[legacyRoutePath] = map[routePath]
-
   })
 
   return map
@@ -290,29 +274,20 @@ export function hasRegisteredStaticRoute(path: string): boolean {
  * ROUTE INTEGRASI
  * ========================================================= */
 
-
 /* =========================================================
  * ROUTE GENERATOR
  * ========================================================= */
-
-export function generateRoutes(
-  menu: MenuItemConfig[]
-): RouteObject[] {
-
+export function generateRoutes(menu: MenuItemConfig[]): RouteObject[] {
   const routes: RouteObject[] = []
-
   const addedPaths = new Set<string>()
 
   function walk(items: MenuItemConfig[]) {
-
     for (const item of items) {
-
       if (
         item.path &&
         combinedRouteMap[item.path] &&
         !addedPaths.has(item.path)
       ) {
-
         const Page = combinedRouteMap[item.path]
 
         routes.push({
@@ -329,19 +304,15 @@ export function generateRoutes(
         })
 
         addedPaths.add(item.path)
-
       }
 
       if (item.children) {
         walk(item.children)
       }
-
     }
-
   }
 
   walk(menu)
-
   return routes
 }
 

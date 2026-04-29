@@ -1,19 +1,14 @@
 import { useEffect, useState } from "react"
 import http from "@/core/http/httpClient"
 
-export interface AsnJabatan {
+export interface AsnDiklat {
   id: number
-  tmt: string
-  nomorSk?: string | null
-  tanggalSk?: string | null
-  jabatan?: string | null
-  jenisJabatan?: string | null
-  unitKerja?: string | null
-  instansi?: string | null
+  nama?: string | null
+  tahun?: number | null
 }
 
-export function useAsnJabatan(asnId?: string) {
-  const [data, setData] = useState<AsnJabatan[]>([])
+export function useAsnDiklat(asnId?: string) {
+  const [data, setData] = useState<AsnDiklat[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -25,14 +20,14 @@ export function useAsnJabatan(asnId?: string) {
       setLoading(true)
 
       try {
-        const res = await http.get<AsnJabatan[]>(`/asn/${asnId}/jabatan`)
+        const res = await http.get<AsnDiklat[]>(`/asn/${asnId}/diklat`)
 
         if (isActive) {
           setData(res.data)
         }
       } catch (err) {
         if (isActive) {
-          console.error("JABATAN ERROR", err)
+          console.error("DIKLAT ERROR", err)
         }
       } finally {
         if (isActive) {

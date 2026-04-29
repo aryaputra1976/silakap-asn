@@ -1,42 +1,35 @@
+// web/src/features/profil-asn/components/AsnStatusTabs.tsx
 type Props = {
   status: string
-  onChange: (v: string) => void
+  onChange: (value: string) => void
 }
 
+const tabs = [
+  { key: "", label: "Semua" },
+  { key: "PNS", label: "PNS" },
+  { key: "PPPK", label: "PPPK" },
+  { key: "PPPK_PARUH_WAKTU", label: "PPPK Paruh Waktu" },
+]
+
 export function AsnStatusTabs({ status, onChange }: Props) {
-
-  const tabs = [
-    { key: "PNS", label: "PNS" },
-    { key: "PPPK", label: "PPPK" },
-    { key: "PPPK_PARUH_WAKTU", label: "PPPK Paruh Waktu" }
-  ]
-
   return (
-
-    <div className="d-flex gap-2">
-
-      {tabs.map((t) => {
-
-        const active = status === t.key
+    <div className="d-flex flex-wrap gap-2">
+      {tabs.map((tab) => {
+        const active = status === tab.key
 
         return (
-
           <button
-            key={t.key}
-            className={`btn btn-sm ${
+            key={tab.key}
+            type="button"
+            className={`btn btn-sm px-4 py-3 fw-bolder ${
               active ? "btn-primary" : "btn-light"
             }`}
-            onClick={() => onChange(t.key)}
+            onClick={() => onChange(tab.key)}
           >
-            {t.label}
+            {tab.label}
           </button>
-
         )
-
       })}
-
     </div>
-
   )
-
 }

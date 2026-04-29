@@ -841,6 +841,8 @@ model SilakapPegawai {
   riwayatPangkat     SilakapRiwayatPangkat[]
   riwayatPendidikan  SilakapRiwayatPendidikan[]
   riwayatDiklat      SilakapRiwayatDiklat[]
+  riwayatPasangan    SilakapRiwayatPasangan[]
+  riwayatAnak        SilakapRiwayatAnak[]
   skp                SilakapRiwayatSkp[]
   hukdis             SilakapRiwayatHukumanDisiplin[]
   usulLayanan        SilakapUsulLayanan[]
@@ -1058,6 +1060,50 @@ model SilakapRiwayatHukumanDisiplin {
   @@index([pegawaiId])
   @@index([tanggalSk])
   @@map("silakap_riwayat_hukuman_disiplin")
+}
+
+// ======================================================
+// ================= DATA KELUARGA (DPCP) ===============
+// ======================================================
+
+model SilakapRiwayatPasangan {
+  id               BigInt   @id @default(autoincrement()) @map("id")
+  pegawaiId        BigInt   @map("pegawai_id")
+  nama             String   @map("nama") @db.VarChar(150)
+  tanggalLahir     DateTime @map("tanggal_lahir")
+  tanggalNikah     DateTime @map("tanggal_nikah")
+  urutanPernikahan Int      @default(1) @map("urutan_pernikahan")
+  // AKTIF | CERAI | MENINGGAL
+  statusPernikahan String   @default("AKTIF") @map("status_pernikahan") @db.VarChar(20)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+
+  @@index([pegawaiId])
+  @@map("silakap_riwayat_pasangan")
+}
+
+model SilakapRiwayatAnak {
+  id           BigInt   @id @default(autoincrement()) @map("id")
+  pegawaiId    BigInt   @map("pegawai_id")
+  nama         String   @map("nama") @db.VarChar(150)
+  tanggalLahir DateTime @map("tanggal_lahir")
+  // KANDUNG | TIRI | ANGKAT
+  statusAnak   String   @default("KANDUNG") @map("status_anak") @db.VarChar(20)
+  namaAyah     String?  @map("nama_ayah") @db.VarChar(150)
+  namaIbu      String?  @map("nama_ibu") @db.VarChar(150)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  pegawai SilakapPegawai @relation(fields: [pegawaiId], references: [id])
+
+  @@index([pegawaiId])
+  @@map("silakap_riwayat_anak")
 }
 
 // ======================================================

@@ -32,25 +32,21 @@ export class AsnMapper {
   }
 
   static toDetail(asn: any): AsnDetailDto {
-
     return {
-      id: BigInt(asn.id),
+      id: Number(asn.id),
       nip: asn.nip,
       nama: asn.nama,
       statusAsn: asn.statusAsn ?? null,
-
-      golongan:
-        asn.golonganAktif?.nama ?? null,
-
-      jabatan:
-        asn.jabatan?.nama ??
-        asn.jenisJabatan?.nama ??
-        null,
-
-      unitKerja:
-        asn.unor?.nama ?? null
+      tempatLahir: asn.tempatLahir ?? null,
+      tanggalLahir: asn.tanggalLahir ?? null,
+      jenisKelamin: asn.jenisKelamin ? { nama: asn.jenisKelamin.nama } : null,
+      agama: asn.agama?.nama ?? null,
+      statusPerkawinan: asn.statusPerkawinan?.nama ?? null,
+      golongan: asn.golonganAktif?.nama ?? null,
+      jabatan: asn.jabatan?.nama ?? asn.jenisJabatan?.nama ?? null,
+      unitKerja: asn.unor?.nama ?? null,
+      fotoUrl: asn.fotoUrl ?? null,
     }
-
   }
 
 }

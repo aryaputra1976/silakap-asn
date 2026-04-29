@@ -1,28 +1,20 @@
 import { useEffect, useState } from "react"
 import http from "@/core/http/httpClient"
 
-export interface AsnDetail {
+export interface AsnPangkat {
   id: number
-  nip: string
-  nama: string
-  statusAsn?: string | null
-  jabatan?: string | null
+  tmt: string
+  nomorSk?: string | null
+  tanggalSk?: string | null
   golongan?: string | null
-  unitKerja?: string | null
-  tempatLahir?: string | null
-  tanggalLahir?: string | null
-  jenisKelamin?: { nama: string } | null
-  agama?: string | null
-  statusPerkawinan?: string | null
-  fotoUrl?: string | null
 }
 
-export function useAsnDetail(id?: string) {
-  const [data, setData] = useState<AsnDetail | null>(null)
+export function useAsnPangkat(asnId?: string) {
+  const [data, setData] = useState<AsnPangkat[]>([])
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!id) return
+    if (!asnId) return
 
     let isActive = true
 
@@ -30,14 +22,14 @@ export function useAsnDetail(id?: string) {
       setLoading(true)
 
       try {
-        const res = await http.get<AsnDetail>(`/asn/${id}`)
+        const res = await http.get<AsnPangkat[]>(`/asn/${asnId}/pangkat`)
 
         if (isActive) {
           setData(res.data)
         }
       } catch (err) {
         if (isActive) {
-          console.error("ASN DETAIL ERROR:", err)
+          console.error("PANGKAT ERROR", err)
         }
       } finally {
         if (isActive) {
@@ -51,7 +43,7 @@ export function useAsnDetail(id?: string) {
     return () => {
       isActive = false
     }
-  }, [id])
+  }, [asnId])
 
   return { data, loading }
 }

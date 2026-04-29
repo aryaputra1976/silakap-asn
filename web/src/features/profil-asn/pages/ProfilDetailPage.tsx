@@ -1,29 +1,34 @@
-import { useParams, useNavigate } from "react-router-dom"
-import { useState } from "react"
-
+// web/src/features/profil-asn/pages/ProfilDetailPage.tsx
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import { useAsnDetail } from "../hooks/useAsnDetail"
 import { AsnHeaderCard } from "../components/AsnHeaderCard"
-import { AsnTabs } from "../components/AsnTabs"
 import { AsnProfileTab } from "../components/AsnProfileTab"
-import { AsnJabatanTab } from "../tabs/AsnJabatanTab"
+
+type ProfilDetailLocationState = {
+  backTo?: string
+}
 
 export default function ProfilDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-
+  const location = useLocation()
   const { data, loading } = useAsnDetail(id)
 
-  const [tab, setTab] = useState("profil")
+  const backTo =
+    (location.state as ProfilDetailLocationState | null)?.backTo ??
+    "/data-asn/pegawai"
 
-  const goBack = () => {
-    navigate("/asn/profil")
-  }
+  const goBack = () => navigate(backTo)
+
+  const goToRiwayat = () =>
+    navigate(`/data-asn/riwayat?pegawai=${id}`)
 
   if (loading) {
     return (
-      <div className="card">
-        <div className="card-body text-center py-10">
-          Loading data ASN...
+      <div className="card shadow-sm border-0">
+        <div className="card-body d-flex align-items-center justify-content-center py-12">
+          <div className="spinner-border text-primary me-3" role="status" />
+          <span className="text-muted fw-semibold">Memuat data ASN...</span>
         </div>
       </div>
     )
@@ -31,9 +36,13 @@ export default function ProfilDetailPage() {
 
   if (!data) {
     return (
-      <div className="card">
-        <div className="card-body text-center py-10">
-          Data ASN tidak ditemukan
+      <div className="card shadow-sm border-0">
+        <div className="card-body text-center py-12">
+          <div className="fs-5 fw-bolder text-gray-900 mb-2">Data ASN tidak ditemukan</div>
+          <div className="text-muted fs-7 mb-5">ID pegawai tidak valid atau data belum tersedia.</div>
+          <button type="button" className="btn btn-light-primary" onClick={goBack}>
+            ← Kembali
+          </button>
         </div>
       </div>
     )
@@ -41,78 +50,94 @@ export default function ProfilDetailPage() {
 
   return (
     <div className="container-fluid">
+      {/* Header */}
+      <div
+        className="card border-0 shadow-sm mb-6"
+        style={{
+          background: "linear-gradient(90deg, #2754d7 0%, #0f214f 55%, #091531 100%)",
+        }}
+      >
+        <div className="card-body p-6 p-lg-7">
+          <div className="d-flex flex-column flex-xl-row align-items-xl-center justify-content-between gap-5">
+            <div className="flex-grow-1">
+              <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-light-primary"
+                  onClick={goBack}
+                >
+                  ← Kembali
+                </button>
+                <div className="text-white opacity-75 fs-7 fw-semibold text-uppercase">
+                  Data ASN / Profil Pegawai / Detail
+                </div>
+              </div>
 
-      {/* Breadcrumb */}
-      <div className="d-flex flex-column mb-5">
+              <h1 className="text-white fw-bolder mb-2">{data.nama}</h1>
 
-        <div className="d-flex align-items-center gap-4 mb-2">
+              <div className="text-white opacity-75 fs-5 fw-semibold mb-5">
+                {data.nip}
+                {data.jabatan ? ` • ${data.jabatan}` : ""}
+              </div>
 
-          <button
-            className="btn btn-sm btn-light-primary"
-            onClick={goBack}
-          >
-            ← Kembali
-          </button>
+              <div className="d-flex flex-wrap gap-3">
+                <span className="badge badge-light-primary fw-bold fs-8 px-4 py-2">
+                  {data.statusAsn}
+                </span>
+                {data.golongan && (
+                  <span className="badge badge-light-warning fw-bold fs-8 px-4 py-2">
+                    {data.golongan}
+                  </span>
+                )}
+              </div>
+            </div>
 
-          <div className="text-muted fs-7">
-            <span
-              className="cursor-pointer text-hover-primary"
-              onClick={goBack}
-            >
-              Profil ASN
-            </span>
-
-            <span className="mx-2">/</span>
-
-            <span className="fw-semibold text-dark">
-              Detail ASN
-            </span>
+            <div className="d-flex justify-content-center justify-content-xl-end">
+              <div className="symbol symbol-80px symbol-lg-90px" style={{ minWidth: 96 }}>
+                <span
+                  className="symbol-label"
+                  style={{ background: "rgba(255,255,255,0.12)", borderRadius: "50%" }}
+                >
+                  <i className="ki-duotone ki-profile-user fs-1 text-white">
+                    <span className="path1" />
+                    <span className="path2" />
+                    <span className="path3" />
+                  </i>
+                </span>
+              </div>
+            </div>
           </div>
-
         </div>
-
       </div>
 
-      {/* Header ASN */}
       <AsnHeaderCard asn={data} />
 
-      {/* Tabs */}
-      <AsnTabs active={tab} onChange={setTab} />
-
-      {/* TAB CONTENT */}
-
-      {tab === "profil" && (
-        <AsnProfileTab asn={data} />
-      )}
-
-      {tab === "jabatan" && (
-        <AsnJabatanTab />
-      )}
-
-      {tab === "pangkat" && (
-        <div className="card">
-          <div className="card-body">
-            Riwayat Pangkat
+      {/* Aksi ke Riwayat */}
+      <div className="card shadow-sm border-0 mb-6">
+        <div className="card-body p-5">
+          <div className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-4">
+            <div>
+              <div className="fw-bolder text-gray-900 mb-1">Riwayat Kepegawaian</div>
+              <div className="text-muted fs-7">
+                Lihat riwayat jabatan, pangkat, pendidikan, diklat, dan data keluarga (DPCP) di workspace riwayat.
+              </div>
+            </div>
+            <button
+              type="button"
+              className="btn btn-primary text-nowrap flex-shrink-0"
+              onClick={goToRiwayat}
+            >
+              <i className="ki-duotone ki-document me-2 fs-4">
+                <span className="path1" />
+                <span className="path2" />
+              </i>
+              Buka Riwayat Lengkap
+            </button>
           </div>
         </div>
-      )}
+      </div>
 
-      {tab === "pendidikan" && (
-        <div className="card">
-          <div className="card-body">
-            Riwayat Pendidikan
-          </div>
-        </div>
-      )}
-
-      {tab === "diklat" && (
-        <div className="card">
-          <div className="card-body">
-            Riwayat Diklat
-          </div>
-        </div>
-      )}
-
+      <AsnProfileTab asn={data} />
     </div>
   )
 }
