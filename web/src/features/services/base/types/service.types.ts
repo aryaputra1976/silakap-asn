@@ -94,6 +94,13 @@ export interface ServiceJabatanDetail {
   isApplied?: boolean
 }
 
+export interface ServicePeremajaanDetail {
+  jenisPerubahan?: string | null
+  keterangan?: string | null
+  nilaiLama?: string | null
+  nilaiBaru?: string | null
+}
+
 export interface ServiceDetailResponse {
   id: string | number
   status: ServiceStatus
@@ -136,6 +143,7 @@ export interface ServiceDetailResponse {
   validasiIssues?: ServiceValidationIssue[]
   pensiunDetail?: ServicePensiunDetail | null
   jabatanDetail?: ServiceJabatanDetail | null
+  peremajaanDetail?: ServicePeremajaanDetail | null
 }
 
 export interface ServiceTimeline {
@@ -166,6 +174,7 @@ export interface ServiceDetailView {
   validationIssues: ServiceValidationIssue[]
   pensiunDetail?: ServicePensiunDetail | null
   jabatanDetail?: ServiceJabatanDetail | null
+  peremajaanDetail?: ServicePeremajaanDetail | null
 }
 
 export interface ServiceDokumen {

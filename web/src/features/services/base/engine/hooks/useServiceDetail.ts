@@ -65,6 +65,7 @@ function mapServiceDetail(
     validationIssues: detail.validasiIssues ?? [],
     pensiunDetail: detail.pensiunDetail ?? null,
     jabatanDetail: detail.jabatanDetail ?? null,
+    peremajaanDetail: detail.peremajaanDetail ?? null,
   }
 }
 

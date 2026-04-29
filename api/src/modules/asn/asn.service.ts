@@ -125,10 +125,10 @@ export class AsnService {
       tmt: r.tmtJabatan,
       nomorSk: r.nomorSk ?? null,
       tanggalSk: r.tanggalSk ?? null,
-      jabatan: (r as any).jabatan?.nama ?? null,
-      jenisJabatan: (r as any).jenisJabatan?.nama ?? null,
-      unitKerja: (r as any).unor?.nama ?? null,
-      instansi: (r as any).instansi?.nama ?? null,
+      jabatan: r.jabatan?.nama ?? null,
+      jenisJabatan: r.jenisJabatan?.nama ?? null,
+      unitKerja: r.unor?.nama ?? null,
+      instansi: r.instansi?.nama ?? null,
     }))
   }
 
@@ -140,7 +140,7 @@ export class AsnService {
       tmt: r.tmtPangkat,
       nomorSk: r.nomorSk ?? null,
       tanggalSk: r.tanggalSk ?? null,
-      golongan: (r as any).golongan?.nama ?? null,
+      golongan: r.golongan?.nama ?? null,
     }))
   }
 
@@ -149,8 +149,8 @@ export class AsnService {
 
     return rows.map((r) => ({
       id: Number(r.id),
-      jenjang: (r as any).pendidikanTingkat?.nama ?? null,
-      bidangStudi: (r as any).pendidikan?.nama ?? null,
+      jenjang: r.pendidikanTingkat?.nama ?? null,
+      bidangStudi: r.pendidikan?.nama ?? null,
       namaSekolah: r.namaSekolah ?? null,
       tahunLulus: r.tahunLulus ?? null,
     }))
@@ -170,7 +170,7 @@ export class AsnService {
     const { pasangan, anak } = await this.repo.findRiwayatKeluarga(id)
 
     return {
-      pasangan: pasangan.map((p: any) => ({
+      pasangan: pasangan.map((p) => ({
         id: Number(p.id),
         nama: p.nama,
         tanggalLahir: p.tanggalLahir,
@@ -178,7 +178,7 @@ export class AsnService {
         urutanPernikahan: p.urutanPernikahan,
         statusPernikahan: p.statusPernikahan,
       })),
-      anak: anak.map((a: any) => ({
+      anak: anak.map((a) => ({
         id: Number(a.id),
         nama: a.nama,
         tanggalLahir: a.tanggalLahir,

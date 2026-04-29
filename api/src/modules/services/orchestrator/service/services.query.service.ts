@@ -28,6 +28,7 @@ export class ServicesQueryService {
           },
         },
         dokumenUsul: true,
+        peremajaan: true,
       },
     })
 
@@ -38,7 +39,17 @@ export class ServicesQueryService {
       )
     }
 
-    return result
+    return {
+      ...result,
+      peremajaanDetail: result.peremajaan
+        ? {
+            jenisPerubahan: result.peremajaan.jenisPerubahan,
+            keterangan: result.peremajaan.keterangan ?? null,
+            nilaiLama: this.readJsonValue(result.peremajaan.dataLama),
+            nilaiBaru: this.readJsonValue(result.peremajaan.dataBaru),
+          }
+        : null,
+    }
   }
 
   async listByPegawai(pegawaiId: bigint) {
@@ -108,5 +119,14 @@ export class ServicesQueryService {
     return this.list({
       jenisLayananId: jenis.id,
     })
+  }
+
+  private readJsonValue(value: Prisma.JsonValue | null) {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null
+    }
+
+    const raw = (value as Prisma.JsonObject).value
+    return typeof raw === 'string' && raw.trim() ? raw.trim() : null
   }
 }

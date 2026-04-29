@@ -2,6 +2,7 @@ import { ServiceHandler } from "./services.registry.types"
 import { BusinessError } from '@/core/errors/business.error'
 
 import { PensiunApplicationService } from "../pensiun/application/pensiun.application.service"
+import { DataUpdateService } from "../data-update/service/data-update.service"
 
 /** Semua kode layanan yang dikenal sistem (aktif maupun belum). */
 export type ServiceCode =
@@ -11,7 +12,7 @@ export type ServiceCode =
   | "JABATAN"
   | "HUKDIS"
   | "TUGAS_BELAJAR"
-  | "DATA_UPDATE"
+  | "PEREMAJAAN"
 
 export class ServicesRegistry {
 
@@ -23,6 +24,7 @@ export class ServicesRegistry {
   private static factories: Record<string, () => ServiceHandler> = {
 
     PENSIUN: () => new PensiunApplicationService(),
+    PEREMAJAAN: () => new DataUpdateService(),
 
   }
 

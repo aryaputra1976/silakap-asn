@@ -332,6 +332,46 @@ export default function ServiceDetailPage() {
         </div>
       )}
 
+      {detail.peremajaanDetail && (
+        <div className="card mb-5">
+          <div className="card-header">
+            <h4 className="mb-0">Ringkasan Peremajaan Data</h4>
+          </div>
+
+          <div className="card-body">
+            <div className="row g-5">
+              <div className="col-md-4">
+                <div className="text-muted fs-7">Data yang Diubah</div>
+                <div className="fw-semibold">
+                  {detail.peremajaanDetail.jenisPerubahan ?? "-"}
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <div className="text-muted fs-7">Nilai Lama</div>
+                <div className="fw-semibold text-danger">
+                  {detail.peremajaanDetail.nilaiLama ?? "-"}
+                </div>
+              </div>
+
+              <div className="col-md-4">
+                <div className="text-muted fs-7">Nilai Baru</div>
+                <div className="fw-semibold text-success">
+                  {detail.peremajaanDetail.nilaiBaru ?? "-"}
+                </div>
+              </div>
+
+              <div className="col-md-12">
+                <div className="text-muted fs-7">Keterangan</div>
+                <div className="fw-semibold">
+                  {detail.peremajaanDetail.keterangan ?? "-"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="row g-5">
         <div className="col-lg-8">
           <div className="card mb-5">

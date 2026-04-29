@@ -77,12 +77,12 @@ export function AsnTable({
       >
         <thead>
           <tr className="text-start text-muted fw-bolder fs-7 text-uppercase gs-0">
-            <th className="ps-0" style={{ width: "34%" }}>
+            <th className="ps-0" style={{ width: "32%" }}>
               ASN
             </th>
             <th style={{ width: "18%" }}>Status / Gol</th>
-            <th style={{ width: "33%" }}>Posisi & Unit</th>
-            <th className="text-end pe-0 text-nowrap" style={{ width: "15%" }}>
+            <th style={{ width: "30%" }}>Posisi & Unit</th>
+            <th className="text-end pe-0 text-nowrap" style={{ width: "20%" }}>
               Aksi
             </th>
           </tr>
@@ -184,17 +184,27 @@ export function AsnTable({
               </td>
 
               <td className="text-end pe-0">
-                <button
-                  type="button"
-                  className="btn btn-sm btn-light-primary px-4 py-2 text-nowrap"
-                  onClick={() =>
-                    navigate(`/asn/profil/${row.id}`, {
-                      state: { backTo },
-                    })
-                  }
-                >
-                  Detail
-                </button>
+                <div className="d-flex gap-2 justify-content-end">
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light px-3 py-2 text-nowrap"
+                    title="Riwayat Kepegawaian"
+                    onClick={() => navigate(`/data-asn/riwayat?pegawai=${row.id}`)}
+                  >
+                    Riwayat
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-light-primary px-3 py-2 text-nowrap"
+                    onClick={() =>
+                      navigate(`/asn/profil/${row.id}`, {
+                        state: { backTo },
+                      })
+                    }
+                  >
+                    Detail
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
